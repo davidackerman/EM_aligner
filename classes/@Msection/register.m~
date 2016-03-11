@@ -1,0 +1,45 @@
+function obj = register(obj)
+% In-layer montage! Pairwise registrations of all adjacent tiles, and
+% update of optimal transformations  based on layer-wide optimization
+%
+% Usage: obj = register(obj)
+% the property obj.method determines the registration method selected.
+% 
+%
+% *Available methods:
+% 'alignTEM',         ---> uses deformable alignment with the matrix method
+% To add a method:
+% Any registration methods may be added to this class as long as it updates
+% the transformation object of every tile at the end of registration
+%
+%
+%
+% Author: Khaled Khairy. FlyTEM team project. Copyright 2016 Janelia Research Campus
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%% Set the state of all tiles that are currently equal to zero to -1 
+%  [they will not be considered for this registration]
+% 
+% All other tiles will be set to a state of zero: 
+% only tiles for which a legal/good transformation will be found are set to 'one' by the registration method
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+for tix = 1:numel(obj.tiles)
+    if obj.tiles(tix).state==0, obj.tiles(tix).state=-1;
+    elseif obj.tiles(tix).state==1
+    obj.tiles(tix).state = 0;
+    end
+end
+
+%% perform registration
+if strcmp(obj.method, 'alignTEM')         % use the deformable alignment with matrix solver
+    obj = alignTEM_inlayer(obj);
+else
+    disp('Method not recognized');
+end
+
+%% update tile centers
+obj = update_tile_centers(obj);

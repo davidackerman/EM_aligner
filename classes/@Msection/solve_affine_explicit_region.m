@@ -1,0 +1,60 @@
+function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(obj, opts)
+% Returns the matrix solution for a contiguous region
+%
+%% default options are set here 
+% lsq_options.verbose         = 1;
+ lsq_options.solver          = 'backslash';%'cgs';%'tfqmr';%'gmres';%'pcg';%'bicgstab';%''symmlq';%minres';%'lsqlin';% ;%'lsqr';%'bicgstab' bicg tfqmr backslash
+ lsq_options.constraint      ='explicit';%'none';% 'similarity';% 'trivial';%
+ lsq_options.pdegree         = 1;
+ lsq_options.constraint_only = 0;
+ lsq_options.lidfix          = 0;
+ lsq_options.tfix            = 0;
+ lsq_options.constrain_edges = 1;
+
+ lsq_options.translation_fac = 1e0;
+ lsq_options.lambda          = 1e1;
+ lsq_options.edge_lambda     = 1e5;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ lsq_options.verbose         = 0;
+ lsq_options.dw              = [1 1 1 1 1 1];
+
+% needed if iterative methods are used
+ lsq_options.ilu_droptol     = 1e-7;
+ lsq_options.use_ilu         = 1;
+ lsq_options.ilu_type        = 'ilutp';%'crout'; %'nofill';%%;
+ lsq_options.ilu_udiag       = 1;
+ lsq_options.L2              = [];
+ lsq_options.U2              = [];
+ lsq_options.A               = [];
+ lsq_options.b               = [];
+ lsq_options.B               = [];
+ lsq_options.d               = [];
+ lsq_options.tB              = [];
+ lsq_options.td              = [];
+ lsq_options.W               = [];
+ lsq_options.dw              = [];
+ lsq_options.restart         = 10;
+ lsq_options.tol             = 1e-10;
+ lsq_options.maxit           = 10000;
+% needed only for trivial constraint
+deg                                 = 180;
+ lsq_options.Rtfix           =  [cosd(deg) -sind(deg) 0; sind(deg) cosd(deg) 0; 0 0 1];
+ lsq_options.verbose         = 0;
+ lsq_options.debug           = 0;
+ lsq_options.LARGE           = 1e2;
+ lsq_options.nmax            = inf;
+ lsq_options.use_Tfac        = 0;
+ lsq_options.use_spmd        = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% override options provided in opts
+if nargin>1, 
+    
+     if isfield(opts, 'solver'), lsq_options.solver = opts.solver;end
+     if isfield(opts, 'lambda'), lsq_options.lambda = opts.lambda;end
+     if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda = opts.edge_lambda;end
+end
+%% solve
+[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = alignTEM_solver(obj, [],  lsq_options);

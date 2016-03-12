@@ -4,7 +4,10 @@ function [obj, js] = alignTEM_inlayer(obj)
 %%% [2] estimates point matches
 %%% [3] solves using rigid transform as regularizer
 
-%obj.dthresh_factor = 1.4;
+
+%% make sure the object is up-to-date
+obj  =  update_XY(obj);
+obj  = update_adjacency(obj);
 %% generate features for all tiles
 [obj] = calculate_tile_features(obj);
 %% generate point matches

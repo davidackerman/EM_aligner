@@ -122,20 +122,14 @@ classdef tile
                 disp('Error retrieving mask');
             end
         end
+        
+        
         function im = get_image(obj, filter)
             if obj.fetch_local
                 im = imread(obj.path);
             else
               im = get_image_renderer(obj, 1.0, 'true');
             end
-%             if strcmp(obj.path(1:4), 'http')
-%                 im = get_image_renderer(obj, 1.0, '"true"');
-%             elseif ~exist(obj.path,'file'),
-%                 disp(['Tile not found: ' obj.path]);
-%                 im = [];
-%             else  %%% then obj.path is just a path to a file
-%                 im = imread(obj.path);
-%             end
             if nargin==2 && ~isempty(im)
                 if strcmp(filter, 'bkgrd1')
                     im = background_filter(im,1);
@@ -151,22 +145,24 @@ classdef tile
             im(~mask) = 0;
         end
         
+        
+        %% use Renderer service to fetch the image
         function im = get_image_renderer(obj, scale, filter)
             % filter must be a string, either "true" or "false"
             %url = 'http://tem-services.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/FAFB00/stack/v5_acquire/tile/150127175351050044.3826.0/scale/1.0/jpeg-image?filter=true';
             url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/jpeg-image?scale=%s&filter=%s',...
                 obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, num2str(scale), filter);
-%            url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/jpeg-image?scale=%s', obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, num2str(scale));
 
             options = weboptions('Timeout', 60);
-            try
+            % we will try three times
+           try
                im = webread(url, options);
            catch err_ip_address
                pause(1);
                try
                im = webread(url,options);
                catch err_ip_address2
-                   pause(2);
+                   pause(10);
                    im = webread(url,options);
                end
            end

@@ -1,8 +1,8 @@
-function obj = register(obj)
+function [obj, js] = register(obj)
 % In-layer montage! Pairwise registrations of all adjacent tiles, and
 % update of optimal transformations  based on layer-wide optimization
 %
-% Usage: obj = register(obj)
+% Usage: [obj, js] = register(obj)
 % the property obj.method determines the registration method selected.
 % 
 %
@@ -17,7 +17,7 @@ function obj = register(obj)
 % Author: Khaled Khairy. FlyTEM team project. Copyright 2016 Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+js = [];  % initialize output to return empty if not set by regisration method
 
 
 %% Set the state of all tiles that are currently equal to zero to -1 
@@ -37,7 +37,7 @@ end
 
 %% perform registration
 if strcmp(obj.method, 'alignTEM')         % use the deformable alignment with matrix solver
-    obj = alignTEM_inlayer(obj);
+    [obj, js] = alignTEM_inlayer(obj);
 else
     disp('Method not recognized');
 end

@@ -114,12 +114,12 @@ for ix = 1:numel(obj.tiles)
                     patch( P(:,1), P(:,2),c,  'EdgeColor', 'w', 'FaceColor', 'none');
                 elseif strcmp(style, 'filled')
                     if etix(ix)
-                        patch( P(:,1), P(:,2),c,  'EdgeColor', 'k', 'FaceColor', 'g', 'FaceAlpha', 0.0);
+                        patch( P(:,1), P(:,2),c,  'EdgeColor', 'k', 'FaceColor', 'g', 'FaceAlpha', 0.4);
 %                     else
 %                         patch( P(:,1), P(:,2),c,  'EdgeColor', 'k', 'FaceColor', 'b');
                     
                     else
-                     patch( P(:,1), P(:,2),c,  'EdgeColor', 'k' , 'FaceColor', 'b', 'Facealpha', 0.0);
+                     patch( P(:,1), P(:,2),c,  'EdgeColor', 'k' , 'FaceColor', 'b', 'Facealpha', 0.4);
                     end
                 end
             end

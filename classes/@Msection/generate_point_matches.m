@@ -31,7 +31,7 @@ np = zeros(numel(r),1);
 delpix = zeros(numel(r),1, 'uint32');
 %count = 1;
 disp('Calculating point matches .... ');
-parfor_progress(numel(r));
+%parfor_progress(numel(r));
 parfor pix = 1: numel(r)
     %disp(['Point matching: ' num2str(pix) ' of ' num2str(numel(r))]);
     f1 = mL2_tiles(r(pix)).features;
@@ -48,9 +48,9 @@ parfor pix = 1: numel(r)
     if size(m1.Location,1)<thresh
         delpix(pix) = 1;
     end
-    parfor_progress;
+%    parfor_progress;
 end
-parfor_progress(0);
+%parfor_progress(0);
 if isempty(M), error('No matches found');end;
 disp('Done!');
 delpix = logical(delpix);

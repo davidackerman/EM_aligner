@@ -28,4 +28,3 @@ s.job_out_option = '-j y -o /dev/null';
 s.twait_jobs    = 5.0;       % seconds to wait before checking qstat
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  ------------------------------      
 obj.regConf.alignTEM = s;
-obj.miConf = m;

@@ -10,7 +10,7 @@ if nargin<3, force  = 0;end
 if nargin<4, max_features = 5000;end
 disp('Calculating image features...');
 mL2_tiles = obj.tiles;
-parfor_progress(numel(mL2_tiles));
+%parfor_progress(numel(mL2_tiles));
 parfor ix = 1:numel(mL2_tiles)
     if isempty(mL2_tiles(ix).features) || force
          t = get_features(mL2_tiles(ix), filter);
@@ -22,8 +22,8 @@ parfor ix = 1:numel(mL2_tiles)
         end
         mL2_tiles(ix) = t;
     end
-    parfor_progress;
+%    parfor_progress;
 end
-parfor_progress(0);
+%parfor_progress(0);
 disp('Done!');
 obj.tiles = mL2_tiles;

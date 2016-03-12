@@ -65,14 +65,10 @@ classdef Msection
         
         function obj = Msection(arg1, arg2, arg3)   % constructor
             % *Scenario 1: obj = Msection(); %no arguments: empty Msection object
-            % *Scenario 2: obj = Msection(tile_array); %  tile_array = array of tile objects
-            % *Scenario 3: obj = Msection(layout_original, z); %arg1 = full layout file path, arg2 = z section desired
-            % *Scenario 4: obj = Msection(rc, z); %  rc is a struct that
-            %                                        defines a renderer
-            %                                        collection. z is
-            %                                        z-value in the
-            %                                        renderer collection
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % *Scenario 2: obj = Msection(rc, z); %  rc is a struct that defines a renderer collection. z is z-value in the renderer collection
+            % *Scenario 3: obj = Msection(tile_array); %  tile_array = array of tile objects
+            % *Scenario 4: obj = Msection(layout_original, z); %arg1 = full layout file path, arg2 = z section desired
+            
             if nargin~=0
                 
                 %%%% generate Msection object from array of tile objects
@@ -103,13 +99,10 @@ classdef Msection
                     jt = tile;
                     sectionID = j(1).layout.sectionId;
                     disp('Loading section ... ');
-                    parfor_progress(numel(j));
                     parfor jix = 1:numel(j)
                         jt(jix) = tile(j(jix));
                         jt(jix).z = z;
-                        parfor_progress;
                     end
-                    parfor_progress(0);
                     % loop over tiles to set tile id
                     parfor ix = 1:numel(jt)
                         jt(ix).id = ix;

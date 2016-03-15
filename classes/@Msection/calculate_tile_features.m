@@ -5,7 +5,7 @@ function obj = calculate_tile_features(obj, filter, force, max_features)
 % filter can be 'bkgrd1', 'bkgrd2', 'bkgrd3', 'histeq', or 'none' (default), or any
 % other filter applicable by tile.get_image
 
-if nargin<2, filter = 'none';end
+if nargin<2, filter = 'true';end
 if nargin<3, force  = 0;end
 if nargin<4, max_features = 5000;end
 disp('Calculating image features...');

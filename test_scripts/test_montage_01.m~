@@ -8,7 +8,7 @@
 
 %% [0] configure collections
 
-section_z = 4.0; % this is the section z-coordinate value to be montaged
+section_z = 1.0; % this is the section z-coordinate value to be montaged
 
 
 % configure source collection
@@ -31,13 +31,14 @@ rctarget_montage.collection = ['EXP_' rcsource.stack '_montage_' num2str(section
 %% [1] generate montage registration
 L                = Msection(rcsource, section_z);   % instantiate an Msection object using the Renderer service to read tiles
 L.dthresh_factor = 1.4;                             % factor x tile diagonal = search radius. increase this paramter to cover a wider radius of tile-tile comparisons
+for tix = 1:numel(L.tiles), L.tiles(tix).fetch_local = 0;end
 [L2, ~]           = register(L);                     % perform the actual registration
-
+disp(L2);
 %% [2] ingest montaged section into the database
 ingest_section_into_renderer_database(L2, rctarget_montage, rcsource, rctarget_montage.collection, pwd);
 mL = update_tile_sources(L2, rctarget_montage.owner, rctarget_montage.project, rctarget_montage.collection, rcsource.server); % point to the new collection
 
-%% [3] look at resulting outlines in Matlab
+%% [3] look at result in Matlab
 figure; show_map(L);title('Tile outlines before registration');
 figure; show_map(mL);title('Tile outlines after registration');
 

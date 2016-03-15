@@ -6,34 +6,14 @@ function [obj, js] = alignTEM_inlayer(obj)
 
 
 %% make sure the object is up-to-date
-obj  =  update_XY(obj);
+obj  = update_XY(obj);
 obj  = update_adjacency(obj);
 %% generate features for all tiles
 [obj] = calculate_tile_features(obj);
 %% generate point matches
 min_pm = 6;
 [L2] = generate_point_matches(obj, min_pm);
-%% generate json point-match data
-counter = 1;
-M = L2.pm.M;
-adj = L2.pm.adj;
-sectionID = L2.sectionID;
-for mix = 1:size(M,1)
-    indx1 = adj(mix,1);
-    indx2 = adj(mix,2);
-    tid1 = [L2.tiles(indx1).renderer_id];
-    tid2 = [L2.tiles(indx2).renderer_id];
 
-    MP{counter}.pz = sectionID;
-    MP{counter}.pId= tid1;
-    MP{counter}.p  = M{mix,1};
-    
-    MP{counter}.qz = sectionID;
-    MP{counter}.qId= tid2;
-    MP{counter}.q  = M{mix,2};
-    counter = counter + 1;
-end
-js = pairs2json(MP); % generate json blob to be ingested into point-match database
 %% decompose into connected components
 [L_vec, a] = reduce_to_connected_components(L2);
 %% solve components and collect
@@ -47,4 +27,26 @@ mL = solve_clusters(L_vec, opts);   % solves individual clusters and reassembles
 %% translate to origin to be Renderer friendly
 obj = translate_to_origin(mL);
 
-
+%% if output js is requested, then generate json point-match data
+if nargout>1
+    counter = 1;
+    M = L2.pm.M;
+    adj = L2.pm.adj;
+    sectionID = L2.sectionID;
+    for mix = 1:size(M,1)
+        indx1 = adj(mix,1);
+        indx2 = adj(mix,2);
+        tid1 = [L2.tiles(indx1).renderer_id];
+        tid2 = [L2.tiles(indx2).renderer_id];
+        
+        MP{counter}.pz = sectionID;
+        MP{counter}.pId= tid1;
+        MP{counter}.p  = M{mix,1};
+        
+        MP{counter}.qz = sectionID;
+        MP{counter}.qId= tid2;
+        MP{counter}.q  = M{mix,2};
+        counter = counter + 1;
+    end
+    js = pairs2json(MP); % generate json blob to be ingested into point-match database
+end

@@ -27,12 +27,12 @@ js = [];  % initialize output to return empty if not set by regisration method
 % after registration, tiles for which an accepted transformation exists 
 % are set to a state of 'one' by the registration method itself
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for tix = 1:numel(obj.tiles)
-    if obj.tiles(tix).state==0, obj.tiles(tix).state=-1;
-    elseif obj.tiles(tix).state==1
-    obj.tiles(tix).state = 0;
-    end
-end
+% for tix = 1:numel(obj.tiles)
+%     if obj.tiles(tix).state==0, obj.tiles(tix).state=-1;
+%     elseif obj.tiles(tix).state==1
+%     obj.tiles(tix).state = 0;
+%     end
+% end
 
 
 %% perform registration
@@ -41,6 +41,7 @@ if strcmp(obj.method, 'alignTEM')         % use the deformable alignment with ma
 else
     disp('Method not recognized');
 end
-
+s = sum([obj.tiles(:).state]);
+if s==0, error('no legal tiles found');end
 %% update tile centers
 obj = update_tile_centers(obj);

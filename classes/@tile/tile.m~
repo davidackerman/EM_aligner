@@ -26,7 +26,7 @@ classdef tile
         SURF_NumOctaves = 2;
         SURF_NumScaleLevels = 3;
         SURF_MetricThreshold = 2000;
-        dir_temp_render = '/scratch/khairyk';% there is no elegant way to do this. [a resp] = system('whoami'); dir_temp_render = ['/scratch/' resp];
+        dir_temp_render = '/scratch/khairyk';%'/nobackup/flyTEM/temp_renderer';
         fetch_local = 0;
         
     end
@@ -163,8 +163,12 @@ classdef tile
 %                 obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, num2str(scale), filter);
 
             url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=%s',...
-                obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, filter);
+                obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, num2str(scale), filter);
 
+
+            %dir_render_scratch = '/scratch/khairyk';
+            %dir_temp = '/groups/flyTEM/home/khairyk/EM_aligner/test_data';
+            
             fn = [obj.dir_temp_render '/tile_image_' num2str(randi(1000)) '_' obj.renderer_id '.jpg'];
             % we will try four times
             cmd = sprintf('/groups/flyTEM/flyTEM/render/bin/render.sh --memory 7g --out %s --parameters_url "%s"', fn, url);

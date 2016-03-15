@@ -1,14 +1,42 @@
 function [x2, R] = solve_AxB(K,Lm,options,d)
-%% SOLVE
-tic
-R = []; 
-%     in case of iterative methods you can use semilogy(R(:,1),R(:,2),'-o');
-%     xlabel('Iteration Number');
-%     ylabel('Relative Residual');
-%     to view iterative method progress;
-if strcmp(options.solver,'backslash--noreg')
-    if options.verbose,disp('------------ Performing backslash -- no reg');end
-    x2 = K\Lm;
+% SOLVE
+% Performs the actual solve of the final linear system. 
+% Input: K is a sparse square matrix assembled elsewhere nxn. 
+%        Lm is a sparse vector nx1
+%        options is a struct with fields:
+%        options.solver: determines the solver strategy. Allowed values
+%
+%           "backslash" : uses Matlab's backslash operator
+%            solving the system K * x2 = Lm directly. This is
+%            memory-limited
+%       
+%           "lsqlin", "gmres", "tfqmr", "bicg", "bicgstab", "lsqr", "pcg",
+%           "symmlq", "cgs", "minres": All of these are iterative methods
+%           that benefit from a good starting value "d" and require
+%           preconditioning. They have tradeoffs regarding accuracy,
+%           efficiency, suitability for a particular system and memory requirements.
+% 
+%          options.L2 and options.U2, if not empty will re-use
+%          preconditioners.
+%
+%           options.ilu_udiag, options. ilu_droptol, options.ilu_type
+%           control the calculation of incomplete LU decomposition. Refer
+%           to Matlab's documentation.
+%
+%           options.restart, options.tol, options.maxit, control execution of the
+%           individual methods.
+%
+% Output: x2: solution vector
+%          R: a 2-vector of residuals
+%
+% Author: Khaled Khairy: Copyright 2016. Janelia Research Campus
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+x2 = [];
+R  = []; 
+
+if options.verbose    % then we also want to know how long it takes to solve the system
+    tic;
 end
 
 %%%%%%%%%%%%%%%%% preconditioning
@@ -118,33 +146,5 @@ if options.debug && ~strcmp(options.solver,'backslash')...
     pause(3);
 end
 
-% % the svd solution
-% [U, S, V] = svds(K);
-% invS = 1./S;
-% invS(isinf(invS)) = 0;
-% x2 = U*invS*V'*Lm;
-
-
 x2 = real(x2);
 
-
-%% Error  ------- sosi -------- error progress as function of lambda needs to be done on A and b and NOT on K and Lm
-% % % err = norm(K*d-Lm);
-% % err = norm(A*d-b);
-% % if options.verbose,disp('Error (pre-optimization  -- Ax=b):');
-% %     disp(num2str(err));
-% % end
-% % % % err = norm(K*x2-Lm);
-% % err = norm(A*x2-b);
-% % if options.verbose,disp('Error (post-optimization -- Ax=b):');
-% %     disp(num2str(err));
-% % end
-
-
-% err1 = norm(K*x1-Lm);
-% if options.verbose,
-%     disp('Error (optimal with backslash):');
-%     disp(num2str(err1));
-%     disp('Ratio error to optimal error');
-%     disp(num2str(abs((err)/err1)));
-% end

@@ -4,10 +4,16 @@
 % [1] generate the Msection object and register (generate montage)
 % [2] ingest the montaged section into the Renderer database as a new collection
 % [3] quick inspection of results
+% 
+% Note: you need to connect to a working Renderer service. Configure
+% accordingly.
+% Please run from a direcory in which you have write permission
+%
+% Author: Khaled Khairy. Janelia Research Campus -- 2016.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% [0] configure collections
-
+clc
 section_z = 4.0; % this is the section z-coordinate value to be montaged
 
 
@@ -26,12 +32,13 @@ rcsource.verbose        = 1;
 rctarget_montage = rcsource;            % initialize to the same as above
 rctarget_montage.project = 'test';      % we will put the montage under "test" projects
 rctarget_montage.collection = ['EXP_' rcsource.stack '_montage_' num2str(section_z)];
+rctarget_montage.stack = rctarget_montage.collection;   % stack and collection are the same
 
 
 %% [1] generate montage registration
-L                = Msection(rcsource, section_z);   % instantiate an Msection object using the Renderer service to read tiles
-L.dthresh_factor = 1.4;                             % factor x tile diagonal = search radius. increase this paramter to cover a wider radius of tile-tile comparisons
-[L2, ~]           = register(L);                     % perform the actual registration
+L                = Msection(rcsource, section_z);   % instantiate Msection object using the Renderer service to read tiles
+L.dthresh_factor = 1.7;                             % factor x tile diagonal = search radius. increase this paramter to cover a wider radius of tile-tile comparisons
+[L2, ~]           = register(L);                    % perform the actual registration
 
 %% [2] ingest montaged section into the database
 ingest_section_into_renderer_database(L2, rctarget_montage, rcsource, rctarget_montage.collection, pwd);

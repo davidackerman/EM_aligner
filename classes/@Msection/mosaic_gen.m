@@ -7,9 +7,6 @@ L = update_tile_info(L);
 L = get_bounding_box(L);
 Wbox = [L.box(1) L.box(3) L.box(2)-L.box(1) L.box(4)-L.box(3)];
 
-% %%% switch all tiles to use local rendering
-for tix = 1:numel(L.tiles), L.tiles(tix).fetch_local = 0;end
-
 L.mosaic = render_poly_06(L.tiles, 0.05, Wbox, 0, L.tiles(1).stack);
 
 % 

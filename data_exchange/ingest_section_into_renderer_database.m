@@ -4,6 +4,7 @@ function ingest_section_into_renderer_database(mL,rctarget, rcsource, target_sta
 %% translate to origin to be Renderer friendly
 disp('translating to set in +ve space');
 mL = translate_to_origin(mL);
+
 %% export to MET (in preparation to be ingested into the Renderer database
 disp('-------------------- Exporting to MET -------------');
 zix = mL.z;
@@ -15,6 +16,7 @@ else
     export_MET(mL, fn_MET, 2, 2, 0);
     v = 'v1';
 end
+
 %% ingest into the Renderer database
 % generate a new collection in the Renderer database
 
@@ -30,3 +32,9 @@ rc.MET_format     = v;
 rc.MET_files{1}   = fn_MET;
 rc.baseURL = rc.server;
 generate_results_collection(rc);
+
+try
+    delete(fn_MET);
+catch err_delete_file
+    kk_disp_err(err_delete_file);
+end

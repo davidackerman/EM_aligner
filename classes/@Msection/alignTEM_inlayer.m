@@ -9,7 +9,7 @@ function [obj, js] = alignTEM_inlayer(obj)
 obj  = update_XY(obj);
 obj  = update_adjacency(obj);
 %% generate features for all tiles
-[obj] = calculate_tile_features(obj);
+%[obj] = calculate_tile_features(obj);
 %% generate point matches
 min_pm = 6;
 [L2] = generate_point_matches(obj, min_pm);

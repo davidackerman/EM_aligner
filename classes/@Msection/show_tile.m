@@ -1,9 +1,11 @@
 function [obj, im, Wbox, imlabel, show_vec] = show_tile(obj, tile_show, fz, scale, box_only,t, stack)
-% Return and show image of tile 'tile_show' together with adjacent tiles accordign to current transformation matrix
+% Return and show image of tile 'tile_show' together with adjacent tiles 
+% i.e. the tile in context of neighbors, so that we can judge stitching
 % Usage: [obj im] = show_tile(obj, tile_show, font_size)
-%       tile_show is an integer index into the obj.tiles array (not z, id,
-%       col or row)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       tile_show is an integer index into the obj.tiles array (it is not z, id, col or row)
+%
+% Author: Khaled Khairy
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 imlabel = [];
 if nargin<7, stack = obj.tiles(1).stack;end
 
@@ -14,7 +16,7 @@ if nargin<6, t = 1;end
 if tile_show<=numel(obj.tiles) && tile_show>0
     obj = update_adjacency(obj);
     
-    % get all connections
+    % get all connections and neighbors of tile_show
     [rows, cols] = ind2sub(size(obj.A), find(obj.A));
     neighbors = [[rows(cols==tile_show)]' [cols(rows==tile_show)]'];    % get neighbors of tiles_show
     show_vec = [tile_show(:)' neighbors(:)'];

@@ -1,6 +1,6 @@
 function obj = import_from_layout_txt(obj, fn, z)
-% constructs an Msection object based on the layout file in fn
-% fn is the full path to a layout file.
+% Populates an Msection object with tiles based on the classic layout file in fn
+% fn: path to a layout file.
 % z are layer indices
 %
 %
@@ -32,7 +32,8 @@ while z_curr<=z && ~feof(fid)
         t(count) = tile(str2double(C{1}), str2double(C{2}), str2double(C{3}), str2double(C{4}), ...
             str2double(C{5})-Xo, str2double(C{6}), str2double(C{7}), str2double(C{8})-Yo, str2double(C{9}), ...
             str2double(C{10}), str2double(C{11}), C{12});
-        
+        t(count).fetch_local = 1;
+        t(count).renderer_id = num2str(count);
         id_vec{count} = str2double(C{2});
         count_vec{count} = count;
         X(count) = str2double(C{5});

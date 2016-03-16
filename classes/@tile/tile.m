@@ -1,4 +1,14 @@
 classdef tile
+    % tile  Summary: 
+    %           Represents one image (tile) 
+    % 
+    %   tile constructors:
+    %       *Scenario 1: obj = tile(js_struct); % struct; a json tile blob that was converted to a Matlab struct and passed as input argument
+    %       *Scenario 2: obj = tile(z, id, t1, t2, t3, t4, t5, t6, col, row, cam, path, temca_conf, rotation, renderer_id); % the full tile configuration is expected explicitly (except for the mask which gets set separately (if at all)
+    % 
+    % Author: Khaled Khairy. khairyk@janelia.hhmi.org. FlyTEM team project.
+    %         Janelia Research Campus. 2016
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     properties
         z;
         sectionId;
@@ -37,7 +47,10 @@ classdef tile
         %% constructor
         function obj = tile(z, id, t1, t2, t3, t4, t5, t6,...
                 col, row, cam, path, temca_conf, rotation, renderer_id)
-            if (nargin==1 & isstruct(z))   % we are reading from a struct that was produced from json from Renderer db
+            % *Scenario 1: obj = tile(js_struct); % struct; a json tile blob that was converted to a Matlab struct and passed as input argument
+            % *Scenario 2: obj = tile(z, id, t1, t2, t3, t4, t5, t6, col,
+            % row, cam, path, temca_conf, rotation, renderer_id); % the full tile configuration is expected explicitly (except for the mask which gets set separately (if at all)
+            if (nargin==1 && isstruct(z))   % we are reading from a struct that was produced from json from Renderer db
                 p = z;
                 obj.z = p.z;
                 obj.id = -999;
@@ -91,12 +104,6 @@ classdef tile
                 T(2,2) = t5;
                 T(3,2) = t6;
                 obj.tform.T = T;
-                %                 obj.tform.T(1,1) = t1;
-                %                 obj.tform.T(2,1) = t2;
-                %                 obj.tform.T(3,1) = t3;
-                %                 obj.tform.T(1,2) = t4;
-                %                 obj.tform.T(2,2) = t5;
-                %                 obj.tform.T(3,2) = t6;
                 obj.col = col;
                 obj.row = row;
                 obj.cam = cam;

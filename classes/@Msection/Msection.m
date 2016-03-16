@@ -12,9 +12,10 @@ classdef Msection
     %   method                  - the tile-tile registration method ('alignTEM')
     %
     % Msection  Class Instantiation:
-    %           *Scenario 1: obj = Msection();                              %no arguments: empty Msection object
-    %           *Scenario 2: obj = Msection(tile_array);                    %tile_array: matlab array of tile objects
-    %           *Scenario 3: obj = Msection(layout_file, z);                %full layout file path, and 'z' section
+    %           *Scenario 1: obj = Msection();                              %  no arguments: empty Msection object
+    %           *Scenario 2: obj = Msection(rc, z);                         %  rc is a struct that defines a renderer collection. z is z-value in the renderer collection
+    %           *Scenario 3: obj = Msection(tile_array);                    %  tile_array = array of tile objects
+    %           *Scenario 4: obj = Msection(layout_original, z);            %  arg1 = full layout file path, arg2 = z section desired
     %
     % Msection  Example usage:
     %           >fn = '/scratch/myexperiments/layoutdata/layout.txt';       % full UNIX path to layout file
@@ -111,72 +112,12 @@ classdef Msection
                     obj = update_tile_sources(obj, rc.owner, rc.project, rc.stack, rc.server);
                     obj.sectionID = sectionID;
                 end
-                
-                %%%%%% import from layout file
-                if nargin==3 && iscell(arg1) && strcmp(arg2, 'BK_format')
-                    %% A layer is constructed when called from the Mstack generate_stack function.
-                    %%% arg1 is a cell array containing all information for
-                    %%% that layer, and arg2 indicates it is in BK_format
-                    %%% (i.e. the data was read from BK format layout file.
-                    %%% This also means we are using affine2d
-                    %%% transformations
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    Xo = 0; % translate all tiles by that X and Y while ingesting
-                    Yo = 0;
-                    id_vec = cell(numel(arg1{1}), 1);
-                    t = tile;
-                    X = 0;
-                    Y = 0;
-                    for tix = 1:numel(arg1{1})      %% we have to generate the individual tile objects, so let's loop over them
-                       
-                        if numel(arg1)==12
-                        t(tix) = tile(arg1{1}(tix), arg1{2}(tix), arg1{3}(tix), arg1{4}(tix), ...
-                            arg1{5}(tix)-Xo, arg1{6}(tix), arg1{7}(tix), arg1{8}(tix)-Yo, arg1{9}(tix), ...
-                            arg1{10}(tix), arg1{11}(tix), arg1{12}{tix});
-                        elseif numel(arg1)==13
-                            t(tix) = tile(arg1{1}(tix), arg1{2}(tix), arg1{3}(tix), arg1{4}(tix), ...
-                            arg1{5}(tix)-Xo, arg1{6}(tix), arg1{7}(tix), arg1{8}(tix)-Yo, arg1{9}(tix), ...
-                            arg1{10}(tix), arg1{11}(tix), arg1{12}{tix}, arg1{13}(tix));
-                        elseif numel(arg1)==14
-                            t(tix) = tile(arg1{1}(tix), arg1{2}(tix), arg1{3}(tix), arg1{4}(tix), ...
-                                arg1{5}(tix)-Xo, arg1{6}(tix), arg1{7}(tix), arg1{8}(tix)-Yo, arg1{9}(tix), ...
-                                arg1{10}(tix), arg1{11}(tix), arg1{12}{tix}, arg1{13}(tix), arg1{14}(tix));
-                        elseif numel(arg1)==15
-                            t(tix) = tile(arg1{1}(tix), arg1{2}(tix), arg1{3}(tix), arg1{4}(tix), ...
-                                arg1{5}(tix)-Xo, arg1{6}(tix), arg1{7}(tix), arg1{8}(tix)-Yo, arg1{9}(tix), ...
-                                arg1{10}(tix), arg1{11}(tix), arg1{12}{tix}, arg1{13}(tix), arg1{14}(tix), arg1{15}{tix});
-                        end
-                        
-                        id_vec{tix} = arg1{2}(tix);
-                        X(tix) = arg1{5}(tix);
-                        Y(tix) = arg1{8}(tix);
-                    end
-                    obj.tiles = t;
-                    obj.X = X;
-                    obj.Y = Y;
-                    obj.z = arg1{1}(1);
-                    obj.original_layout_file = [];
-                    obj.map_id = containers.Map(id_vec, 1:numel(arg1{1}));     % generate a hash table with id's as the keys
-                    obj = update_adjacency(obj);
-                    obj = generate_hash_tables(obj);
-                end
-                
+               
                 %%%%%% import from layout file
                 if nargin==2 && ischar(arg1)
                     %% in this case we construct a layer by directly reading the relevant z tile information from the layout file
                     obj = Msection;
                     obj = import_from_layout_txt(obj, arg1, arg2);
-                    obj = generate_hash_tables(obj);
-                    obj = update_adjacency(obj);
-                end
-                
-                %%%%%% copy -- generate a section based on another
-                if nargin ==3 && strcmp('Msection', class(arg1))
-                    % then we are generating a subsection from a section
-                    % arg1 is the section, arg2 the col_range and arg3 the
-                    % row_range
-                    obj = Msection;
-                    obj = get_subsection(obj, arg1, arg2, arg3);
                     obj = generate_hash_tables(obj);
                     obj = update_adjacency(obj);
                 end

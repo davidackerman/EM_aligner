@@ -17,35 +17,33 @@ clc
 section_z = 4.0; % this is the section z-coordinate value to be montaged
 
 
-% configure source collection
-rcsource.stack          = 'v12_acquire_merged';
-rcsource.owner          = 'flyTEM';
-rcsource.project        = 'FAFB00';
-rcsource.server         = 'http://10.37.5.60:8080/render-ws/v1'; % use of ip adress is preferred (no DNS lookup)-- Note: 10.37.5.60 is a VM, 10.40.3.162 is tem-services
-rcsource.service_host   = '10.37.5.60:8080';
-rcsource.verbose        = 1;
-rcsource.baseURL        = rcsource.server;
-rcsource.source_stack   = rcsource.stack;
-rcsource.verbose        = 1;
+% source collection
+rcsource.owner                  = 'flyTEM';
+rcsource.project                = 'FAFB00';
+rcsource.stack                  = 'v12_acquire_merged';
+rcsource.service_host           = '10.37.5.60:8080';    % use of ip adress is preferred (no DNS lookup)--Note: 10.37.5.60 is a VM, 10.40.3.162 is tem-services
+rcsource.baseURL                = ['http://' rcsource.service_host '/render-ws/v1']; 
+rcsource.verbose                = 1;
 
-% configure output montage target collection
-rctarget_montage = rcsource;            % initialize to the same as above
-rctarget_montage.project = 'test';      % we will put the montage under "test" projects
-rctarget_montage.collection = ['EXP_' rcsource.stack '_montage_' num2str(section_z)];
-rctarget_montage.stack = rctarget_montage.collection;   % stack and collection are the same
+% target collection
+rctarget_montage.owner          = 'flyTEM';
+rctarget_montage.project        = 'test';
+rctarget_montage.stack          = ['Test_' rcsource.stack '_montage_' num2str(section_z)];
+rctarget_montage.service_host   = '10.37.5.60:8080';    % use of ip adress is preferred (no DNS lookup)-- Note: 10.37.5.60 is a VM, 10.40.3.162 is tem-services
+rctarget_montage.baseURL        = ['http://' rctarget_montage.service_host '/render-ws/v1']; 
+rctarget_montage.verbose        = 1;
 
 
 %% [1] generate montage registration
 L                = Msection(rcsource, section_z);   % instantiate Msection object using the Renderer service to read tiles
 L.dthresh_factor = 1.7;                             % factor x tile diagonal = search radius. increase this paramter to cover a wider radius of tile-tile comparisons
-[L2, ~]           = register(L);                    % perform the actual registration
+[L2, ~]          = register(L);                    % perform the actual registration
 
-%% [2] ingest montaged section into the database
-ingest_section_into_renderer_database(L2, rctarget_montage, rcsource, rctarget_montage.collection, pwd);
-mL = update_tile_sources(L2, rctarget_montage.owner, rctarget_montage.project, rctarget_montage.collection, rcsource.server); % point to the new collection
+%% [2] ingest montaged section into the database (optional) so that we can look at it using dynamic rendering
+ingest_section_into_renderer_database_overwrite(L2, rctarget_montage, rcsource, pwd);
 
-%% [3] look at resulting outlines in Matlab
+%% [3] look at tile outlines in Matlab
 figure; show_map(L);title('Tile outlines before registration');
-figure; show_map(mL);title('Tile outlines after registration');
+figure; show_map(L2);title('Tile outlines after registration');
 
 

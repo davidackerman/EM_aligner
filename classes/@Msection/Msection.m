@@ -94,7 +94,7 @@ classdef Msection
                     
                     % % get a list of all tiles 
                     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
-                        rc.server, rc.owner, rc.project, rc.stack, z);
+                        rc.baseURL, rc.owner, rc.project, rc.stack, z);
                     j = webread(urlChar);
                     % generate the tiles
                     jt = tile;
@@ -109,7 +109,7 @@ classdef Msection
                         jt(ix).id = ix;
                     end
                     obj = Msection(jt);
-                    obj = update_tile_sources(obj, rc.owner, rc.project, rc.stack, rc.server);
+                    obj = update_tile_sources(obj, rc);
                     obj.sectionID = sectionID;
                 end
                

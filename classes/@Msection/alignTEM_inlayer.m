@@ -8,11 +8,9 @@ function [obj, js] = alignTEM_inlayer(obj)
 %% make sure the object is up-to-date
 obj  = update_XY(obj);
 obj  = update_adjacency(obj);
-%% generate features for all tiles
-%[obj] = calculate_tile_features(obj);
 %% generate point matches
 min_pm = 6;
-[L2] = generate_point_matches(obj, min_pm);
+[L2] = generate_point_matches(obj, min_pm); % also makes sure features are calculated
 
 %% decompose into connected components
 [L_vec, a] = reduce_to_connected_components(L2);

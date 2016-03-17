@@ -267,7 +267,7 @@ classdef tile
         end
         
         function im = show(obj, filter)
-            if nargin<2, filter = 'none';end
+            if nargin<2, filter = 'true';end
             warning off;
             im = get_image(obj, filter);
             imshow(im);

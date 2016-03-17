@@ -28,12 +28,13 @@ end
 %% append tiles to existing collection
 resp = append_renderer_stack(rc_target, rc_base, fn, v);
 
-%% cleanup
-try 
-    delete(fn); 
-catch err_delete, 
-    kk_disp_err(err_delete);
-end
+try delete(fn); catch err_delete, kk_disp_err(err_delete);end
 
-%% complete stack
-resp = renderer_stack_state_complete(rc);
+
+
+%% cleanup
+try
+    delete(fn_MET);
+catch err_delete_file
+    kk_disp_err(err_delete_file);
+end

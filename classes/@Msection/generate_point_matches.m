@@ -5,7 +5,7 @@ function [obj, M, adj] = generate_point_matches(obj, thresh, filter)
 % SOSI: does not handle orphan tiles
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin<2, thresh = 12;end;
-if nargin<3, filter = 'none';end
+if nargin<3, filter = 'true';end
 
 if isempty(obj.A), 
     warning('No adjacency matrix found, calculating');

@@ -38,7 +38,7 @@ end
 
 if strfind(resp, 'caught exception'),
     disp(resp);
-    error('append_renderer_stack: server-side error reported');
+    error('append_renderer_stack: server reported error');
 end
 
 
@@ -50,6 +50,7 @@ end
 
 %%
 function check_input(rc, rc_base, fn, MET_format)
+if stack_complete(rc), disp(rc);error('The stack is in state: COMPLETE');end
 if ~isfield(rc, 'baseURL'), disp_usage; error('baseURL not provided');end
 if ~isfield(rc, 'owner'), disp_usage; error('owner not provided');end
 if ~isfield(rc, 'project'), disp_usage; error('project not provided');end

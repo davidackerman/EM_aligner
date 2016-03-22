@@ -265,7 +265,11 @@ classdef tile
                 im = get_image_renderer(obj, 1.0, 'true');
             end
         end
-        
+        function url = get_url(obj)
+            % returns the Renderer URL to be consumed by the Renderer service API
+            url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
+                obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id);
+        end
         function im = show(obj, filter)
             if nargin<2, filter = 'true';end
             warning off;

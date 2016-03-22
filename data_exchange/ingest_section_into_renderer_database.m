@@ -36,4 +36,4 @@ catch err_delete,
 end
 
 %% complete stack
-resp = renderer_stack_state_complete(rc);
+resp = renderer_stack_state_complete(rc_target);

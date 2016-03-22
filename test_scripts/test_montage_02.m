@@ -1,4 +1,4 @@
-% test script: run inside directory ~/EM_aligner/test_scripts
+% test script: run inside directory ~/EM_aligner/test_scripts only
 %
 %
 % Generate Msection from layout file and generate a montage for a 37-tile section

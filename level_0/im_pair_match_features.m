@@ -22,7 +22,7 @@ geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
 geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';
 geoTransformEst.Transform = 'Affine';%'Nonreflective similarity';%'Affine';%
 geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
-geoTransformEst.MaximumRandomSamples = 1000;
+geoTransformEst.MaximumRandomSamples = 5000;
 geoTransformEst.DesiredConfidence = 99.95;
 
 

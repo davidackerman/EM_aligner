@@ -1,5 +1,5 @@
-function [m12_1, m12_2, js] = point_match_gen_SIFT(t1, t2)
-% Return point-matches based on SIFT features
+function [m12_1, m12_2, v] = point_match_gen_SIFT(url1, url2)
+% Return point-matches based on SIFT features   --- still under development
 %
 % Depends on Eric T.'s packaging of Saalfeld's code that uses SIFT and filters point matches
 % 
@@ -8,14 +8,25 @@ function [m12_1, m12_2, js] = point_match_gen_SIFT(t1, t2)
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+m12_1 = [];
+m12_2 = [];
+v = [];
+if nargin<3, run_local = 1;end
 
-% tile urls should look like this:
+% URLs could be anything that the Renderer can interpret accoring to its API.
+% for example tile urls should look like this:
+% url1 = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
+%                 t1.server, t1.owner, t1.project, t1.stack, t1.renderer_id);
+% url2 = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
+%                 t2.server, t2.owner, t2.project, t2.stack, t2.renderer_id);
+
 %http://10.37.5.60:8080/render-ws/v1/owner/flyTEM/project/test/stack/EXP_v12_SURF_rough_1_4/tile/151215054802009008.3.0/render-parameters?filter=true
 % command issued to system
 %/groups/flyTEM/flyTEM/render/bin/gen-match.sh --memory 7G --numberOfThreads 8 --baseDataUrl "${BASE_DATA_URL}" --owner trautmane --collection test_match_gen ${TILE_URL_PAIRS} | tee -a log.txt
 
+tm = clock;
+file_code = [num2str(tm(6)) '_' num2str(randi(1000000000000))];
 
-file_code = num2str(randi(1000000)) ;
 fn_pm = ['/groups/flyTEM/home/khairyk/mwork/temp/matches_' file_code '.json'];
 fn_log = ['groups/flyTEM/home/khairyk/mwork/temp/log_' file_code '.txt'];
 
@@ -27,10 +38,6 @@ str_owner = '--owner trautmane ';
 str_collection = '--collection test_match_gen ';
 
 
-url1 = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
-                t1.server, t1.owner, t1.project, t1.stack, t1.renderer_id);
-url2 = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
-                t2.server, t2.owner, t2.project, t2.stack, t2.renderer_id);
 str_pairs =[url1 ' ' url2];
 
 str_parameters = [' --matchStorageFile ' fn_pm ' | tee -a ' fn_log];
@@ -39,8 +46,8 @@ str = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collect
 
 
 [a, resp_str] = system(str);
-disp(resp_str);
-
+%disp(resp_str);
+%wait_for_file(fn_pm, 10);
 
 %% read json file
 try
@@ -61,14 +68,14 @@ if ~isempty(v{1}.matches.p)
         m12_2 = m12_2(indx,:);
         m12_1 = m12_1(indx,:);
     end
-    figure; showMatchedFeatures(get_image(t1), get_image(t2), m12_1, m12_2, 'montage');
+
 else
-    warning('No point-matches found');
+    warning('No point-matches found -- empty set returned');
 end
 
 
 %% cleanup
-delete fn_pm;
+delete(fn_pm);
 
 
 

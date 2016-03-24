@@ -209,10 +209,110 @@ end
 disp(cs);
 
 %% [6] Determine blocks to match
+DX = 4;   % number of divisions of the total bounding box in x
+DY = 4;
+dir_temp_render = L_rough(1).tiles(1).dir_temp_render;
+Wbox = zeros(numel(L_rough), 4);
+bbox = zeros(numel(L_rough),4);
+parfor lix = 1:numel(L_rough)
+   [ Wbox(lix,:), bbox(lix,:)] = get_section_bounds_renderer(rc, z(lix));
+end
+% sosi---- im = get_image_box_renderer(rc, t.z, Wbox, 0.1, dir_temp_render, 'rough_block'); imshow(im);
+bb = [min(Wbox(:,1)) min(Wbox(2)) max(bbox(:,3)) max(bbox(:,4))];
+wb = [bb(1) bb(2) bb(3)-bb(1) bb(4)-bb(2)];
 
+% draw rectangles
 
+rectangle('Position', wb, 'FaceColor', [0.5 0.5 0.5]);
+dx = round(wb(3)/DX);
+dy = round(wb(4)/DY);
+
+wbox = zeros(DX*DY, 4);
+counter = 1;
+for xix = 0:DX-1
+    for yix = 0:DY-1
+        xpos = bb(1)+xix*dx;
+        ypos = bb(2)+yix*dy;
+        wbox(counter,:) = [ xpos  ypos dx dy];  
+        counter = counter + 1;
+        %rcolor = rand(1,3);rectangle('Position', wbox, 'FaceColor', rcolor);  pause(1);
+    end
+end
+ 
 %% [7] generate point-matches for all blocks
+scale = 0.15;
+% opt.SURF_NumOctaves = 4;
+% opt.SURF_NumScaleLevels = 8;
+% opt.SURF_MetricThreshold = 100;
 
+b = zeros(DX*DY,6);  % let's just list sections and block windows in preparation for parfor
+count = 1;
+for cix = 1:size(cs,1)    % loop over section pairs
+    for bix = 1:size(wbox,1)  % loop over blocks
+        b(count,:) = [cs(cix,:) wbox(bix,:)];
+        count = count + 1;
+    end
+end
+%         % get feature matches using SURF
+%         % get canvas image
+%         im1 = get_image_box_renderer(rctarget_rough, cs(cix,1), wbox(bix,:), scale, dir_temp_render, num2str(cs(cix,1)));
+%         im2 = get_image_box_renderer(rctarget_rough, cs(cix,2), wbox(bix,:), scale, dir_temp_render, num2str(cs(cix,2)));
+% %         figure;imshowpair(im1, im2, 'montage');
+%         [f1, vp1] = im_get_features(im1,'SURF' , opt);
+%         [f2, vp2] = im_get_features(im2, 'SURF', opt);
+%         [m12_1, m12_2, tf12] = im_pair_match_features(f1, vp1, f2, vp2);
+%         figure; showMatchedFeatures(im1, im2, m12_1, m12_2, 'montage');
+
+m12_1 = {};
+m12_2 = {};
+for bix = 1:size(b,1)   % process each line in b (a section pair and block window)
+    disp(bix);
+        box = b(bix, 3:6);
+        %%% use SIFT
+        url1 = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/render-parameters?filter=true',...
+            rctarget_rough.baseURL, rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,1)), ...
+            box(1), ...
+            box(2), ...
+            box(3), ...
+            box(4), ...
+            num2str(scale));
+        url2 = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/render-parameters?filter=true',...
+            rctarget_rough.baseURL, rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,2)), ...
+            box(1), ...
+            box(2), ...
+            box(3), ...
+            box(4), ...
+            num2str(scale));
+        
+        
+        %%% get images
+        [im1, v1] = get_image_box_renderer(rctarget_rough, b(bix,1), box, scale, dir_temp_render, num2str(b(bix,1)));
+        [im2, v2] = get_image_box_renderer(rctarget_rough, b(bix,2), box, scale, dir_temp_render, num2str(b(bix,2)));
+        clf;warning off;imshowpair(im1, im2, 'montage'); title(num2str(bix));drawnow
+%         
+        
+        [m_2, m_1] = point_match_gen_SIFT(url2, url1);
+        if isempty(m_1), 
+            m12_1{bix} = [];
+            m12_2{bix} = [];
+        else
+            m12_1{bix} = m_1;
+            m12_2{bix} = m_2;
+        end
+         if ~isempty(m12_1), figure; warning off;showMatchedFeatures(im1, im2, m_1, m_2, 'montage');end
+
+        %%% associate point-matches with tiles and convert to aflter-LC coordinates suitable for insertion into a the pm database 
+        % map world coordinates to local coordinates
+        % /v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/world-to-local-coordinates/{x},{y} 
+        url_W2L =...
+            sprintf('http://tem-services.int.janelia.org:8080/render-ws/v1/owner/%s/project/%s/stack/%s/z/%s/world-to-local-coordinates/%.2f","%.2f',...
+             rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,2)), ...
+            m_1(1) + box(1), m_1(2) + box(2));
+        v = webread(url_W2L);
+%         %%% production --- submit to cluster
+%         [m12_1, m12_2, js] = point_match_gen_SIFT_qsub(url2, url1);
+
+end
 %% [8] Convert block point-matches into tile-tile point-matches
 
 

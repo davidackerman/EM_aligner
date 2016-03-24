@@ -1,4 +1,4 @@
-function [m12_1, m12_2, v] = point_match_gen_SIFT(url1, url2, run_local)
+function [m12_1, m12_2, js] = point_match_gen_SIFT_qsub(url1, url2)
 % Return point-matches based on SIFT features   --- still under development
 %
 % Depends on Eric T.'s packaging of Saalfeld's code that uses SIFT and filters point matches
@@ -8,10 +8,7 @@ function [m12_1, m12_2, v] = point_match_gen_SIFT(url1, url2, run_local)
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-m12_1 = [];
-m12_2 = [];
-v = [];
-if nargin<3, run_local = 1;end
+
 
 % URLs could be anything that the Renderer can interpret accoring to its API.
 % for example tile urls should look like this:
@@ -24,11 +21,17 @@ if nargin<3, run_local = 1;end
 % command issued to system
 %/groups/flyTEM/flyTEM/render/bin/gen-match.sh --memory 7G --numberOfThreads 8 --baseDataUrl "${BASE_DATA_URL}" --owner trautmane --collection test_match_gen ${TILE_URL_PAIRS} | tee -a log.txt
 
+% generate proper UUID in the future (e.g. uuid = generate_uuid() )
 tm = clock;
 file_code = [num2str(tm(6)) '_' num2str(randi(1000000000000))];
 
 fn_pm = ['/groups/flyTEM/home/khairyk/mwork/temp/matches_' file_code '.json'];
+%fn_log = ['groups/flyTEM/home/khairyk/mwork/temp/log.txt'];
 fn_log = ['groups/flyTEM/home/khairyk/mwork/temp/log_' file_code '.txt'];
+
+% fn_pm = ['/scratch/khairyk/matches_' file_code '.json'];
+% fn_log = ['/scratch/khairyk/log_' file_code '.txt'];
+
 
 base_cmd = '/groups/flyTEM/flyTEM/render/bin/gen-match.sh ';
 str_memory = '--memory 7G ';
@@ -40,14 +43,22 @@ str_collection = '--collection test_match_gen ';
 
 str_pairs =[url1 ' ' url2];
 
-str_parameters = [' --matchStorageFile ' fn_pm ' | tee -a ' fn_log];
+str_parameters = [' --matchStorageFile ' fn_pm];
 
-str = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collection str_pairs str_parameters];
+sift_str = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collection str_pairs str_parameters];
+% [a, resp_str] = system(sift_str); disp(resp_str);
 
+if exist(fn_pm,'file'), delete fn_pm;end
 
-[a, resp_str] = system(str);
-disp(resp_str);
-wait_for_file(fn_pm, 10);
+% qsub call
+jbname = ['ST-' num2str(tm(5)) '-' num2str(round(tm(6)))];
+bsub_nthr = 8;
+account = '-A flyTEM';
+job_log = '-j y -o /groups/flyTEM/home/khairyk/mwork/temp';
+qsub_str = sprintf('qsub -l short=true -N %s %s %s -cwd -V -b y -pe batch 4 "%s" ',...
+                    jbname, account, job_log, sift_str);
+[a, resp_str] = system(qsub_str);disp(resp_str);
+wait_for_file(fn_pm, 5000);
 
 %% read json file
 try
@@ -75,7 +86,7 @@ end
 
 
 %% cleanup
-delete(fn_pm);
+delete fn_pm;
 
 
 

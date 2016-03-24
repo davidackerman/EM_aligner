@@ -24,7 +24,7 @@ if strcmp(fd, 'SURF')
                                    'NumScaleLevels', obj.SURF_NumScaleLevels,...
                                    'MetricThreshold', obj.SURF_MetricThreshold);
                                
-    [f1, vp1]  = extractFeatures(im1,  p1);
+    [f1, vp1]  = extractFeatures(im1,  p1, 'Method', 'SURF', 'SURFSize', 128);
 end
 if strcmp(fd, 'BRISK')
     % USE BRISK

@@ -164,7 +164,14 @@ parfor ix  = 1:numel(tiles)
         if strcmp(class(tiles(ix).tform), 'affine2d')
             % where did the target coordinates come from in the source image?
             warning off;
-            [x, y] = transformPointsInverse(tiles(ix).tform, xgrid, ygrid); % get coordinates in undeformed image (works nicely for affine2d because invertible)
+            tform = tiles(ix).tform;
+            
+            if tiles(ix).fetch_local==0, 
+                tform.T([1 5]) = 1;
+                tform.T([2 4]) = 0;
+            end
+                    
+            [x, y] = transformPointsInverse(tform, xgrid, ygrid); % get coordinates in undeformed image (works nicely for affine2d because invertible)
             % interpolate to generate the tile image
             if verbose,disp('render_poly:affine2d --> using cubic interpolation');end
             

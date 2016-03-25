@@ -94,12 +94,28 @@ handles.L = update_adjacency(handles.L);
 handles.L = get_bounding_box(handles.L);
 handles.scale = 0.5;
 handles.force_mosaic = 1;
-%%% Plot the tiles: 
 
-%handles.L = show_map_with_mosaic(handles.L, 0.05, 0, 'transparent', 0);
-handles.L = show_map(handles.L);
-% handles.L = get_bounding_box(handles.L);
-handles.L = show_map(handles.L, 'registered only');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% starting plot
+%%% Plot the tiles:
+
+if ~isempty((handles.L.mosaic))
+    
+    im = handles.L.mosaic;
+    RI = imref2d(size(im));
+    RI.XWorldLimits = [handles.L.box(1) handles.L.box(2)];
+    RI.YWorldLimits = [handles.L.box(3) handles.L.box(4)];
+    imh = imshow(im,RI);
+    alpha_data = ones(size(im))*0.1;
+    % set the y-axis back to normal.
+    set(gca,'ydir','normal');
+    hold on;
+    handles.L = show_map(handles.L);
+else
+    %handles.L = show_map_with_mosaic(handles.L, 0.05, 0, 'transparent', 0);
+    %handles.L = show_map(handles.L);
+    % handles.L = get_bounding_box(handles.L);
+    handles.L = show_map(handles.L, 'registered only');
+end
 axis on;
 
 

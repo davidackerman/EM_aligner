@@ -1,14 +1,17 @@
-function [m12_1, m12_2, js] = point_match_gen_SIFT_qsub(url2, url1)
+function [m12_1, m12_2, v] = point_match_gen_SIFT_qsub(url1, url2)
 % Return point-matches based on SIFT features   --- still under development
 %
 % Depends on Eric T.'s packaging of Saalfeld's code that uses SIFT and filters point matches
 % 
+% Future plans: 
+% 
 % This function is still being testd. In the future it will exercise the full range of parameters
 % and use arrays of tile pairs.
+% Access to Renderer functions will be using Java directly within Matlab
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+verbose = 0;
 
 % URLs could be anything that the Renderer can interpret accoring to its API.
 % for example tile urls should look like this:
@@ -21,44 +24,47 @@ function [m12_1, m12_2, js] = point_match_gen_SIFT_qsub(url2, url1)
 % command issued to system
 %/groups/flyTEM/flyTEM/render/bin/gen-match.sh --memory 7G --numberOfThreads 8 --baseDataUrl "${BASE_DATA_URL}" --owner trautmane --collection test_match_gen ${TILE_URL_PAIRS} | tee -a log.txt
 
-% generate proper UUID in the future (e.g. uuid = generate_uuid() )
+% generate proper UUID in the future (e.g. uuid = generate_uuid() ) whic uses Java
 tm = clock;
-file_code = [num2str(tm(6)) '_' num2str(randi(1000000000000))];
+file_code           = [num2str(tm(6)) '_' num2str(randi(1000000000000))];
+dir_temp_pm         = '/groups/flyTEM/home/khairyk/mwork/temp';
+dir_temp_script     = '/groups/flyTEM/home/khairyk/mwork/temp';
 
-fn_pm = ['/groups/flyTEM/home/khairyk/mwork/temp/matches_' file_code '.json'];
-%fn_log = ['groups/flyTEM/home/khairyk/mwork/temp/log.txt'];
-fn_log = ['groups/flyTEM/home/khairyk/mwork/temp/log_' file_code '.txt'];
+fn_script           = [dir_temp_script '/script_' file_code '.sh'];
+fn_pm               = [dir_temp_pm '/matches_' file_code '.json'];
+%fn_log              = [dir_temp_script '/log_' file_code '.txt'];
 
 % fn_pm = ['/scratch/khairyk/matches_' file_code '.json'];
 % fn_log = ['/scratch/khairyk/log_' file_code '.txt'];
 
+%% configure script parameters
+base_cmd            = '/groups/flyTEM/flyTEM/render/bin/gen-match.sh ';
+str_memory          = '--memory 7G ';
+str_n_threads       = '--numberOfThreads 4 ';
+str_base_data_url   = '--baseDataUrl http://tem-services:8080/render-ws/v1 ';
+str_owner           = '--owner khairyk ';
+str_collection      = '--collection test_match_gen ';
 
-base_cmd = '/groups/flyTEM/flyTEM/render/bin/gen-match.sh ';
-str_memory = '--memory 7G ';
-str_n_threads = '--numberOfThreads 8 ';
-str_base_data_url = '--baseDataUrl http://tem-services:8080/render-ws/v1 ';
-str_owner = '--owner trautmane ';
-str_collection = '--collection test_match_gen ';
-
-
-str_pairs =[url1 ' ' url2];
-
-str_parameters = [' --matchStorageFile ' fn_pm];
-
-sift_str = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collection str_pairs str_parameters];
-% [a, resp_str] = system(sift_str); disp(resp_str);
-
+%% construct command to call Eric T.'s script
+str_pairs           = [url1 ' ' url2];
+str_parameters      = [' --matchStorageFile ' fn_pm];
+sift_str            = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collection str_pairs str_parameters];
+resp                 = write_script(fn_script, sift_str);
+if verbose, disp(resp);end
 if exist(fn_pm,'file'), delete fn_pm;end
 
-% qsub call
+%% qsub call
 jbname = ['ST-' num2str(tm(5)) '-' num2str(round(tm(6)))];
-bsub_nthr = 8;
 account = '-A flyTEM';
-job_log = '-j y -o /groups/flyTEM/home/khairyk/mwork/temp';
+% job_log = '-j y -o /groups/flyTEM/home/khairyk/mwork/temp';
+job_log = '-j y -o /dev/null';
 qsub_str = sprintf('qsub -l short=true -N %s %s %s -cwd -V -b y -pe batch 4 "%s" ',...
-                    jbname, account, job_log, sift_str);
-[a, resp_str] = system(qsub_str);disp(resp_str);
-wait_for_file(fn_pm, 5000);
+                    jbname, account, job_log, fn_script);
+[a, resp_str] = system(qsub_str);
+if verbose, disp(resp_str);end
+wait_for_file(fn_pm, 5000, verbose);
+delete(fn_script);
+
 
 %% read json file
 try
@@ -81,7 +87,9 @@ if ~isempty(v{1}.matches.p)
     end
 
 else
-    warning('No point-matches found');
+    disp('No point-matches found');
+    m12_1 = [];
+    m12_2 = [];
 end
 
 
@@ -90,7 +98,7 @@ delete(fn_pm);
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%% options from Eric T's original Email
 % %     --SIFTfdSize
 % %        SIFT feature descriptor size: how many samples per row and column

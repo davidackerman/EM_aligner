@@ -57,17 +57,17 @@ if tile_show<=numel(obj.tiles) && tile_show>0
         im = [];
         return;
     else
-        t = obj.tiles(tile_show);
-        rc.baseURL = t.server;
-        rc.owner   = t.owner;
-        rc.project = t.project;
-        rc.stack   = t.stack;
-        im = get_image_box_renderer(rc, t.z, Wbox, scale, t.dir_temp_render, t.renderer_id);
-        
+%         t = obj.tiles(tile_show);
+%         rc.baseURL = t.server;
+%         rc.owner   = t.owner;
+%         rc.project = t.project;
+%         rc.stack   = t.stack;
+%         im = get_image_box_renderer(rc, t.z, Wbox, scale, t.dir_temp_render, t.renderer_id);
+%         
 
         
         %%% use Renderer client for getting individual tiles, and let matlab assemble them
-%         [im, Wbox, imlabel] = render_poly_06(L.tiles, scale, Wbox, 0, stack);
+        [im, Wbox, imlabel] = render_poly_06(L.tiles, scale, Wbox, 0, stack);
 %         
         warning off;imshow(im);warning on;
         %     %% optionally show the text labels overlaid onto the tile images

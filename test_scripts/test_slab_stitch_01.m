@@ -2,7 +2,7 @@
 % Dependencies:
 %               - Renderer service
 %               - script to generate spark_montage_scapes
-% 
+%
 % Calculate the full stitching (montage and alignment) of a set of sections
 % Ingest this slab into a new collection
 %
@@ -72,20 +72,20 @@ ms.skip_similarity_matrix       = 'y';
 ms.skip_aligned_image_generation= 'y';
 ms.base_output_dir              = '/nobackup/flyTEM/spark_montage';
 ms.run_dir                      = ['scale_' ms.scale];
-ms.script                       = '../external/generate_montage_scape_point_matches.sh';%'../unit_tests/generate_montage_scape_point_matches_stub.sh'; %
+ms.script                       = '/groups/flyTEM/home/khairyk/EM_aligner/external/generate_montage_scape_point_matches.sh';%'../unit_tests/generate_montage_scape_point_matches_stub.sh'; %
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
-     rcsource.baseURL, rcsource.owner, rcsource.project, rcsource.stack);
- j = webread(urlChar);
- sectionId = {j(:).sectionId};
- z         = [j(:).z];
- indx = find(z>=nfirst & z<=nlast);
- 
- sectionId = sectionId(indx);% determine the sectionId list we will work with
- z         = z(indx);        % determine the zvalues (this is also the spatial order)
+    rcsource.baseURL, rcsource.owner, rcsource.project, rcsource.stack);
+j = webread(urlChar);
+sectionId = {j(:).sectionId};
+z         = [j(:).z];
+indx = find(z>=nfirst & z<=nlast);
+
+sectionId = sectionId(indx);% determine the sectionId list we will work with
+z         = z(indx);        % determine the zvalues (this is also the spatial order)
 %% [1] generate montage for individual sections and generate montage collection
 L = Msection;
 L(numel(z)) = Msection;
@@ -97,6 +97,7 @@ for lix = 1:numel(z)
     [L(lix), js]            = alignTEM_inlayer(L(lix));
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% ingest js into point matches database
+    %%% this needs to be done using webwrite --- sosi ---  until then <sigh> we will use curl
     fn = ['temp_' num2str(randi(100000)) '_' num2str(lix) '.json'];
     fid = fopen(fn, 'w');
     fwrite(fid,js);
@@ -115,7 +116,8 @@ mL = concatenate_tiles(L, opts.outlier_lambda);
 ingest_section_into_renderer_database_overwrite(mL, rctarget_montage, rcsource, pwd);
 mL = update_tile_sources(mL, rctarget_montage);
 L_montaged = split_z(mL);
-%% [2] generate montage-scapes and montage-scape point-matches 
+
+%% [2] generate montage-scapes and montage-scape point-matches
 
 [L2] = generate_montage_scapes_SIFT_point_matches(ms);
 
@@ -178,7 +180,7 @@ for lix = 1:numel(L_montaged)
     tmx1 = [1 0 0; 0 1 0; -dx -dy 1];  % translation matrix for section box
     for tix = 1:numel(L3(lix).tiles)
         newT = L3(lix).tiles(tix).tform.T * tmx1 * smx * mL3s(lix).tiles(1).tform.T * tmx2 * (invsmx);
-        L3(lix).tiles(tix).tform.T = newT;     
+        L3(lix).tiles(tix).tform.T = newT;
     end
     L3(lix) = update_XY(L3(lix));
 end
@@ -207,7 +209,6 @@ for uix = top:-1:bottom
     end
 end
 disp(cs);
-
 %% [6] Determine blocks to match
 DX = 4;   % number of divisions of the total bounding box in x
 DY = 4;
@@ -215,7 +216,7 @@ dir_temp_render = L_rough(1).tiles(1).dir_temp_render;
 Wbox = zeros(numel(L_rough), 4);
 bbox = zeros(numel(L_rough),4);
 parfor lix = 1:numel(L_rough)
-   [ Wbox(lix,:), bbox(lix,:)] = get_section_bounds_renderer(rc, z(lix));
+    [ Wbox(lix,:), bbox(lix,:)] = get_section_bounds_renderer(rctarget_rough, z(lix));
 end
 % sosi---- im = get_image_box_renderer(rc, t.z, Wbox, 0.1, dir_temp_render, 'rough_block'); imshow(im);
 bb = [min(Wbox(:,1)) min(Wbox(2)) max(bbox(:,3)) max(bbox(:,4))];
@@ -223,7 +224,7 @@ wb = [bb(1) bb(2) bb(3)-bb(1) bb(4)-bb(2)];
 
 % draw rectangles
 
-rectangle('Position', wb, 'FaceColor', [0.5 0.5 0.5]);
+%rectangle('Position', wb, 'FaceColor', [0.5 0.5 0.5]);
 dx = round(wb(3)/DX);
 dy = round(wb(4)/DY);
 
@@ -233,19 +234,14 @@ for xix = 0:DX-1
     for yix = 0:DY-1
         xpos = bb(1)+xix*dx;
         ypos = bb(2)+yix*dy;
-        wbox(counter,:) = [ xpos  ypos dx dy];  
+        wbox(counter,:) = [ xpos  ypos dx dy];
         counter = counter + 1;
         %rcolor = rand(1,3);rectangle('Position', wbox, 'FaceColor', rcolor);  pause(1);
     end
 end
- 
-%% [7] generate point-matches for all blocks
-scale = 0.15;
-% opt.SURF_NumOctaves = 4;
-% opt.SURF_NumScaleLevels = 8;
-% opt.SURF_MetricThreshold = 100;
 
-b = zeros(DX*DY,6);  % let's just list sections and block windows in preparation for parfor
+% list sections and block windows in preparation for parfor
+b = zeros(DX*DY,6);
 count = 1;
 for cix = 1:size(cs,1)    % loop over section pairs
     for bix = 1:size(wbox,1)  % loop over blocks
@@ -253,65 +249,85 @@ for cix = 1:size(cs,1)    % loop over section pairs
         count = count + 1;
     end
 end
-%         % get feature matches using SURF
-%         % get canvas image
-%         im1 = get_image_box_renderer(rctarget_rough, cs(cix,1), wbox(bix,:), scale, dir_temp_render, num2str(cs(cix,1)));
-%         im2 = get_image_box_renderer(rctarget_rough, cs(cix,2), wbox(bix,:), scale, dir_temp_render, num2str(cs(cix,2)));
-% %         figure;imshowpair(im1, im2, 'montage');
-%         [f1, vp1] = im_get_features(im1,'SURF' , opt);
-%         [f2, vp2] = im_get_features(im2, 'SURF', opt);
-%         [m12_1, m12_2, tf12] = im_pair_match_features(f1, vp1, f2, vp2);
-%         figure; showMatchedFeatures(im1, im2, m12_1, m12_2, 'montage');
 
-m12_1 = {};
-m12_2 = {};
-for bix = 1:size(b,1)   % process each line in b (a section pair and block window)
+% get montage boxes as well
+Wboxm = zeros(numel(L_montaged), 4);
+bboxm = zeros(numel(L_montaged),4);
+parfor lix = 1:numel(L_montaged)
+    [ Wboxm(lix,:), bboxm(lix,:)] = get_section_bounds_renderer(rctarget_montage, z(lix));
+end
+bbm = [min(Wboxm(:,1)) min(Wboxm(2)) max(bboxm(:,3)) max(bboxm(:,4))];
+wbm = [bbm(1) bbm(2) bbm(3)-bbm(1) bbm(4)-bbm(2)];
+
+%% [7] generate point-matches for all blocks   --- needs to be "parfor"d
+scale = 0.15;
+parfor bix = 1:size(b,1)   % process each line in b (a section pair and block window -- x y W H)
+    ids = {};
+    pairs = [];
+    w = [];
+    count = 1;
     disp(bix);
-        box = b(bix, 3:6);
-        %%% use SIFT
-        url1 = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/render-parameters?filter=true',...
-            rctarget_rough.baseURL, rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,1)), ...
-            box(1), ...
-            box(2), ...
-            box(3), ...
-            box(4), ...
-            num2str(scale));
-        url2 = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/render-parameters?filter=true',...
-            rctarget_rough.baseURL, rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,2)), ...
-            box(1), ...
-            box(2), ...
-            box(3), ...
-            box(4), ...
-            num2str(scale));
+    box = b(bix, 3:6);
+    %%% use SIFT
+    url1 = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/render-parameters?filter=true',...
+        rctarget_rough.baseURL, rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,1)), ...
+        box(1), ...
+        box(2), ...
+        box(3), ...
+        box(4), ...
+        num2str(scale));
+    url2 = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/render-parameters?filter=true',...
+        rctarget_rough.baseURL, rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,2)), ...
+        box(1), ...
+        box(2), ...
+        box(3), ...
+        box(4), ...
+        num2str(scale));
+    
+    [m_2, m_1, js] = point_match_gen_SIFT_qsub(url2, url1);   % submits jobs -- returns point-matches in box coordinate system%%% production --- submit to cluster
+    %[m_2, m_1] = point_match_gen_SIFT(url2, url1);
+    if ~isempty(m_1),
         
+        %%% SOSI == look at images and point matches
+        %         [im1, v1] = get_image_box_renderer(rctarget_rough, b(bix,1), box, scale, dir_temp_render, num2str(b(bix,1)));
+        %         [im2, v2] = get_image_box_renderer(rctarget_rough, b(bix,2), box, scale, dir_temp_render, num2str(b(bix,2)));
+        %         clf;warning off;imshowpair(im1, im2, 'montage'); title(num2str(bix));drawnow
+        %         if ~isempty(m12_1), figure; warning off;showMatchedFeatures(im1, im2, m_1, m_2, 'montage');end
         
-        %%% get images
-        [im1, v1] = get_image_box_renderer(rctarget_rough, b(bix,1), box, scale, dir_temp_render, num2str(b(bix,1)));
-        [im2, v2] = get_image_box_renderer(rctarget_rough, b(bix,2), box, scale, dir_temp_render, num2str(b(bix,2)));
-        clf;warning off;imshowpair(im1, im2, 'montage'); title(num2str(bix));drawnow
-%         
-        
-        [m_2, m_1] = point_match_gen_SIFT(url2, url1);
-        if isempty(m_1), 
-            m12_1{bix} = [];
-            m12_2{bix} = [];
-        else
-            m12_1{bix} = m_1;
-            m12_2{bix} = m_2;
+        % convert these point-matches to "acquire or montage" coordinate system to make them ingestable json strings that will go into pm collection
+        for pimix = 1:numel(m_1,1)   % loop over box point-matches
+            % Strategy: for each set of point we convert from world to (rough-aligned) local
+            % What we really want is local "acquire", so we need to convert from (rough-aligned) local to
+            % acquire world,
+            % then subtract translation component of tile specs from points so that they become
+            % (acquire) local
+            
+            %%%%%%%%%%%
+            % first convert point found in the first box (in layer(b(bix,1)))
+            %%%%%%%%%%%%
+            x = m_1(1,1)/scale + box(1);
+            y = m_1(1,2)/scale + box(2);
+            z1 = b(bix,1);
+            [pGroupId, p] = world_to_local_LC_tile(rctarget_rough, rctarget_montage, [x y z1], wbm);
+            %%%%%%%%%%%
+            % second convert point found in the second box (in layer(b(bix,2)))
+            %%%%%%%%%%%%
+            x = m_2(1,1)/scale + box(1);
+            y = m_2(1,2)/scale + box(2);
+            z2 = b(bix,2);
+            [qGroupId, q] = world_to_local_LC_tile(rctarget_rough, rctarget_montage, [x y z2], wbm);
+            
+            % write into buffer
+            ids{count,1} = pGroupId;
+            ids{count,2} = qGroupId;
+            pairs(count,:) = [p q];
+            w(count) =1/(1 + abs(z1-z2));
+            count = count + 1;
         end
-         if ~isempty(m12_1), figure; warning off;showMatchedFeatures(im1, im2, m_1, m_2, 'montage');end
-
-        %%% associate point-matches with tiles and convert to aflter-LC coordinates suitable for insertion into a the pm database 
-        % map world coordinates to local coordinates
-        % /v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/world-to-local-coordinates/{x},{y} 
-        url_W2L =...
-            sprintf('http://tem-services.int.janelia.org:8080/render-ws/v1/owner/%s/project/%s/stack/%s/z/%s/world-to-local-coordinates/%.2f","%.2f',...
-             rctarget_rough.owner, rctarget_rough.project, rctarget_rough.stack, num2str(b(bix,2)), ...
-            m_1(1) + box(1), m_1(2) + box(2));
-        v = webread(url_W2L);
-%         %%% production --- submit to cluster
-%         [m12_1, m12_2, js] = point_match_gen_SIFT_qsub(url2, url1);
-
+    end
+    IDS(bix)    = {ids};
+    PAIRS(bix)  = {pairs};
+    W(bix)      = {w};
 end
 %% [8] Convert block point-matches into tile-tile point-matches
 
@@ -342,7 +358,7 @@ end
 %     end
 % end
 % disp(cs);
-% 
+%
 % % loop over cs pairs and determine potential tile pairs
 % l1 = [];
 % l2 = [];
@@ -380,35 +396,35 @@ end
 %     disp([pix l1(pix) l2(pix) id1(pix) id2(pix)]);
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     t1 = L(l1(pix)).tiles(id1(pix));
-%     t2 = L(l2(pix)).tiles(id2(pix)); 
+%     t2 = L(l2(pix)).tiles(id2(pix));
 %     t1.fetch_local = 0;
 %     t2.fetch_local = 0;
-%    
+%
 %     im1 = get_image(t1);
 %     im2 = get_image(t2);
 %     im1r = rangefilt(im1);
 %     im2r = rangefilt(im2);
 %     figure;imshowpair(im1, im2, 'montage');
 %     figure;imshowpair(im1r, im2r, 'montage');
-%     
-%     
+%
+%
 %     [m12_1, m12_2, js] = point_match_gen_SIFT(t1, t2);
-%     
+%
 %     %[m1, m2, w, imt1] = kk_dftregistration(im1, im2);
-%     
+%
 %     %%%%%% sosi
 % %      figure; showMatchedFeatures(im1, im2, m1, m2, 'montage');
 % %      figure;imshowpair(im1, imt1, 'montage');
-%         
+%
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
+%
 %     M(pix,:) = {[m1],[m2]};
-%     
-%     
+%
+%
 %     %%%%%%%% sosi
 % %     show_feature_point_correspondence(t1,t2,M(pix,:));
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     
+%
 %     adj(pix,:) = [id1(pix) id2(pix)];
 %     W(pix) = {[ones(size(m1,1),1) * 1/(1+ abs(L3(l1(pix)).tiles(id1(pix)).z-L3(l2(pix)).tiles(id2(pix)).z))]};
 %     np(pix)  = size(m1,1);
@@ -421,27 +437,27 @@ end
 % %parfor_progress(0);
 % if isempty(M), error('No matches found');end;
 % disp('Done!');
-% 
-% 
+%
+%
 % delpix = logical(delpix);
 % M(delpix,:) = [];
 % adj(delpix,:) = [];
 % W(delpix) = [];
 % np(delpix) = [];
-% 
+%
 % l1(delpix) = [];
 % l2(delpix) = [];
 % id1(delpix) = [];
 % id2(delpix) = [];
 % rid1(delpix) = [];
 % rid2(delpix) = [];
-% 
-% 
+%
+%
 % pm.M = M;
 % pm.adj = adj;
 % pm.W = W;
 % pm.np = np;
-% 
+%
 % %%%%%%%%%% sosi
 % % %% check  point matches
 % warning off;
@@ -461,10 +477,10 @@ end
 % %% [7] transform point matches to lens-corrected-only stage and ingest into pm database
 % for pix = 1:size(pm.adj,1)
 %     t1 = L3(l1(pix)).tiles(id1(pix));
-%     t2 = L3(l2(pix)).tiles(id2(pix)); 
+%     t2 = L3(l2(pix)).tiles(id2(pix));
 %     pm1 = [pm.M{pix,1} ones(size(pm.M{pix,1},1),1)] * inv(t1.tform.T);
 %     pm2 = [pm.M{pix,2} ones(size(pm.M{pix,2},1),1)] * inv(t2.tform.T);
-%     
+%
 %     pm.M{pix,1} = pm1(:,1:2);
 %     pm.M{pix,2} = pm2(:,1:2);
 % end
@@ -477,11 +493,11 @@ end
 %     indx2 = adj(mix,2);
 %     tid1 = [L3(l1(mix)).tiles(indx1).renderer_id];
 %     tid2 = [L3(l2(mix)).tiles(indx2).renderer_id];
-% 
+%
 %     MP{counter}.pz = L3(l1(mix)).tiles(indx1).sectionID;
 %     MP{counter}.pId= tid1;
 %     MP{counter}.p  = M{mix,1};
-%     
+%
 %     MP{counter}.qz = L3(l2(mix)).tiles(indx2).sectionID;
 %     MP{counter}.qId= tid2;
 %     MP{counter}.q  = M{mix,2};
@@ -501,7 +517,7 @@ end
 % [a, resp]= evalc('system(cmd)');
 % delete(fn);
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     
+%
 %% [8] solve whole system
 
 %% [9] generate the new collection

@@ -1,4 +1,4 @@
-function [im, v] = get_image_box_renderer(rc, z, Wbox, scale, dir_temp_render, renderer_id)
+function [im, v, url] = get_image_box_renderer(rc, z, Wbox, scale, dir_temp_render, fn_id)
 % Returns the image of a specified box in collection rc
 % use Renderer client for complete box
 %   /v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/box/{x},{y},{width},{height},{scale}/jpeg-image
@@ -7,8 +7,15 @@ function [im, v] = get_image_box_renderer(rc, z, Wbox, scale, dir_temp_render, r
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% check input
+maxD = 10000;
+if Wbox(3)*scale>maxD || Wbox(4)*scale>maxD, error('box too large');end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v = [];
-fn = [dir_temp_render '/tile_image_' num2str(randi(1000)) '_' renderer_id '.jpg'];
+fn = [dir_temp_render '/tile_image_' generate_uuid '_' fn_id '.jpg'];
 url = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/render-parameters?filter=true',...
     rc.baseURL, rc.owner, rc.project, rc.stack, num2str(z), ...
     Wbox(1), ...
@@ -30,7 +37,7 @@ while ~(file_ready) && count<200
     count = count + 1;
 end
 try
-    pause(1.0);
+    pause(2.0);
     im = imread(fn, 'jpeg');
     %if nargout>1, v = webread(url);end
 catch err_reading_image

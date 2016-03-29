@@ -3,7 +3,7 @@ function [obj, errAb, mL, invalid_similarity, invalid_translation] = get_rigid_a
 % [1] Similarity constained
 % [2] Rescaling
 % [3] Translation only
-% This function depends on the "solver" utility functions
+% This function depends on "solver" utility functions
 % Author: Khaled Khairy Janelia Research Campus (HHMI) 2015
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -18,7 +18,7 @@ function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid] = alig
 %%% and adj, similar to above, except that adj(:,1) (and also M{:,1}) are
 %%% specifice to the lower of the two layers.
 %%% Example P{1} for two the case of two layers, i.e. there is only one pair and P is a
-%%% cell array with one element, which is the struct:
+%%% cell array with one element, which is for example the struct:
 %%% M: {5810x2 cell}
 %%%     adj: [5810x2 double]
 %%%     id1: 2336

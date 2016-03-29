@@ -38,7 +38,7 @@ end
 
 if strfind(resp, 'caught exception'),
     disp(resp);
-    error('append_renderer_stack: server reported error');
+    error('append_renderer_stack: server reported an error');
 end
 
 

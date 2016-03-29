@@ -1,9 +1,10 @@
 function [pGroupId, p] = world_to_local_LC_tile(rcW, rcmontage, wp, wbm)
-% converts a point in  world coordinates defined by rcW, to local tile coordinates after tile has been subjected
-% to LC, which is typically by applying the first three transformations in the transformation list
-% therefore rcmontage could also be rcacquire/rcsource
-% The main requirement is that the last transformation is either identity or only a translation
-% wbm: is the world coordinate box for the montage collection. It can be calculated as follows
+% converts a point wp in  world coordinates (defined by rcW), to local tile coordinates (in the state after tile has been subjected
+% to LC, which is typically by applying the first three transformations in the transformation list).
+% rcmontage could also be rcacquire/rcsource
+% The main requirement is that the last transformation is either identity or only a translation, and
+% only preceded by the three original tansformations (the first being LC).
+% wbm: is the world coordinate box for the montage collection. It should be pre calculated as follows
 % (example):
 %
 % Wboxm = zeros(numel(L_montaged), 4);
@@ -14,6 +15,7 @@ function [pGroupId, p] = world_to_local_LC_tile(rcW, rcmontage, wp, wbm)
 % bbm = [min(Wboxm(:,1)) min(Wboxm(2)) max(bboxm(:,3)) max(bboxm(:,4))];
 % wbm = [bbm(1) bbm(2) bbm(3)-bbm(1) bbm(4)-bbm(2)];
 %
+% or obtained from rcW by getting the stack bounds (sosi---do this in the future)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 x = wp(1);
 y = wp(2);

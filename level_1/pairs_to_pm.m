@@ -7,7 +7,28 @@ function [L, orphans] = pairs_to_pm(L, options, pairs)
 % are therefore provided as output separately.
 % The output L containts a pm field with concatenated point-match information ready for consumption
 % by the matrix solver.
+% All tile ids need to be unique. 
+% Example usage -- used in interpreting montage scapes as Msection object:
+% generate Msection object with one tile/layer. each tile is a montage scape
 %
+% tiles = tile;
+% parfor tix = 1:numel(IDS{1})
+%     t = tile;
+%     t.z = tix;
+%     t.id = IDS{1}(tix);
+%     t.path = IDS{2}{tix};
+%     t.rot = 0;
+%     t.fetch_local = 1;
+%     tiles(tix) = t;
+% end
+% L = Msection(tiles);
+% % generate point-matches--- pairs variable
+% delta = 0;
+% pairs = [ones(numel(MATCHES{1}),1) MATCHES{1}(:) MATCHES{2}(:)+delta MATCHES{3}(:)+delta ones(numel(MATCHES{1}),1) MATCHES{4}(:) MATCHES{5}(:)+delta MATCHES{6}(:)+delta];
+% options.verbose = 0;
+% options.minpmblock = 0;
+% options.minpmblock_cross = 0;
+% [L, orphans] = pairs_to_pm(L, options, pairs)
 %
 % Author: Khaled Khairy. Janelia Research Campus. Copyright 2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -16,12 +37,12 @@ z = L.z;
 
 plindx = (double(pairs(:,1)==z) + double(pairs(:,5)==z))==2;% logical index for all entries in pairs specific to this layer
 if isempty(plindx), error('No tiles in "pairs" correspond to tiles in L');end
-p = pairs(plindx,:);    % reduce "pairs" to the entries specific to this layer z
+p = pairs(plindx,:);    % reduce "pairs" to entries specific to this layer z
 unqt = unique([p(:,2);p(:,6)]); % get the unique tile ids within this group
 tvec = [L.tiles(:).id];
 %if numel(unqt)<numel(tvec)
 if (sum(ismember(tvec, unqt)) ~= numel(tvec))
-    warning('Some tile ids are not present in "pairs"');
+    disp('Some tile ids are not present in "pairs"');
     missing_set = setdiff(tvec, unqt);
     disp('specific ids:');
     disp(num2str(missing_set(:)));
@@ -30,7 +51,7 @@ if (sum(ismember(tvec, unqt)) ~= numel(tvec))
     %disp(orphans(:));
     disp(['Total missing tiles: ' num2str(numel(missing_set))]);
 elseif numel(unqt)>numel(tvec)
-    warning('Some tile ids are present in "pairs" but missing in Msection: This should not happen.');
+    disp('Some tile ids are present in "pairs" but missing in Msection: This should not happen.');
 else
     % disp('All tiles ids accounted for in both point-match files and Msection object');
 end

@@ -87,7 +87,7 @@ if ~isempty(v{1}.matches.p)
     end
 
 else
-    disp('No point-matches found');
+    if verbose, disp('No point-matches found');end
     m12_1 = [];
     m12_2 = [];
 end

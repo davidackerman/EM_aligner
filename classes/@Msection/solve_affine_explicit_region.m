@@ -1,5 +1,5 @@
 function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(obj, opts)
-% Returns the matrix solution for a contiguous region
+% Returns the matrix solution for a contiguous regionusing an affine transform
 %
 %% default options are set here 
 % lsq_options.verbose         = 1;
@@ -55,6 +55,10 @@ if nargin>1,
      if isfield(opts, 'solver'), lsq_options.solver = opts.solver;end
      if isfield(opts, 'lambda'), lsq_options.lambda = opts.lambda;end
      if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda = opts.edge_lambda;end
+     if isfield(opts, 'constrain_edges'), lsq_options.constrain_edges = opts.constrain_edges;end
+     if isfield(opts, 'lidfix'), lsq_options.lidfix = opts.lidfix; end
+     if isfield(opts, 'tfix'), lsq_options.tfix = opts.tfix; end
+
 end
 %% solve
 [obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = alignTEM_solver(obj, [],  lsq_options);

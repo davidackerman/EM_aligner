@@ -56,9 +56,9 @@ deg                                 = 180;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% overrides
 if nargin>2, 
-     if isfield(opts, 'solver'), lsq_options.solver = opts.solver;end
-     if isfield(opts, 'lambda'), lsq_options.lambda = opts.lambda;end
-     if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda = opts.edge_lambda;end
-     if isfield(opts, 'use_ilu'), lsq_options.use_ilu = opts.use_ilu;end
+     if isfield(opts, 'solver'), lsq_options.solver             = opts.solver;end
+     if isfield(opts, 'lambda'), lsq_options.lambda             = opts.lambda;end
+     if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda   = opts.edge_lambda;end
+     if isfield(opts, 'use_ilu'), lsq_options.use_ilu           = opts.use_ilu;end
 end
 [obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = alignTEM_solver(obj, [],  lsq_options);

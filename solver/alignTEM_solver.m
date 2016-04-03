@@ -35,9 +35,9 @@ function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid] = alig
 %%% OR: if options.constraints=="similarity" ---> calculate a similarity,constraint guess
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Author: Khaled Khairy 2014 Janelia
 
-if numel(P) + 1 ~= numel(L),
-    error('Please check dimensions of L and P inputs');
-end
+% if numel(P) + 1 ~= numel(L),
+%     error('Please check dimensions of L and P inputs');
+% end
 A   = [];
 b   = [];
 B   = [];
@@ -126,7 +126,7 @@ if isempty(options.B)
         end
     elseif strcmp(options.constraint, 'similarity')
         if options.verbose,disp('---------------- Similarity constrained system ------------------');end
-        [d] = alignTEM_similarity_constrained_system_gen(L,P, options,tdim, ncoeff);
+        [d] = alignTEM_similarity_constrained_system_gen(L, options,tdim, ncoeff);
         lidfix = 0;
         tfix = 0;
         options.constraint_only = 1;
@@ -201,23 +201,25 @@ else
     end
     spK = 1- nnz(K)/prod(size(K)); %#ok<PSIZE>
     if options.verbose,disp(['Sparsity of K: ' num2str(spK)]);end
-    % disp(['Estimated condition number of K: ' num2str(condest(K))]); disp(condest(K));
-    % disp('Ranges min max:');
-    % disp(['A : ' num2str([min(A(:)) max(A(:))])]);
-    % disp(['b : ' num2str([min(b(:)) max(b(:))])]);
-    % disp(['W : ' num2str([min(W(:)) max(W(:))])]);
-    % disp(['B : ' num2str([min(B(:)) max(B(:))])]);
-    % disp(['d : ' num2str([min(d(:)) max(d(:))])]);
-    % disp(['K : ' num2str([min(K(:)) max(K(:))])]);
-    % disp(['Lm : ' num2str([min(Lm(:)) max(Lm(:))])]);
-    
+    if options.verbose>1
+        disp(['Estimated condition number of K: ' num2str(condest(K))]); disp(condest(K));
+        disp('Ranges min max:');
+        disp(['A : ' num2str([min(A(:)) max(A(:))])]);
+        disp(['b : ' num2str([min(b(:)) max(b(:))])]);
+        disp(['W : ' num2str([min(W(:)) max(W(:))])]);
+        disp(['B : ' num2str([min(B(:)) max(B(:))])]);
+        disp(['d : ' num2str([min(d(:)) max(d(:))])]);
+        disp(['K : ' num2str([min(K(:)) max(K(:))])]);
+        disp(['Lm : ' num2str([min(Lm(:)) max(Lm(:))])]);
+    end
     
     % K  = A'*A + lambda*(B')*B;
     % Lm  = A'*b  + lambda*(B')*d;
-    
     %disp('Clearing memory: deleting A W B b');
     % cleanup
     %clear A W B b
+    
+    
     %% Solve
     [x2, R] = solve_AxB(K,Lm, options, d);
     if strcmp(options.constraint, 'explicit')

@@ -15,10 +15,10 @@ function [L_vec,a] = reduce_to_connected_components(obj)
 
 % generate a graph object, based on point-matches
 obj.G = graph(obj.pm.adj(:,1), obj.pm.adj(:,2), obj.pm.np, {obj.tiles(:).renderer_id});
-b = conncomp(obj.G, 'OutputForm', 'vector');  % generate the logical clusters (connected components)
+b = conncomp(obj.G, 'OutputForm', 'vector');  % generate logical clusters (connected components)
 bins = unique(b);
 %% 
-parfor bix = 1:numel(bins)
+for bix = 1:numel(bins)
     indx = b==bins(bix);
     if sum(indx)>1
         L_vec(bix) = reduce_to_tile_subset(obj, find(indx));

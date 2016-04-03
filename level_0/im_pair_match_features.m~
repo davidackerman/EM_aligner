@@ -34,7 +34,6 @@ geoTransformEst.DesiredConfidence = 99.95;
 m1 = m1(inlierIdx);
 m2 = m2(inlierIdx);
 %%%%%%%%%%%%%%%%%%%%
-warning on;
 end
 
 

@@ -1,4 +1,4 @@
-function [L, tIds, PM] = load_point_matches(nfirst, nlast, rc, pm)
+function [L, tIds, PM, pm_mx] = load_point_matches(nfirst, nlast, rc, pm)
 % Input: nfirst and nlast are zvalue of sections in rc
 %        rc and pm are structs with specifications for accessing
 %        collections of tile-specs and point-matches (that are related)
@@ -18,13 +18,16 @@ function [L, tIds, PM] = load_point_matches(nfirst, nlast, rc, pm)
 % % pm.server = 'http://tem-services.int.janelia.org:8080/render-ws/v1';
 % % pm.owner  = 'flyTEM';
 % % pm.match_collection = 'v9_1';
+%
+% Author: Khaled Khairy. Janelia Research Campus 2016
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
      rc.baseURL, rc.owner, rc.project, rc.stack);
- j = webread(urlChar);
- sectionId = {j(:).sectionId};
- z         = [j(:).z];
+ js = webread(urlChar);
+ sectionId = {js(:).sectionId};
+ z         = [js(:).z];
  indx = find(z>=nfirst & z<=nlast);
  
  sectionId = sectionId(indx);% determine the sectionId list we will work with
@@ -89,35 +92,49 @@ PM.adj = [];
 PM.W = {};
 PM.np = [];
 min_points = 5;    
+n1 = [];
+warning off;
 parfor ix = 1:numel(z)
     urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
                pm.server, pm.owner, pm.match_collection, sectionId{ix});
            try
-               j = webread(urlChar, options);
+               jj = webread(urlChar, options);
            catch err_ip_address
                pause(1);
-               j = webread(urlChar,options);
+               jj = webread(urlChar,options);
            end
     count = 1;
-    for jix = 1:numel(j)
-        if size(j(jix).matches.p',1)>=min_points
-            if isKey(map_id, j(jix).pId) && isKey(map_id, j(jix).qId)
-                PM(ix).M{count,1}   = j(jix).matches.p';
-                PM(ix).M{count,2}   = j(jix).matches.q';
-                PM(ix).adj(count,:) = [map_id(j(jix).pId) map_id(j(jix).qId)];
-                PM(ix).W{count,1}     = j(jix).matches.w';         % relative weights of point matches within this group
-                PM(ix).np(count)    = size(j(jix).matches.p',1);
+    n1(ix) = numel(jj);
+    for jix = 1:numel(jj)
+        if size(jj(jix).matches.p',1)>=min_points
+            if isKey(map_id, jj(jix).pId) && isKey(map_id, jj(jix).qId)
+                PM(ix).M{count,1}   = jj(jix).matches.p';
+                PM(ix).M{count,2}   = jj(jix).matches.q';
+                PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
+                PM(ix).W{count,1}     = jj(jix).matches.w';         % relative weights of point matches within this group
+                PM(ix).np(count)    = size(jj(jix).matches.p',1);
                 count = count + 1;
             end
         end
     end
 end
+warning on;
+%
+[xPM2, n2] = get_cross_section_pm(2, pm, sectionId, map_id, min_points);%% get point matches to immediate neighbor
+[xPM3, n3] = get_cross_section_pm(3, pm, sectionId, map_id, min_points);%% get point matches one section removed from neighbor
+[xPM4, n4] = get_cross_section_pm(4, pm, sectionId, map_id, min_points);%% get point matches two sectionss removed from neighbor
 
-[xPM2] = get_cross_section_pm(2, pm, sectionId, map_id, min_points);%% get point matches to immediate neighbor
-[xPM3] = get_cross_section_pm(3, pm, sectionId, map_id, min_points);%% get point matches one section removed from neighbor
-%[xPM4] = get_cross_section_pm(4, pm, sectionId, map_id, min_points);%% get point matches two sectionss removed from neighbor
 
-
+pm_mx = diag(n1);
+if ~isempty(n2), 
+    pm_mx = pm_mx + diag(n2,1);
+end
+if ~isempty(n3),
+    pm_mx = pm_mx + diag(n3,2);
+end
+if ~isempty(n4),
+    pm_mx = pm_mx + diag(n4,3);
+end
 %% concatenate PM and xPM in the order that will be used for filling A in the solution
 clear M adj W np;
 for ix = 1:numel(z)
@@ -151,22 +168,33 @@ L.pm.W = W;
 L.pm.np = np;
 
 
+% before returning make sure L.pm.adj are unique
+% --------- sosi: invesitgate how duplicates could arise in the first place
+[bb, indx] = unique(L.pm.adj,'rows');
+L.pm.M = L.pm.M(indx);
+L.pm.adj = L.pm.adj(indx,:);
+L.pm.W = L.pm.W(indx);
+L.pm.np = L.pm.np(indx);
 %%%%%%%%%%%%%%%%%%%%%%%%
-function [xPM] = get_cross_section_pm(n, pm, sectionId, map_id, min_points)
-
+function [xPM, np_vec] = get_cross_section_pm(n, pm, sectionId, map_id, min_points)
+np_vec = []; 
 xPM.M = {};
 xPM.adj = [];
 xPM.W = {};
 xPM.np = [];     
 options = weboptions;
 options.Timeout = 20;
+
 if numel(sectionId)>=n
-    fac = (1/n)^2;
+   
+    fac = (1/n/100);   % small fac ==> less weight for cross-layer point matches
+    
     for ix = n:numel(sectionId)
         urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
             pm.server, pm.owner, pm.match_collection, sectionId{ix-(n-1)}, sectionId{ix});
         j = webread(urlChar, options);
         count = 1;
+        np_vec(ix-(n-1)) = numel(j);
         for jix = 1:numel(j)
             if size(j(jix).matches.p',1)>=min_points
                 if isKey(map_id, j(jix).pId) && isKey(map_id, j(jix).qId)

@@ -10,10 +10,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% [0] configure collections and prepare quantities
-clc;
+clc; clear all;
 kk_clock;
 nfirst = 1;
-nlast  = 4;
+nlast  = 20;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -73,9 +73,9 @@ ms.run_dir                      = ['scale_' ms.scale];
 ms.script                       = '/groups/flyTEM/home/khairyk/EM_aligner/renderer_api/generate_montage_scape_point_matches.sh';%'../unit_tests/generate_montage_scape_point_matches_stub.sh'; %
 
 % configure fine alignment
-DX = 4;   % number of divisions of the total bounding box in x
-DY = 4;
-scale = 1.0;
+DX = 5;   % number of divisions of the total bounding box in x
+DY = 5;
+scale = 0.5;
 depth = 1;  % largest distance (in layers) considered for neighbors
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -255,22 +255,27 @@ end
 % get montage boxes as well
 Wboxm = zeros(numel(L_montage), 4);
 bboxm = zeros(numel(L_montage),4);
-parfor lix = 1:numel(L_montage)
-    [ Wboxm(lix,:), bboxm(lix,:)] = get_section_bounds_renderer(rctarget_montage, z(lix));
+parfor llix = 1:numel(L_montage)
+    [ Wboxm(llix,:), bboxm(llix,:)] = get_section_bounds_renderer(rctarget_montage, z(llix));
 end
 bbm = [min(Wboxm(:,1)) min(Wboxm(2)) max(bboxm(:,3)) max(bboxm(:,4))];
 wbm = [bbm(1) bbm(2) bbm(3)-bbm(1) bbm(4)-bbm(2)];
 
-%% [7] generate point-matches for all blocks 
-
+%% [7] generate point-matches for all blocks
+err_logs = {};
+IDS    = {};
+PAIRS  = {};
+W      = {};
+parfor_progress(size(b,1));
 parfor bix = 1:size(b,1)   % process each line in b (a section pair and block window -- x y W H)
+    %disp(['Processing ' num2str(bix) ' of ' num2str(size(b,1))]);
     ids = {};
     pairs = [];
     w = [];
     count = 1;
     %disp(bix);
     box = b(bix, 3:6);
-
+    
     %%% sosi --- check whether this is box is empty for any of the two layers before
     %%% proceeding
     
@@ -290,67 +295,78 @@ parfor bix = 1:size(b,1)   % process each line in b (a section pair and block wi
         box(4), ...
         num2str(scale));
     
-    [m_2, m_1, js] = point_match_gen_SIFT_qsub(url2, url1);   % submits jobs -- returns point-matches in box coordinate system%%% production --- submit to cluster
+    [m_2, m_1, ~, err_logs{bix}] = point_match_gen_SIFT_qsub(url2, url1);   % submits jobs -- returns point-matches in box coordinate system%%% production --- submit to cluster
     %[m_2, m_1] = point_match_gen_SIFT(url2, url1);  % same as above but without qsub'ing
     if ~isempty(m_1),
-
-        % convert these point-matches to "acquire or montage" coordinate system to make them ingestable json strings that will go into pm collection
-        z1 = b(bix,1);
-        z2 = b(bix,2);
-        for pimix = 1:size(m_1,1)   % loop over box point-matches
-            % Strategy: for each set of point we convert from (rough-aligned) world to (raw) local
-            % What we really want is local "acquire" (i.e. without the last transformation, but after LC),
-            % so we (a) convert from (raw) local to acquire world (where we know the last transformation is only translation), then
-            % (b) subtract translation component of tile specs from points so that they become (acquire) local
-            % The logic to do this is in 'world_to_local_LC_tile.m'
+        try
+            % convert these point-matches to "acquire or montage" coordinate system to make them ingestable json strings that will go into pm collection
+            z1 = b(bix,1);
+            z2 = b(bix,2);
+            for pimix = 1:size(m_1,1)   % loop over box point-matches
+                % Strategy: for each set of point we convert from (rough-aligned) world to (raw) local
+                % What we really want is local "acquire" (i.e. without the last transformation, but after LC),
+                % so we (a) convert from (raw) local to acquire world (where we know the last transformation is only translation), then
+                % (b) subtract translation component of tile specs from points so that they become (acquire) local
+                % The logic to do this is in 'world_to_local_LC_tile.m'
+                
+                %%%%%%%%%%%
+                % first convert point found in the first box (in layer(b(bix,1)))
+                %%%%%%%%%%%%
+                x = m_1(pimix, 1)/scale + box(1);
+                y = m_1(pimix, 2)/scale + box(2);
+                
+                [pGroupId, p] = world_to_local_LC_tile(rctarget_rough, rctarget_montage, [x y z1], wbm);
+                if ~isempty(pGroupId)
+                    %%%%%%%%%%%
+                    % second convert point found in the second box (in layer(b(bix,2)))
+                    %%%%%%%%%%%%
+                    x = m_2(pimix, 1)/scale + box(1);
+                    y = m_2(pimix, 2)/scale + box(2);
+                    
+                    [qGroupId, q] = world_to_local_LC_tile(rctarget_rough, rctarget_montage, [x y z2], wbm);
+                    
+                    % write into buffer
+                    ids{count,1} = pGroupId;
+                    ids{count,2} = qGroupId;
+                    pairs(count,:) = [p q];
+                    w(count) =1/(1 + abs(z1-z2));
+                end
+                count = count + 1;
+            end
+            %         %%% SOSI == look at images and point matches
+            %         [im1, v1] = get_image_box_renderer(rctarget_rough, b(bix,1), box, scale, dir_temp_render, num2str(b(bix,1)));
+            %         [im2, v2] = get_image_box_renderer(rctarget_rough, b(bix,2), box, scale, dir_temp_render, num2str(b(bix,2)));
+            %          clf;warning off;imshowpair(im1, im2, 'montage'); title(num2str(bix));drawnow
             
-            %%%%%%%%%%%
-            % first convert point found in the first box (in layer(b(bix,1)))
-            %%%%%%%%%%%%
-            x = m_1(pimix, 1)/scale + box(1);
-            y = m_1(pimix, 2)/scale + box(2);
-            
-            [pGroupId, p] = world_to_local_LC_tile(rctarget_rough, rctarget_montage, [x y z1], wbm);
-            %%%%%%%%%%%
-            % second convert point found in the second box (in layer(b(bix,2)))
-            %%%%%%%%%%%%
-            x = m_2(pimix, 1)/scale + box(1);
-            y = m_2(pimix, 2)/scale + box(2);
-            
-            [qGroupId, q] = world_to_local_LC_tile(rctarget_rough, rctarget_montage, [x y z2], wbm);
-            
-            % write into buffer
-            ids{count,1} = pGroupId;
-            ids{count,2} = qGroupId;
-            pairs(count,:) = [p q];
-            w(count) =1/(1 + abs(z1-z2));
-            count = count + 1;
+            %         figure; warning off;showMatchedFeatures(im1, im2, m_1, m_2, 'montage');
+            %         %%% sosi == look at point matches in pairs and confirm correspondence to original feature matches
+            %         pix = 3;
+            %         tid1 = L_montage(z1).map_renderer_id(ids{pix,1});
+            %         tid2 = L_montage(z2).map_renderer_id(ids{pix,2});
+            %         t1 = L_montage(z1).tiles(tid1);
+            %         t2 = L_montage(z2).tiles(tid2);
+            %         imt1 = get_image(t1);figure;imshow(imt1);hold on;plot(pairs(pix,1), pairs(pix,2),'*y');
+            %         imt2 = get_image(t2);figure;imshow(imt2);hold on;plot(pairs(pix,3), pairs(pix,4),'*w');
+        catch err_world_to_local_tile
+            kk_disp_err(err_world_to_local_tile);
         end
-%         %%% SOSI == look at images and point matches
-%         [im1, v1] = get_image_box_renderer(rctarget_rough, b(bix,1), box, scale, dir_temp_render, num2str(b(bix,1)));
-%         [im2, v2] = get_image_box_renderer(rctarget_rough, b(bix,2), box, scale, dir_temp_render, num2str(b(bix,2)));
-%         %clf;warning off;imshowpair(im1, im2, 'montage'); title(num2str(bix));drawnow
-%         figure; warning off;showMatchedFeatures(im1, im2, m_1, m_2, 'montage');
-%         %%% sosi == look at point matches in pairs and confirm correspondence to original feature matches
-%         pix = 3;
-%         tid1 = L_montage(z1).map_renderer_id(ids{pix,1});
-%         tid2 = L_montage(z2).map_renderer_id(ids{pix,2});
-%         t1 = L_montage(z1).tiles(tid1);
-%         t2 = L_montage(z2).tiles(tid2);
-%         imt1 = get_image(t1);figure;imshow(imt1);hold on;plot(pairs(pix,1), pairs(pix,2),'*y');
-%         imt2 = get_image(t2);figure;imshow(imt2);hold on;plot(pairs(pix,3), pairs(pix,4),'*w');
-        
     end
     IDS{bix}    = ids;
     PAIRS{bix}  = pairs;
     W{bix}      = w;
+    parfor_progress;
 end
+parfor_progress(0);
 % prepare point-match data for ingestion
 % delete empty entries into IDS and PAIRS
 del_ix = zeros(size(b,1),1, 'logical');
 for bix = 1:size(b,1)
     if isempty(IDS{bix}), del_ix(bix) = 1;end
 end
+disp('----------------------------');
+disp(['Number of empty blocks: ' num2str(sum(del_ix))]);
+disp('----------------------------');
+
 IDS(del_ix) = [];
 PAIRS(del_ix) = [];
 b(del_ix,:) = [];
@@ -364,8 +380,8 @@ for ix = 1:numel(IDS)
     rids = [rids;IDS{ix}];
     pms  = [pms; PAIRS{ix}];
     zs   = [zs; [ones(size(PAIRS{ix},1),1)*b(ix,1) ones(size(PAIRS{ix},1),1)*b(ix,2)]];
-%     sids{ix,1} = sectionId{b(ix,1)};
-%     sids{ix,2} = sectionId{b(ix,2)};
+    %     sids{ix,1} = sectionId{b(ix,1)};
+    %     sids{ix,2} = sectionId{b(ix,2)};
 end
 cids = {};
 for ix = 1:size(rids,1)
@@ -377,7 +393,7 @@ n_pairs = size(ia,1);
 % for a specific cid, to find its occurrences (linear index) in rids and pms we need to do for example:
 % [c] = ismember(cids, C{1})
 %% [8] generate json and ingest into pm database
-
+% SOSI -------------- BUGGY --- FIX BEFORE PROCEEDING
 for mix = 1:n_pairs    % loop over point matches
     [c] = find(ismember(cids, C{mix}));             % get linear index into rids, pms
     sectionID1 = sectionId{zs(c(1),1)};
@@ -413,7 +429,14 @@ delete(fn);
 
 
 %% [9] Solve system and ingest into Renderer database
-mL = solve_slab(rcsource, pm, nfirst, nlast, rctarget_align);
+
+opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
+opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
+opts.lambda = 1e2;
+opts.edge_lambda = 1e4;
+opts.solver = 'backslash';
+mL = solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
 kk_clock;
 
 

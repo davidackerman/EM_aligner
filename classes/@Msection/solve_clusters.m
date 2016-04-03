@@ -1,10 +1,12 @@
 function [mL, err, R, L_s_mL] = solve_clusters(L_vec, opts, stvec_flag)
-%% returns a solved fully assembled coherent group of possibly more than one cluster
-%%% L has full point pair information as obtained for example by using:
+% % returns a solved fully assembled coherent group of tiles
+% % that could be made of more than one cluster (connected component)
+% % 
+% % L has full point pair information as obtained for example by using:
 % % rc.stack = 'v9_acquire_LC_merged_2';
 % % rc.owner='flyTEM';
 % % rc.project='FAFB00';
-% % rc.server='http://tem-services.int.janelia.org:8080/render-ws/v1';
+% % rc.baseURL ='http://tem-services.int.janelia.org:8080/render-ws/v1';
 % %
 % % pm.server = 'http://tem-services.int.janelia.org:8080/render-ws/v1';
 % % pm.owner  = 'flyTEM';
@@ -14,7 +16,11 @@ function [mL, err, R, L_s_mL] = solve_clusters(L_vec, opts, stvec_flag)
 % % nlast  = 1502;
 % %
 % % [L, tIds, PM] = load_point_matches(nfirst, nlast, rc, pm);
-% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %
+% % Author: Khaled Khairy: Janelia Research Campus 2016
+% %
+% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if nargin<3, stvec_flag = 0;end  % in that case we do not assume a starting value, and perform rigid fit
 
 L_s_mL = Msection;
@@ -97,12 +103,9 @@ for cix = 1:numel(L_vec)
             L_s_mL(cix) = ll2r;
         elseif opts.degree==1
             [L_s_mL(cix), err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(ll2r, opts);
-        elseif opts.degree==2
+        elseif opts.degree>1
             [ll3, err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(ll2r, opts);
-            [L_s_mL(cix), err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td] = solve_polynomial_explicit_region(ll3,2, opts);
-        elseif opts.degree==3
-            [ll3, err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(ll2r, opts);
-            [L_s_mL(cix), err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td] = solve_polynomial_explicit_region(ll3,3, opts);
+            [L_s_mL(cix), err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td] = solve_polynomial_explicit_region(ll3,opts.degree, opts);
         end
         %L_s_mL(cix) = ll;
         R(cix) = {[Res]};

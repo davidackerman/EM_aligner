@@ -1,4 +1,4 @@
-function [d] = alignTEM_similarity_constrained_system_gen(L,P, options,tdim, ncoeff)
+function [d] = alignTEM_similarity_constrained_system_gen(L, options,tdim, ncoeff)
 % Generate the matrices B and d in the second term of Eq. 1 in the notes
 % based on similarity-constrained fitting.
 % First we generate the matrices D and f and solve the Dm-f system as in
@@ -138,54 +138,15 @@ for ix = 1:numel(D_i),
     n = n+size(D_i{ix}, 1);
     m_old = m;
     m = m+size(D_i{ix},2); % only increases (horizontally)
-                           % as new layers are added
-                           
-                           if verbose
-                               disp('--- placing montage block');
-                               disp(ix);
-                               disp(['---------- max J: ' num2str(max(J))]);
-                               disp(['---------- m    : ' num2str(m)]);
-                           end
-    % add crosslayer matrices
-    % assumes that we have a crosslayer matrix coupling layer D_i{ix}
-    % with D_i{ix+1}
+    % as new layers are added
     
-    %     disp(pos)
-    %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % add crosslayer coupling
-%     if (nP)>=ix
-%         
-%         % place the first part of the block 
-%         [I(pos+1:pos+nnz(D_ij{ix,1})),...
-%          J(pos+1:pos+nnz(D_ij{ix,1})),...
-%          S(pos+1:pos+nnz(D_ij{ix,1}))] = find(D_ij{ix,1});
-%         
-%         % 
-%         I(pos+1:pos+nnz(D_ij{ix,1})) = I(pos+1:pos+nnz(D_ij{ix,1})) + n;
-%         J(pos+1:pos+nnz(D_ij{ix,1})) = J(pos+1:pos+nnz(D_ij{ix,1})) + m_old;
-%         pos = pos + nnz(D_ij{ix,1});
-% 
-%         % the second part of the block
-%         [I(pos+1:pos+nnz(D_ij{ix,2})),...
-%          J(pos+1:pos+nnz(D_ij{ix,2})),...
-%          S(pos+1:pos+nnz(D_ij{ix,2}))] = find(D_ij{ix,2});
-%         
-%         % 
-%         I(pos+1:pos+nnz(D_ij{ix,2})) = I(pos+1:pos+nnz(D_ij{ix,2})) + n;
-%         J(pos+1:pos+nnz(D_ij{ix,2})) = J(pos+1:pos+nnz(D_ij{ix,2})) + m;
-%         pos = pos + nnz(D_ij{ix,2});
-%         
-%         
-%         disp('--- placing crosslayer block');
-%         disp(ix);
-%         disp(['---------- max J: ' num2str(max(J))]);
-%         
-%         % update vector f
-%         f(n+1:n+size(D_ij{ix},1)) = f_ij{ix};
-%         % add the number of points to get the correct dimensionality of the
-%         % final matrix D
-%         n = n+size(D_ij{ix,2}, 1);
-%     end
+    if verbose
+        disp('--- placing montage block');
+        disp(ix);
+        disp(['---------- max J: ' num2str(max(J))]);
+        disp(['---------- m    : ' num2str(m)]);
+    end
+
 end
 % cleanup
 %disp('Cleanup: D_i D_ij f_ij');

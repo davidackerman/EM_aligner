@@ -1,4 +1,4 @@
-% script to solve a FAFBv12 slab
+% Example script to solve a FAFBv12 slab for an existing set of point matches
 %
 % Assumes that all the work for generating point-matches has been done
 % at the tile level
@@ -33,10 +33,10 @@ pm.match_collection = 'v12_dmesh';
 
 % configure solver
 opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
-opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
+opts.degree = 3;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-opts.lambda = 1e0;
-opts.edge_lambda = 1e2;
+opts.lambda = 1e-1;
+opts.edge_lambda = 1e1;
 opts.solver = 'backslash';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,8 +44,7 @@ opts.solver = 'backslash';
 [mL] = solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
 
 
-%% look at a box in the middle of the section to spot check alignment
-clc
+%% look at a box in the middle of the section to spot-check alignment
 scale = 1.0;
 n = nlast-nfirst;
 dir_temp_render = '/scratch/khairyk';
@@ -62,7 +61,7 @@ Wbox = [x y  W H];
 M = zeros(W*scale, H*scale,n);
 parfor z = 1:n
     z_eff = z + nfirst-1;
-    disp(z_eff);
+    %disp(z_eff);
     [im, v, url] = get_image_box_renderer(rctarget_align, z_eff, Wbox, scale, dir_temp_render, rctarget_align.stack);
     M(:,:,z) = mat2gray(im);
 end

@@ -1,4 +1,6 @@
 function kk_disp_err(err)
+
+
 disp(err);
 disp(err.message);
 for ix = 1:numel(err.stack)

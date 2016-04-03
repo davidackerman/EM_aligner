@@ -1,10 +1,10 @@
-function [m12_1, m12_2, v] = point_match_gen_SIFT_qsub(url1, url2)
+function [m12_1, m12_2, v, err_log] = point_match_gen_SIFT_qsub(url1, url2)
 % Return point-matches based on SIFT features   --- still under development
 %
 % Depends on Eric T.'s packaging of Saalfeld's code that uses SIFT and filters point matches
-% 
-% Future plans: 
-% 
+%
+% Future plans:
+%
 % This function is still being testd. In the future it will exercise the full range of parameters
 % and use arrays of tile pairs.
 % Access to Renderer functions will be using Java directly within Matlab
@@ -12,7 +12,8 @@ function [m12_1, m12_2, v] = point_match_gen_SIFT_qsub(url1, url2)
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 verbose = 0;
-
+err_log = {};
+v = [];
 % URLs could be anything that the Renderer can interpret accoring to its API.
 % for example tile urls should look like this:
 % url1 = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
@@ -39,62 +40,85 @@ fn_pm               = [dir_temp_pm '/matches_' file_code '.json'];
 
 %% configure script parameters
 base_cmd            = '/groups/flyTEM/flyTEM/render/bin/gen-match.sh ';
-str_memory          = '--memory 7G ';
-str_n_threads       = '--numberOfThreads 4 ';
+str_memory          = '--memory 11G ';
+str_n_threads       = '--numberOfThreads 8 ';
 str_base_data_url   = '--baseDataUrl http://tem-services:8080/render-ws/v1 ';
 str_owner           = '--owner khairyk ';
 str_collection      = '--collection test_match_gen ';
-
+str_matchMaxEpsilon = '--matchMaxEpsilon 10 ';
+str_matchMinNumInliers = '--matchMinNumInliers 3 ';
 %% construct command to call Eric T.'s script
-str_pairs           = [url1 ' ' url2];
+str_pairs           = [url1 ' ' url2 ' '];
 str_parameters      = [' --matchStorageFile ' fn_pm];
-sift_str            = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collection str_pairs str_parameters];
+sift_str            = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collection str_pairs str_matchMaxEpsilon str_matchMinNumInliers str_parameters];
 resp                 = write_script(fn_script, sift_str);
 if verbose, disp(resp);end
 if exist(fn_pm,'file'), delete fn_pm;end
 
 %% qsub call
-jbname = ['ST-' num2str(tm(5)) '-' num2str(round(tm(6)))];
+jbname = ['ST-' num2str(randi(10000))]; % just to generate somewhat unique names for jobs
 account = '-A flyTEM';
 % job_log = '-j y -o /groups/flyTEM/home/khairyk/mwork/temp';
 job_log = '-j y -o /dev/null';
-qsub_str = sprintf('qsub -l short=true -N %s %s %s -cwd -V -b y -pe batch 4 "%s" ',...
-                    jbname, account, job_log, fn_script);
-[a, resp_str] = system(qsub_str);
-if verbose, disp(resp_str);end
-wait_for_file(fn_pm, 5000, verbose);
-delete(fn_script);
+qsub_str = sprintf('qsub -l short=true -N %s %s %s -cwd -V -b y -pe batch 8 "%s" ',...
+    jbname, account, job_log, fn_script);
+manage_jobs('khairyk', {jbname}, {qsub_str}, {dir_temp_script}, 10, []);
 
+% [a, resp_str] = system(qsub_str);
+% if verbose, disp(resp_str);end
+% wait_for_file(fn_pm, 400, verbose);  %%%  needs to  babysit better than that
 
+if exist(fn_pm,'file')==2
 %% read json file
 try
     v = JSON.parse(fileread(fn_pm));
-catch
-    error('Error reading point-matches json file');
-end
-
-
-%% extract point matches from json
-if ~isempty(v{1}.matches.p)
-    m12_1 = [ [v{1}.matches.p{1}{:}]' [v{1}.matches.p{2}{:}]'];
-    m12_2 = [ [v{1}.matches.q{1}{:}]' [v{1}.matches.q{2}{:}]'];
-    % look at point matches
-    max_n_show = 20;
-    if size(m12_2,1)>max_n_show,
-        indx = randi(size(m12_2,1), max_n_show,1);
-        m12_2 = m12_2(indx,:);
-        m12_1 = m12_1(indx,:);
+    
+    %% extract point matches from json
+    if ~isempty(v{1}.matches.p)
+        m12_1 = [ [v{1}.matches.p{1}{:}]' [v{1}.matches.p{2}{:}]'];
+        m12_2 = [ [v{1}.matches.q{1}{:}]' [v{1}.matches.q{2}{:}]'];
+        % look at point matches
+        max_n_show = 20;
+        if size(m12_2,1)>max_n_show,
+            indx = randi(size(m12_2,1), max_n_show,1);
+            m12_2 = m12_2(indx,:);
+            m12_1 = m12_1(indx,:);
+        end
+        
+    else
+        if verbose, disp('No point-matches found');end
+        m12_1 = [];
+        m12_2 = [];
     end
-
-else
-    if verbose, disp('No point-matches found');end
+catch err_reading_json_point_matches
+    kk_disp_err(err_reading_json_point_matches);
+    
+    disp('Error reading point-matches json file ---- skipping this file:');
+    disp(fn_pm);
+    disp('original qsub command :');
+    disp(qsub_str);
+    disp('No point-matches found');
+    err_log{end+1} = qsub_str;
     m12_1 = [];
     m12_2 = [];
 end
+else
+    m12_1 = [];
+    m12_2 = [];
+    err_log{end+1} = ['json file was not generated, giving up'];
+end
+
+
 
 
 %% cleanup
-delete(fn_pm);
+try
+    delete(fn_script);
+    delete(fn_pm);
+catch err_delete
+    err_log{end+1} = 'Failed to delete file';
+    kk_disp_err(err_delete);
+end
 
 
 

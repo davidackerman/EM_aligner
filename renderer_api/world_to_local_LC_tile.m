@@ -25,26 +25,28 @@ tm = clock;
 file_code           = [num2str(tm(6)) '_' num2str(randi(1000000000000))];
 fn = [file_code 'tmp.txt']; % curl writes to this file, which then gets read by Matlab
 [pGroupId, p] = world_to_local_renderer(rcW,fn, [x y z]);
-% convert from local (raw) to world (acquire)
-x = p(1);
-y = p(2);
-p = local_to_world_renderer(rcmontage, pGroupId, fn, [x y]);
-% we are not done yet. we have to find the point in the tile coordinate system of the image produced after
-% the standard first three transormations only have been applied, i.e. without the last transformation
-% we know this last transformation is a translation only in the rctarget_montage collection.
-% therefore all we need to do is subtract this last translation, and then translate to world 0,0
-
-% get the required translation from tile spec
-url1 = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
-    rcmontage.baseURL, rcmontage.owner, rcmontage.project, rcmontage.stack, pGroupId);
-v = webread(url1);
-
-transform_string = v.tileSpecs.transforms.specList(end).dataString;
-C = strsplit(transform_string);
-
-% assuming we are dealing with affines, then the required information is extacted as stings  5 and 6
-% of C:
-dx = str2double(C{5});
-dy = str2double(C{6});
-
-p = [p(1)-wbm(1) p(2)-wbm(2)]-[dx dy];
+if ~isempty(pGroupId)
+    % convert from local (raw) to world (acquire)
+    x = p(1);
+    y = p(2);
+    p = local_to_world_renderer(rcmontage, pGroupId, fn, [x y]);
+    % we are not done yet. we have to find the point in the tile coordinate system of the image produced after
+    % the standard first three transormations only have been applied, i.e. without the last transformation
+    % we know this last transformation is a translation only in the rctarget_montage collection.
+    % therefore all we need to do is subtract this last translation, and then translate to world 0,0
+    
+    % get the required translation from tile spec
+    url1 = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=true',...
+        rcmontage.baseURL, rcmontage.owner, rcmontage.project, rcmontage.stack, pGroupId);
+    v = webread(url1);
+    
+    transform_string = v.tileSpecs.transforms.specList(end).dataString;
+    C = strsplit(transform_string);
+    
+    % assuming we are dealing with affines, then the required information is extacted as stings  5 and 6
+    % of C:
+    dx = str2double(C{5});
+    dy = str2double(C{6});
+    
+    p = [p(1)-wbm(1) p(2)-wbm(2)]-[dx dy];
+end

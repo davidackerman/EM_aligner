@@ -47,7 +47,7 @@ str = [base_cmd str_memory str_n_threads str_base_data_url str_owner str_collect
 
 [a, resp_str] = system(str);
 %disp(resp_str);
-%wait_for_file(fn_pm, 10);
+wait_for_file(fn_pm, 10);
 
 %% read json file
 try

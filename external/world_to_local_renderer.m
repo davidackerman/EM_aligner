@@ -19,8 +19,16 @@ cmd = sprintf('curl -X GET --connect-timeout 30 --header "Content-Type: applicat
 [a, resp]= evalc('system(cmd)');%disp(a);disp(resp);
 jstr = fileread(fn); %disp(str);
 delete(fn);
+try
 v = JSON.parse(jstr);
+catch
+end
 % we only use the visible tile (which is the last one in v) ---> generate point-match entries on a tile-to-tile basis
+try
 pGroupId= v{end}.tileId;
+catch
+    pGroupID = [];
+    %disp('Warning: invalid field tileId');
+end
 p       = [v{end}.local{1} v{end}.local{2} v{end}.local{3}]; % --> this is the point in question, needs to be converted
             

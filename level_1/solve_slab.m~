@@ -12,7 +12,6 @@ verbose = 1;
 if ~isfield(opts, 'nbrs'), opts.nbrs = 2;end
 if ~isfield(opts, 'min_points'), opts.min_points = 5;end
 if ~isfield(opts, 'xs_weight'), opts.xs_weight = 1;end
-if ~isfield(opts, 'stvec_flag'), opts.stvec_flag = 0;end  % when set to zero, solver will perform rigid transformation to get a starting value
 cs     = nlast-nfirst + 1;
 sh     = 0;     % this is core overlap. Actual overlap is this number + 2;
 

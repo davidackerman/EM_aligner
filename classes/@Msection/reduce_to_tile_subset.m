@@ -27,13 +27,25 @@ if isfield(L.pm, 'adj')
     Lpmadj = L.pm.adj;
     LpmM = L.pm.M;
     LpmW = L.pm.W;
+    del_ix = zeros(numel(C1),1);
     %%% sosi: This parfor is rate-limiting (slow) still
-    parfor tix = 1:numel(C1)
-        adj(tix,:) = [lmap_renderer_id(C1{tix}) lmap_renderer_id(C2{tix})];
+    for tix = 1:numel(C1)
         indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})],'rows'));
+        if isempty(indxL),
+            indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{tix}) Lmap_renderer_id(C1{tix})],'rows'));
+        end
+        if isempty(indxL),
+            disp(tix);
+            disp([C1{tix} ' ' C2{tix}]);
+            disp([Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})])
+            error('indxL should never be empty');
+        end
         M(tix,:)   = [LpmM(indxL,1) LpmM(indxL,2)];
+        adj(tix,:) = [lmap_renderer_id(C1{tix}) lmap_renderer_id(C2{tix})];
         W(tix)     = LpmW(indxL);
     end
+    
+    
     l.pm.M   = M;
     l.pm.adj = adj;
     l.pm.W   = W';

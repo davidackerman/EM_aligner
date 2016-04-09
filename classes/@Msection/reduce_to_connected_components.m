@@ -17,6 +17,18 @@ function [L_vec,a] = reduce_to_connected_components(obj)
 obj.G = graph(obj.pm.adj(:,1), obj.pm.adj(:,2), obj.pm.np, {obj.tiles(:).renderer_id});
 b = conncomp(obj.G, 'OutputForm', 'vector');  % generate logical clusters (connected components)
 bins = unique(b);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%% sosi --- expand on below to generate some form of report about components found
+% for bix = 1:numel(bins)
+%     occur(bix) = sum(b==bins(bix));
+% end
+% indx = find(occur>3);
+% bar(occur(indx));
+% disp(bins(indx));
+% disp(occur(indx));
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% 
 for bix = 1:numel(bins)
     indx = b==bins(bix);

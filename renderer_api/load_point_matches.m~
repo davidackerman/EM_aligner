@@ -178,8 +178,8 @@ n   = {};
 for pmix = 1:nbr
     [xPM{pmix}, n{pmix}] = get_cross_section_pm(pmix+1, pm, sectionId, map_id, min_points, xs_weight);%% get point matches to immediate neighbor
 end
-M   = [];
-adj = [];
+% M   = [];
+% adj = [];
 W   = [];
 np = [];
 for ix = 1:numel(z)   % loop over sections
@@ -238,9 +238,7 @@ for tix = 1:numel(C1)
     indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})],'rows'));
     if isempty(indxL),
         indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{tix}) Lmap_renderer_id(C1{tix})],'rows'));
-        % swap the two
-        temp = L.pm.adj(indx,1);L.pm.adj(indx,1) = L.pm.adj(indx,2);L.pm.adj(indx,2) = temp;
-        temp = L.pm.M{indxL,1};L.pm.M{indxL,1} = L.pm.M{indxL,2};L.pm.M{indxL,2} = temp;
+        s
     end
     if isempty(indxL),
         disp(tix);

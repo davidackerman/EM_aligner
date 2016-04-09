@@ -27,9 +27,12 @@ L_s_mL = Msection;
 err = [];
 R = {};
 %parfor_progress(numel(L_vec));
-disp('Solving connected components');
+%disp('Solving connected components');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SOSI: there is some bug that results in "Conversion to double from Msection is not
 % possible." error when the loop is a parfor.
+% Also tobd: test accuracy of placement of chuncks
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for cix = 1:numel(L_vec)
     %disp(['Processing: ' num2str(cix) ' with #tiles: ' num2str(numel(L_vec(cix).tiles))]);
     if numel(L_vec(cix).tiles)>opts.min_tiles

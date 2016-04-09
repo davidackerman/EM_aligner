@@ -51,7 +51,7 @@ rctarget_align.verbose        = 1;
 % configure point-match collection
 pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
 pm.owner            = 'flyTEM';
-pm.match_collection = 'FAFBv12Test15';
+pm.match_collection = 'FAFBv12Test13';
 
 % configure montage-scape point-match generation
 ms.service_host                 = rctarget_montage.service_host;
@@ -75,7 +75,7 @@ ms.script                       = '/groups/flyTEM/home/khairyk/EM_aligner/render
 % configure fine alignment
 DX = 5;   % number of divisions of the total bounding box in x
 DY = 5;
-scale = 1.0;
+scale = 0.5;
 depth = 3;  % largest distance (in layers) considered for neighbors
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -272,7 +272,7 @@ MPAIRS = {};
 W      = {};
 urls = cell(size(b,1),1);
 npms = [];
-%parfor_progress(size(b,1));
+parfor_progress(size(b,1));
 parfor bix = 1:size(b,1)   % process each line in b (a section pair and block window -- x y W H)
     %disp(['Processing ' num2str(bix) ' of ' num2str(size(b,1))]);
     ids = {};
@@ -374,9 +374,9 @@ parfor bix = 1:size(b,1)   % process each line in b (a section pair and block wi
     IDS{bix}    = ids;
     PAIRS{bix}  = pairs;
     W{bix}      = w;
-    %parfor_progress;
+    parfor_progress;
 end
-%parfor_progress(0);
+parfor_progress(0);
 % prepare point-match data for ingestion
 % delete empty entries into IDS and PAIRS
 del_ix = zeros(size(b,1),1, 'logical');
@@ -511,7 +511,7 @@ opts.edge_lambda = 1e4;
 opts.solver = 'backslash';
 opts.min_points = 10;
 opts.nbrs = depth;
-opts.xs_weight = 0.1;
+opts.xs_weight = 100;
 [mL, A]= solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
 T = array2table(A{1});
 disp(T);
@@ -527,14 +527,11 @@ rctarget_align.baseURL        = ['http://' rctarget_rough.service_host '/render-
 rctarget_align.verbose        = 1;
 
 opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
-opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
+opts.degree = 2;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-opts.lambda = 1e2;
-opts.edge_lambda = 1e4;
+opts.lambda = 1e4;
+opts.edge_lambda = 1e5;
 opts.solver = 'backslash';
-opts.min_points = 10;
-opts.nbrs = depth;
-opts.xs_weight = 0.1;
 [mL, A] = solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
 kk_clock;
 

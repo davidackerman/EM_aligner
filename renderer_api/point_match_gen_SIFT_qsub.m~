@@ -27,7 +27,7 @@ v = [];
 
 
 %%%% configure SIFT and point match decisions
-if nargin<3,
+if narg<3,
 opts.SIFTfdSize        = 8;
 opts.SIFTmaxScale      = 1.0;
 opts.SIFTminScale      = 0.2;
@@ -64,13 +64,13 @@ str_collection      = '--collection test_match_gen ';
 
 str_SIFTfdSize      = sprintf('--SIFTfdSize %d ', opts.SIFTfdSize);
 str_SIFTmaxScale    = sprintf('--SIFTmaxScale %d ', opts.SIFTmaxScale);
-str_SIFTminScale    = sprintf('--SIFTminScale %d ', opts.SIFTminScale);
-str_SIFTsteps       = sprintf('--SIFTsteps %d ', opts.SIFTsteps);
+str_SIFTminScale    = '--SIFTminScale 0.2 ';
+str_SIFTsteps       = '--SIFTsteps 8 ';
 
-str_matchMaxEpsilon = sprintf('--matchMaxEpsilon %d ', opts.matchMaxEpsilon);
-str_matchRod        = sprintf('--matchRod %d ', opts.matchRod);
-str_matchMinNumInliers = sprintf('--matchMinNumInliers %d ', opts.matchMinNumInliers);
-str_matchMinInlierRatio= sprintf('--matchMinInlierRatio %d ', opts.matchMinInlierRatio);
+str_matchMaxEpsilon = '--matchMaxEpsilon 40 ';
+str_matchRod        = '--matchRod 0.95 ';
+str_matchMinNumInliers = '--matchMinNumInliers 10 ';
+str_matchMinInlierRatio= '--matchMinInlierRatio 0.0 ';
 
 %% construct command to call Eric T.'s script
 str_pairs           = [url1 ' ' url2 ' '];

@@ -110,8 +110,8 @@ while nactive
         if ~isempty(k), nactive = nactive + 1;end
     end
     er = findstr(s,'Eqw');
-    if ~isempty(er), warning('one or more jobs not executing --- error: Eqw');end
+    if ~isempty(er), disp('one or more jobs not executing --- error: Eqw');end
     pause(t);
 end
-disp('----- Finished');
+%disp('----- Finished');
 

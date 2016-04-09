@@ -13,7 +13,7 @@
 clc; clear all;
 kk_clock;
 nfirst = 1;
-nlast  = 16;
+nlast  = 4;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -51,7 +51,7 @@ rctarget_align.verbose        = 1;
 % configure point-match collection
 pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
 pm.owner            = 'flyTEM';
-pm.match_collection = 'FAFBv12Test15';
+pm.match_collection = 'FAFBv12Test16';
 
 % configure montage-scape point-match generation
 ms.service_host                 = rctarget_montage.service_host;

@@ -10,7 +10,7 @@ function [im, v, url] = get_image_box_renderer(rc, z, Wbox, scale, fn_id)
 
 
 %%% check input
-maxD = 10000;
+maxD = 500000;
 if Wbox(3)*scale>maxD || Wbox(4)*scale>maxD, error('box too large');end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

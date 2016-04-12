@@ -174,7 +174,7 @@ nconn1 = numel(unique(conncomp(L2.G)));
 
 L2v.G = graph(L2v.pm.adj(:,1), L2v.pm.adj(:,2), L2v.pm.np);
 nconn2 = numel(unique(conncomp(L2v.G)));
-if nconn2~=1, 
+if nconn~=1, 
     disp(['Number of connected components original: ' num2str(nconn1)]);
     disp(['Number of connected components pruned: ' num2str(nconn2)]);    
     error('One (and only one) connected component is allowed in rough alignment');

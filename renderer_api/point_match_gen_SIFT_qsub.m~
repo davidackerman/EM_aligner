@@ -1,4 +1,4 @@
-function [m12_1, m12_2, v, err_log] = point_match_gen_SIFT_qsub(url1, url2)
+function [m12_1, m12_2, v, err_log] = point_match_gen_SIFT_qsub(url1, url2, opts)
 % Return point-matches based on SIFT features   --- still under development
 %
 % Depends on Eric T.'s packaging of Saalfeld's code that uses SIFT and filters point matches
@@ -27,14 +27,14 @@ v = [];
 
 
 %%%% configure SIFT and point match decisions
-if narg<3,
+if nargin<3,
 opts.SIFTfdSize        = 8;
-opts.SIFTmaxScale      = 1.0;
+opts.SIFTmaxScale      = 0.8;
 opts.SIFTminScale      = 0.2;
-opts.SIFTsteps         = 8;
+opts.SIFTsteps         = 3;
 
-opts.matchMaxEpsilon     = 40;
-opts.matchRod            = 0.95;
+opts.matchMaxEpsilon     = 20;
+opts.matchRod            = 0.92;
 opts.matchMinNumInliers  = 10;
 opts.matchMinInlierRatio = 0.0;
 
@@ -63,14 +63,14 @@ str_owner           = '--owner khairyk ';
 str_collection      = '--collection test_match_gen ';
 
 str_SIFTfdSize      = sprintf('--SIFTfdSize %d ', opts.SIFTfdSize);
-str_SIFTmaxScale    = sprintf('--SIFTmaxScale %d ', opts.SIFTmaxScale);
-str_SIFTminScale    = '--SIFTminScale 0.2 ';
-str_SIFTsteps       = '--SIFTsteps 8 ';
+str_SIFTmaxScale    = sprintf('--SIFTmaxScale %.1f ', opts.SIFTmaxScale);
+str_SIFTminScale    = sprintf('--SIFTminScale %.2f ', opts.SIFTminScale);
+str_SIFTsteps       = sprintf('--SIFTsteps %d ', opts.SIFTsteps);
 
-str_matchMaxEpsilon = '--matchMaxEpsilon 40 ';
-str_matchRod        = '--matchRod 0.95 ';
-str_matchMinNumInliers = '--matchMinNumInliers 10 ';
-str_matchMinInlierRatio= '--matchMinInlierRatio 0.0 ';
+str_matchMaxEpsilon = sprintf('--matchMaxEpsilon %d ', opts.matchMaxEpsilon);
+str_matchRod        = sprintf('--matchRod %.2f ', opts.matchRod);
+str_matchMinNumInliers = sprintf('--matchMinNumInliers %d ', opts.matchMinNumInliers);
+str_matchMinInlierRatio= sprintf('--matchMinInlierRatio %.2f ', opts.matchMinInlierRatio);
 
 %% construct command to call Eric T.'s script
 str_pairs           = [url1 ' ' url2 ' '];
@@ -103,7 +103,7 @@ try
         m12_1 = [ [v{1}.matches.p{1}{:}]' [v{1}.matches.p{2}{:}]'];
         m12_2 = [ [v{1}.matches.q{1}{:}]' [v{1}.matches.q{2}{:}]'];
         % look at point matches
-        max_n_show = 20;
+        max_n_show = 100000;
         if size(m12_2,1)>max_n_show,
             indx = randi(size(m12_2,1), max_n_show,1);
             m12_2 = m12_2(indx,:);
@@ -139,7 +139,7 @@ err_log{end+1} = qsub_str;
 %% cleanup
 try
     delete(fn_script);
-    delete(fn_pm);
+    if exist(fn_pm, 'file'), delete(fn_pm);end;
 catch err_delete
     err_log{end+1} = 'Failed to delete file';
     kk_disp_err(err_delete);

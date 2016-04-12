@@ -1,5 +1,5 @@
 function [d] = alignTEM_similarity_constrained_system_gen(L, options,tdim, ncoeff)
-% Generate the matrices B and d in the second term of Eq. 1 in the notes
+% Generate  d (the constraints vector -- i.e. the values that are regularized against) in the second term of Eq. 1 in the notes
 % based on similarity-constrained fitting.
 % First we generate the matrices D and f and solve the Dm-f system as in
 % Eq.3 in the notes.

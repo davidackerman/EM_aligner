@@ -1,4 +1,4 @@
-function [L, tIds, PM, pm_mx] = load_point_matches(nfirst, nlast, rc, pm, nbr, min_points, xs_weight)
+function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, nlast, rc, pm, nbr, min_points, xs_weight)
 % Input: nfirst and nlast are zvalue of sections in rc
 %        rc and pm are structs with specifications for accessing
 %        collections of tile-specs and point-matches (that are related)
@@ -238,7 +238,7 @@ for tix = 1:numel(C1)
     indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})],'rows'));
     if isempty(indxL),
         indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{tix}) Lmap_renderer_id(C1{tix})],'rows'));
-        % swap the two
+        % swap the two in this case
         temp = L.pm.adj(indx,1);L.pm.adj(indx,1) = L.pm.adj(indx,2);L.pm.adj(indx,2) = temp;
         temp = L.pm.M{indxL,1};L.pm.M{indxL,1} = L.pm.M{indxL,2};L.pm.M{indxL,2} = temp;
     end

@@ -13,7 +13,7 @@
 clc; clear all;
 kk_clock;
 nfirst = 1;
-nlast  = 16;
+nlast  = 500;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -25,7 +25,7 @@ rcsource.verbose        = 1;
 
 % configure montage collection
 
-rctarget_montage.stack          = ['EXP_v12_montage_' num2str(nfirst) '_' num2str(nlast)];
+rctarget_montage.stack          = ['EXP_v12_500_montage_' num2str(nfirst) '_' num2str(nlast)];
 rctarget_montage.owner          ='flyTEM';
 rctarget_montage.project        = 'test';
 rctarget_montage.service_host   = '10.37.5.60:8080';
@@ -33,7 +33,7 @@ rctarget_montage.baseURL        = ['http://' rctarget_montage.service_host '/ren
 rctarget_montage.verbose        = 1;
 
 % configure rough collection
-rctarget_rough.stack          = ['EXP_v12_rough_' num2str(nfirst) '_' num2str(nlast)];
+rctarget_rough.stack          = ['EXP_v12_500_rough_' num2str(nfirst) '_' num2str(nlast)];
 rctarget_rough.owner          ='flyTEM';
 rctarget_rough.project        = 'test';
 rctarget_rough.service_host   = '10.37.5.60:8080';
@@ -41,7 +41,7 @@ rctarget_rough.baseURL        = ['http://' rctarget_rough.service_host '/render-
 rctarget_rough.verbose        = 1;
 
 % configure align collection
-rctarget_align.stack          = ['EXP_v12_alignP1_' num2str(nfirst) '_' num2str(nlast)];
+rctarget_align.stack          = ['EXP_v12_500_alignP1_' num2str(nfirst) '_' num2str(nlast)];
 rctarget_align.owner          = 'flyTEM';
 rctarget_align.project        = 'test';
 rctarget_align.service_host   = '10.37.5.60:8080';
@@ -51,7 +51,7 @@ rctarget_align.verbose        = 1;
 % configure point-match collection
 pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
 pm.owner            = 'flyTEM';
-pm.match_collection = 'FAFBv12Test13';
+pm.match_collection = 'FAFBv12_500Sections';
 
 % configure montage-scape point-match generation
 ms.service_host                 = rctarget_montage.service_host;
@@ -73,10 +73,24 @@ ms.run_dir                      = ['scale_' ms.scale];
 ms.script                       = '/groups/flyTEM/home/khairyk/EM_aligner/renderer_api/generate_montage_scape_point_matches.sh';%'../unit_tests/generate_montage_scape_point_matches_stub.sh'; %
 
 % configure fine alignment
+
 DX = 5;   % number of divisions of the total bounding box in x
 DY = 5;
 scale = 0.5;
 depth = 3;  % largest distance (in layers) considered for neighbors
+
+SIFTopts.SIFTfdSize        = 8;
+SIFTopts.SIFTmaxScale      = 1.0;
+SIFTopts.SIFTminScale      = 0.2;
+SIFTopts.SIFTsteps         = 8;
+
+SIFTopts.matchMaxEpsilon     = 40;
+SIFTopts.matchRod            = 0.95;
+SIFTopts.matchMinNumInliers  = 10;
+SIFTopts.matchMinInlierRatio = 0.0;
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
@@ -272,7 +286,7 @@ MPAIRS = {};
 W      = {};
 urls = cell(size(b,1),1);
 npms = [];
-parfor_progress(size(b,1));
+%parfor_progress(size(b,1));
 parfor bix = 1:size(b,1)   % process each line in b (a section pair and block window -- x y W H)
     %disp(['Processing ' num2str(bix) ' of ' num2str(size(b,1))]);
     ids = {};
@@ -301,15 +315,79 @@ parfor bix = 1:size(b,1)   % process each line in b (a section pair and block wi
         box(4), ...
         num2str(scale));
     urls{bix} = {url1, url2};
-    [m_2, m_1, ~, err_logs{bix}] = point_match_gen_SIFT_qsub(url2, url1);   % submits jobs -- returns point-matches in box coordinate system%%% production --- submit to cluster
+    [m_2, m_1, ~, err_logs{bix}] = point_match_gen_SIFT_qsub(url2, url1, SIFTopts);   % submits jobs -- returns point-matches in box coordinate system%%% production --- submit to cluster
     MPAIRS{bix} = [m_1 m_2];
     
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%% sosi test best siftopts
+%     SIFTopts.SIFTfdSize        = 8;
+%     SIFTopts.SIFTmaxScale      = 1.0;
+%     SIFTopts.SIFTminScale      = 0.2;
+%     SIFTopts.SIFTsteps         = 8;
+%     
+%     SIFTopts.matchMaxEpsilon     = 40;
+%     SIFTopts.matchRod            = 0.95;
+%     SIFTopts.matchMinNumInliers  = 10;
+%     SIFTopts.matchMinInlierRatio = 0.0;
+% 	clear sift_opts npoints
+%     counter = 1;
+%     M_1 = {};
+%     M_2 = {};
+%     for fd_size = 10 : -2.0: 4
+%         for max_scale = 0.6 : 0.1: 0.9 
+%             for min_scale = 0.4 :0.1: 0.5
+%                 for steps = 4 : 2 : 8
+%                     for match_max_epsilon = 15:5:25
+%                         for match_rod = 0.85 : 0.05 : 0.97
+%                             for match_min_numinliers = 10:5:20
+%                                 for match_min_inlier_ratio = 0.0
+%                                     
+%                                     
+%                                     SIFTopts.SIFTfdSize        = fd_size;
+%                                     SIFTopts.SIFTmaxScale      = max_scale;
+%                                     SIFTopts.SIFTminScale      = min_scale;
+%                                     SIFTopts.SIFTsteps         = steps;
+%                                     
+%                                     SIFTopts.matchMaxEpsilon     = match_max_epsilon;
+%                                     SIFTopts.matchRod            = match_rod;
+%                                     SIFTopts.matchMinNumInliers  = match_min_numinliers;
+%                                     SIFTopts.matchMinInlierRatio = match_min_inlier_ratio;
+%                                     
+%                                     sift_opts(counter) = SIFTopts;
+%                                     counter = counter + 1;
+%                                     m_1 = [];
+%                                     m_2 = [];
+%                                     disp('-------------------------------');
+%                                     disp(SIFTopts);
+% %                                      disp(counter);
+%                                     disp('-------------------------------');
+%                                     try
+%                                     [m_2, m_1, ~, err_logs{bix}] = point_match_gen_SIFT_qsub(url2, url1, SIFTopts);   % submits jobs -- returns point-matches in box coordinate system%%% production --- submit to cluster
+%                                     catch
+%                                         disp('Skipping');
+%                                     end
+%                                     M_1{counter} = m_1;
+%                                     M_2{counter} = m_2;
+%                                     disp('Result:');
+%                                     disp(size(m_1));
+%                                     npoints(counter) = size(m_1,1);
+%                                 end
+%                             end
+%                         end
+%                     end
+%                 end
+%             end
+%         end
+%     end
+        
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     %%% SOSI == look at images and point matches
-% %     disp(err_logs{bix});
-% %     [im1, v1] = get_image_box_renderer(rctarget_rough, b(bix,1), box, scale, num2str(b(bix,1)));
-% %     [im2, v2] = get_image_box_renderer(rctarget_rough, b(bix,2), box, scale, num2str(b(bix,2)));
-% %      figure; showMatchedFeatures(im1, im2, m_1, m_2, 'montage');
+%     disp(err_logs{bix});
+%     [im1, v1] = get_image_box_renderer(rctarget_rough, b(bix,1), box, scale, num2str(b(bix,1)));
+%     [im2, v2] = get_image_box_renderer(rctarget_rough, b(bix,2), box, scale, num2str(b(bix,2)));
+%      figure; showMatchedFeatures(im1, im2, m_1, m_2, 'montage');
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
@@ -374,9 +452,9 @@ parfor bix = 1:size(b,1)   % process each line in b (a section pair and block wi
     IDS{bix}    = ids;
     PAIRS{bix}  = pairs;
     W{bix}      = w;
-    parfor_progress;
+    %parfor_progress;
 end
-parfor_progress(0);
+%parfor_progress(0);
 % prepare point-match data for ingestion
 % delete empty entries into IDS and PAIRS
 del_ix = zeros(size(b,1),1, 'logical');
@@ -506,13 +584,14 @@ delete(fn);
 opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-opts.lambda = 1e2;
-opts.edge_lambda = 1e4;
+opts.lambda = 1e0;
+opts.edge_lambda = 1e1;
 opts.solver = 'backslash';
 opts.min_points = 10;
 opts.nbrs = depth;
-opts.xs_weight = 100;
-[mL, A]= solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
+opts.xs_weight = 0.1;
+opts.stvec_flag = 1;  % i.e. use the provided collection trasformations as starting values
+[mL, A]= solve_slab(rctarget_rough, pm, nfirst, nlast, rctarget_align, opts);
 T = array2table(A{1});
 disp(T);
 kk_clock;
@@ -529,10 +608,16 @@ rctarget_align.verbose        = 1;
 opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 2;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-opts.lambda = 1e4;
-opts.edge_lambda = 1e5;
+opts.lambda = 1e2;
+opts.edge_lambda = 1e4;
 opts.solver = 'backslash';
-[mL, A] = solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
+opts.min_points = 10;
+opts.nbrs = depth;
+opts.xs_weight = 0.1;
+opts.stvec_flag = 1;  % i.e. use the provided collection trasformations as starting values
+[mL, A]= solve_slab(rctarget_rough, pm, nfirst, nlast, rctarget_align, opts);
+T = array2table(A{1});
+disp(T);
 kk_clock;
 
 

@@ -99,7 +99,7 @@ classdef Msection
                     % generate the tiles
                     jt = tile;
                     sectionID = j(1).layout.sectionId;
-                    disp('Loading section ... ');
+                    %disp('Loading section ... ');
                     parfor jix = 1:numel(j)
                         jt(jix) = tile(j(jix));
                         jt(jix).z = z;

@@ -1,7 +1,7 @@
-function ingest_section_into_renderer_database(mL,rc_target, rc_base, dir_work, translate_to_positive_space)
+function ingest_section_into_LOADING_collection(mL,rc_target, rc_base, dir_work, translate_to_origin)
 % This is a high-level function that:
 % Ingests the data into an existing collection, creates one if the collection doesn't already exist
-% sets the state to LOADING  if it is in COMPLETE state and
+% assumes LOADING  if it is in COMPLETE state and
 % Completes the collection in the end
 %
 % Since collections are based off of other collections. In this case the base
@@ -9,7 +9,7 @@ function ingest_section_into_renderer_database(mL,rc_target, rc_base, dir_work, 
 %
 % Author: Khaled Khairy. Janelia Research Campus.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin<5, translate_to_positive_space = 1;end
+if nargin<5, translate_to_origin = 1;end
 
 if ~stack_exists(rc_base), error('base collection not found');end
 
@@ -23,8 +23,8 @@ if stack_complete(rc_target)
 end
 %% translate to origin to be Renderer friendly
 try
-if translate_to_positive_space
-%disp('translating to set in +ve space');
+if translate_to_origin
+disp('translating to set in +ve space');
 mL = translate_to_origin(mL);
 end
 catch

@@ -13,6 +13,7 @@ if ~isfield(opts, 'nbrs'), opts.nbrs = 2;end
 if ~isfield(opts, 'min_points'), opts.min_points = 5;end
 if ~isfield(opts, 'xs_weight'), opts.xs_weight = 1;end
 if ~isfield(opts, 'stvec_flag'), opts.stvec_flag = 0;end  % when set to zero, solver will perform rigid transformation to get a starting value
+if ~isfield(opts, 'translate_to_origin'), opts.translate_to_origin = 1;end
 cs     = nlast-nfirst + 1;
 sh     = 0;     % this is core overlap. Actual overlap is this number + 2;
 
@@ -78,7 +79,7 @@ for ix = 1:size(chnks,1)
         
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ingest_section_into_renderer_database_overwrite(mL,rctarget, rc, pwd);
+        ingest_section_into_renderer_database_overwrite(mL,rctarget, rc, pwd, opts.translate_to_origin);
         if verbose, disp('Ingesting:'); disp(rctarget);end
     end
 end

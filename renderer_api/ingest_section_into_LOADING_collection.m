@@ -1,15 +1,16 @@
-function ingest_section_into_renderer_database(mL,rc_target, rc_base, dir_work, translate_to_positive_space)
+function ingest_section_into_LOADING_collection(mL,rc_target, rc_base, dir_work, translate_to_positive_space)
 % This is a high-level function that:
-% Ingests the data into an existing collection, creates one if the collection doesn't already exist
-% sets the state to LOADING  if it is in COMPLETE state and
-% Completes the collection in the end
+%* Ingests the data into an existing collection, 
+%* creates one if the collection doesn't already exist
+%* assumes LOADING, sets to LOADING if it is in COMPLETE state,
+%* does not set state to COMPLETE
 %
-% Since collections are based off of other collections. In this case the base
+%# Since collections are based off of other collections. In this case the base
 % collection is specified in the rc_base struct
 %
 % Author: Khaled Khairy. Janelia Research Campus.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin<5, translate_to_positive_space = 1;end
+if nargin<5, translate_to_origin = 1;end
 
 if ~stack_exists(rc_base), error('base collection not found');end
 
@@ -18,7 +19,6 @@ if ~stack_exists(rc_target)
     resp = create_renderer_stack(rc_target);
 end
 if stack_complete(rc_target)
-    %disp('Cannot append COMPLETE stack: setting state to LOADING');
     resp = set_renderer_stack_state_loading(rc_target);
 end
 %% translate to origin to be Renderer friendly
@@ -50,5 +50,3 @@ catch err_delete,
     kk_disp_err(err_delete);
 end
 
-%% complete stack
-resp = set_renderer_stack_state_complete(rc_target);

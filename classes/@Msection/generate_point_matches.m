@@ -30,7 +30,7 @@ W = cell(numel(r),1);
 np = zeros(numel(r),1);
 delpix = zeros(numel(r),1, 'uint32');
 %count = 1;
-disp('Calculating point matches .... ');
+%disp('Calculating point matches .... ');
 %parfor_progress(numel(r));
 parfor pix = 1: numel(r)
     %disp(['Point matching: ' num2str(pix) ' of ' num2str(numel(r))]);
@@ -52,7 +52,7 @@ parfor pix = 1: numel(r)
 end
 %parfor_progress(0);
 if isempty(M), error('No matches found');end;
-disp('Done!');
+%disp('Done!');
 delpix = logical(delpix);
 M(delpix,:) = [];
 adj(delpix,:) = [];

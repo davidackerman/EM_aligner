@@ -8,7 +8,7 @@ function obj = calculate_tile_features(obj, filter, force, max_features)
 if nargin<2, filter = 'true';end
 if nargin<3, force  = 0;end
 if nargin<4, max_features = 5000;end
-disp('Calculating image features...');
+%disp('Calculating image features...');
 mL2_tiles = obj.tiles;
 %parfor_progress(numel(mL2_tiles));
 parfor ix = 1:numel(mL2_tiles)
@@ -25,5 +25,5 @@ parfor ix = 1:numel(mL2_tiles)
 %    parfor_progress;
 end
 %parfor_progress(0);
-disp('Done!');
+%disp('Done!');
 obj.tiles = mL2_tiles;

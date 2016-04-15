@@ -12,7 +12,7 @@ try
     web_resp = webread(urlChar);
     res = 1;
 catch err_stack
-    kk_disp_err(err_stack);
+    %kk_disp_err(err_stack);
     res = 0;
 end
     

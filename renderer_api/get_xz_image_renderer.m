@@ -35,6 +35,6 @@ I = sum(I,2)/dy;
 I = squeeze(I);
 I = imresize(I,[width numel(zrange)*(zres/xres)]);
 warning('off', 'Images:initSize:adjustingMag');I = imadjust(I');
-imshow(I);
+imshow(mat2gray(I));
 
 %daspect([1 1/50 1]);

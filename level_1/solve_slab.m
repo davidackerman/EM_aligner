@@ -1,4 +1,4 @@
-function [mL, pm_mx] = solve_slab(rc, pm, nfirst, nlast, rctarget, opts)
+function [mL, pm_mx, err, R] = solve_slab(rc, pm, nfirst, nlast, rctarget, opts)
 % solve a slab (range of z-coordinates) within collection rc using point matches in point-match
 % collection pm.
 % the slab is delimited by nfirst and nlast, which are z-values. nlast is not included.
@@ -54,6 +54,7 @@ if verbose, disp('Chuncks: ');disp(chnks);end
 collection = cell(size(chnks,1),1);
 zfirst = zeros(size(chnks,1),1);
 zlast  = zeros(size(chnks,1),1);
+err = {};
 pm_mx = {};  % stores the poin-match count correlation matrix
 for ix = 1:size(chnks,1)
     disp('------------- solving ----------');
@@ -69,7 +70,7 @@ for ix = 1:size(chnks,1)
     L_vec(ntiles<10) = [];
     
     %% Solve: Provide the collection of connected components and they will each be individually solved
-    [mL, err1, R1] = solve_clusters(L_vec, opts, opts.stvec_flag);   % solves individual clusters and reassembles them into one
+    [mL, err{ix}, R{ix}] = solve_clusters(L_vec, opts, opts.stvec_flag);   % solves individual clusters and reassembles them into one
     %%%% ingest into Renderer database
     %     cd(dir_temp);    save(collection{ix}, 'mL', 'rc', 'pm', 'opts', 'chnks', 'sectionId', 'z');
     if ~isempty(rctarget)
@@ -79,7 +80,7 @@ for ix = 1:size(chnks,1)
         
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ingest_section_into_renderer_database_overwrite(mL,rctarget, rc, pwd, opts.translate_to_origin);
+        ingest_section_into_renderer_database(mL,rctarget, rc, pwd, opts.translate_to_origin);
         if verbose, disp('Ingesting:'); disp(rctarget);end
     end
 end

@@ -13,7 +13,7 @@ if nargin<5, translate_to_positive_space = 1;end
 
 if ~stack_exists(rc_base), error('base collection not found');end
 
-if ~stack_exists(rc_target) 
+if ~stack_exists(rc_target)
     disp('Target collection not found, creating new collection in state: ''Loading''');
     resp = create_renderer_stack(rc_target);
 end
@@ -23,11 +23,11 @@ if stack_complete(rc_target)
 end
 %% translate to origin to be Renderer friendly
 try
-if translate_to_positive_space
-%disp('translating to set in +ve space');
-mL = translate_to_origin(mL);
-end
-catch
+    if translate_to_positive_space
+        %disp('translating to set in +ve space');
+        mL = translate_to_origin(mL);
+    end
+catch err
     disp('Failed to translate to +ve space');
 end
 %% export to MET (in preparation to be ingested into the Renderer database
@@ -44,9 +44,9 @@ end
 resp = append_renderer_stack(rc_target, rc_base, fn, v);
 
 %% cleanup
-try 
-    delete(fn); 
-catch err_delete, 
+try
+    delete(fn);
+catch err_delete,
     kk_disp_err(err_delete);
 end
 

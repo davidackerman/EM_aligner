@@ -28,8 +28,8 @@ if isfield(L.pm, 'adj')
     LpmM = L.pm.M;
     LpmW = L.pm.W;
     del_ix = zeros(numel(C1),1);
-    %%% sosi: This parfor is rate-limiting (slow) still
-    for tix = 1:numel(C1)
+    %%% sosi: slow
+    parfor tix = 1:numel(C1)
         indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})],'rows'));
         if isempty(indxL),
             indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{tix}) Lmap_renderer_id(C1{tix})],'rows'));

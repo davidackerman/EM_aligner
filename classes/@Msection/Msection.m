@@ -1,5 +1,5 @@
 classdef Msection
-    % Msection  Summary: 
+    % Msection  Summary:
     %           Represents a collection of image tiles that are (partially)
     %           overlapping. These can be one section (all have the same z)
     %           or span mutiple sections, in which case z is that of the
@@ -54,14 +54,14 @@ classdef Msection
         map_id;                         % maps: 'id' to index into the 'tiles' array
         map_renderer_id;                % maps: 'renderer_id' to index into 'tiles' array
         mosaic = [];                    % mosaic image of all tiles
-        T = [1 0 0;0 1 0;0 0 1];        % generic identity transform 
+        T = [1 0 0;0 1 0;0 0 1];        % generic identity transform
         X, Y, box;                      % housekeeping arrays
         pm;                             % point-matches struct
         n_points_pair_same = 10;        % number of points to generate for each image pair in a forward transformation (used by get_point_pairs);
         dthresh_factor = 0.9;           % factor for adjacency calculation. Adjacent tiles have a center that is diagonal*dthresh_fac removed from the center of the tile
         edge_tiles = [];                % logical vector of length numel(obj.tiles) to indicate edge tiles = 1 or non-edge = 0;
     end
-
+    
     methods
         
         function obj = Msection(arg1, arg2, arg3)   % constructor
@@ -75,7 +75,7 @@ classdef Msection
                 %%%% generate Msection object from array of tile objects
                 if nargin==1
                     %%% in this case we are given an array of tiles
-                    obj.z = arg1(1).z; % use z value provided in first tile 
+                    obj.z = arg1(1).z; % use z value provided in first tile
                     obj.tiles = arg1;
                     obj.original_layout_file = [];
                     obj = update_adjacency(obj);
@@ -92,7 +92,7 @@ classdef Msection
                     rc = arg1;
                     z  = arg2; % is the z position of the section
                     
-                    % % get a list of all tiles 
+                    % % get a list of all tiles
                     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
                         rc.baseURL, rc.owner, rc.project, rc.stack, z);
                     j = webread(urlChar);
@@ -112,7 +112,7 @@ classdef Msection
                     obj = update_tile_sources(obj, rc);
                     obj.sectionID = sectionID;
                 end
-               
+                
                 %%%%%% import from layout file
                 if nargin==2 && ischar(arg1)
                     %% in this case we construct a layer by directly reading the relevant z tile information from the layout file
@@ -127,29 +127,52 @@ classdef Msection
             obj = tile_pos_gen(obj);
             %if nnz(obj.A)==0, warning('No adjacency information in A');end
         end
+        function obj = translate_to_origin(obj)
+            % mL = get_bounding_box(mL);
+            
+            for ix = 1:numel(obj.tiles)
+                if isa(obj.tiles(ix).tform,  'images.geotrans.PolynomialTransformation2D')
+                    X(ix) = obj.tiles(ix).tform.A(1);
+                    Y(ix) = obj.tiles(ix).tform.B(1);
+                    
+                else
+                    X(ix) = obj.tiles(ix).tform.T(3);
+                    Y(ix) = obj.tiles(ix).tform.T(6);
+                    
+                end
+            end
+            
+            delta = 0;
+            dx = min(X(:)) + delta;%mL.box(1);
+            dy = min(Y(:)) + delta;%mL.box(2);
+            for ix = 1:numel(obj.tiles)
+                obj.tiles(ix) = translate_tile(obj.tiles(ix), [dx dy]);
+            end
+            
+        end
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

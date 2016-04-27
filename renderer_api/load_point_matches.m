@@ -7,7 +7,7 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, nlast, 
 %         the first set of points and M{1,2} for xy of the matching points
 %
 % requires a starting value for section zvalues (nfirst) and the zvalue of
-% the last section required (nlast). nfirst and nlast can be the same value
+% the last section (nlast). nfirst and nlast can be the same value
 % First a sectionID list is created in the order of zvalues (most of those
 % are already ordered, but we need to be sure). This is why we need rc.
 % Second all point matches within the sections and across sections will be
@@ -25,7 +25,7 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, nlast, 
 % Author: Khaled Khairy. Janelia Research Campus 2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin<5, nbr = 4;end  % number of neighbors to check
-if nargin<6, min_points = 6;end
+if nargin<6, min_points = 0;end
 if nargin<7, xs_weight = 1;end
 %% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
@@ -212,8 +212,10 @@ L.pm.np = np;
 % section adjacency point-match count matrix
 pm_mx = diag(n1);
 for nbrix = 1:nbr
+    if ~isempty(n{nbrix})
     if ~(sum(n{nbrix}(:,1))==0),
         pm_mx = pm_mx + diag(n{nbrix}(:,1),nbrix);
+    end
     end
 end
 

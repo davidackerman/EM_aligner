@@ -531,7 +531,7 @@ delete(fn);
 
 
 
-% %% [9] P1: Solve system and ingest into Renderer database
+%% [9] P1: Solve system and ingest into Renderer database
 % rctarget_align.stack          = ['EXP_v12_alignP1_' num2str(nfirst) '_' num2str(nlast)];
 % rctarget_align.owner          = 'flyTEM';
 % rctarget_align.project        = 'test';

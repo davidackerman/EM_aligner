@@ -8,7 +8,7 @@ function [im, v, url] = get_image_box_renderer(rc, z, Wbox, scale, fn_id)
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+if nargin<5, fn_id = [];end
 %%% check input
 maxD = 500000;
 if Wbox(3)*scale>maxD || Wbox(4)*scale>maxD, error('box too large');end

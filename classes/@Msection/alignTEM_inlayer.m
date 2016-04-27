@@ -1,4 +1,4 @@
-function [obj, js] = alignTEM_inlayer(obj)
+function [obj, js, err, L2] = alignTEM_inlayer(obj)
 %% Solves the montage problem for a given section
 %%% [1] generate features for tiles
 %%% [2] estimates point matches
@@ -9,7 +9,7 @@ function [obj, js] = alignTEM_inlayer(obj)
 obj  = update_XY(obj);
 obj  = update_adjacency(obj);
 %% generate point matches
-min_pm = 6;
+min_pm = 8;
 [L2] = generate_point_matches(obj, min_pm); % also makes sure features are calculated
 
 %% decompose into connected components
@@ -18,10 +18,10 @@ min_pm = 6;
 opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 0 = rigid approximation, 1 = affine, 2 = second order polynomial, maximum is 3= third order polynomial
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-opts.lambda = 1e3;
-opts.edge_lambda = 1e6;
+opts.lambda = 1e0;
+opts.edge_lambda = 1e1;
 opts.solver = 'backslash';
-mL = solve_clusters(L_vec, opts);   % solves individual clusters and reassembles them into one
+[mL, err] = solve_clusters(L_vec, opts);   % solves individual clusters and reassembles them into one
 %% translate to origin to be Renderer friendly
 obj = translate_to_origin(mL);
 

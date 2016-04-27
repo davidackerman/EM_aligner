@@ -34,7 +34,7 @@ classdef tile
         featuresMethod = 'SURF'; % method to be used for calculating features
         % surf paramters
         SURF_NumOctaves = 2;
-        SURF_NumScaleLevels = 3;
+        SURF_NumScaleLevels = 4;
         SURF_MetricThreshold = 2000;
         dir_temp_render = '/scratch/khairyk';% there is no elegant way to do this. [a resp] = system('whoami'); dir_temp_render = ['/scratch/' resp];
         fetch_local = 0;

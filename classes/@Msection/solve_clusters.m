@@ -31,7 +31,7 @@ R = {};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SOSI: there is some bug that results in "Conversion to double from Msection is not
 % possible." error when the loop is a parfor.
-% Also tobd: test accuracy of placement of chuncks
+% Also tobd: test accuracy of placement of connected components
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for cix = 1:numel(L_vec)
     %disp(['Processing: ' num2str(cix) ' with #tiles: ' num2str(numel(L_vec(cix).tiles))]);
@@ -40,6 +40,7 @@ for cix = 1:numel(L_vec)
         if stvec_flag==0
             %%% perform rigid transformation
             [ll2r, errR, mL, is, it]  = get_rigid_approximation(L_vec(cix), opts.solver);
+            
             % tiles that are members of reference section (for example that
             % correpsonding to tile 1, and also who did not fail during the
             % solution
@@ -73,7 +74,7 @@ for cix = 1:numel(L_vec)
             %%% rotate all tiles around this center of mass using the average
             %%% angle da
             for tix = 1:numel(ll2r.tiles)
-                ll2r.tiles(tix) = rotate(ll2r.tiles(tix), cm(1), cm(2), da);
+                ll2r.tiles(tix) = rotate(ll2r.tiles(tix), cm(1), cm(2), -da);
             end
             
             %%%%% Now do tanslation for this connected component

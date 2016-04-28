@@ -8,7 +8,7 @@
 clc;kk_clock;
 
 nfirst = 1;
-nlast  = 100;
+nlast  = 25;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -33,7 +33,7 @@ pm.owner            = 'flyTEM';
 pm.match_collection = 'v12_dmesh';
 
 % configure solver
-opts.min_tiles = 10; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';
@@ -42,15 +42,15 @@ opts.nbrs = 3;
 opts.xs_weight = 1/10;
 opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 
-% % test for best regularization parameter
-% % This is the smallest that does not cause shrinkage of tiles
+% % % test for best regularization parameter
+% % % This is the smallest that does not cause shrinkage of tiles
 % regstart = -2;
 % regfinish = 5;
 % step = 0.5;
 % [L, L_vec, pm_mx, err, scl, h] = ...
 %     solver_regularization_parameter_sweep(nfirst, nlast, rcsource, pm, ...
 %                                           opts, regstart, regfinish, step);
-% 
+
 
 %% solve
 

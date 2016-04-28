@@ -62,4 +62,5 @@ for lix = nfirst:nlast
 
     count = count + 1;
 end
+
 resp = set_renderer_stack_state_complete(rctarget_montage);

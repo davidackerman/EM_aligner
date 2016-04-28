@@ -7,8 +7,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%% [0] configure collections and prepare quantities
 clc;kk_clock;
 
-nfirst = 1;
-nlast  = 25;
+nfirst = 270;
+nlast  = 274;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -38,60 +38,35 @@ opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';
 opts.min_points = 5;
-opts.nbrs = 3;
+opts.nbrs = 4;
 opts.xs_weight = 1/10;
-opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
+opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 
 % % test for best regularization parameter
-% % This is the smallest that does not cause downscaling of tiles
-% prepare
-[L, ~, ~, pm_mx] = load_point_matches(nfirst, nlast, rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
-[L_vec, ntiles] = reduce_to_connected_components(L);
-L_vec(ntiles<10) = [];
+% % This is the smallest that does not cause shrinkage of tiles
+regstart = -2;
+regfinish = 5;
+step = 0.5;
 
-solve_time = [];
-err = [];
-scl = [];
-count = 1;
-for explambda = [-2:0.5: 6]
-    disp(explambda);
-    kkt = tic;
-    opts.lambda = 10^explambda;
-    opts.edge_lambda = 10^(explambda);
-    %[mL2, A, err_res, R]= solve_slab(rcsource, pm, nfirst, nlast, [], opts);
-    [mL2, err_res, R] = solve_clusters(L_vec, opts, opts.stvec_flag);   % solves individual clusters and reassembles them into one
-    err(count) = max(err_res);
-    
-    % measure deformation
-    parfor ix = 1:numel(mL2.tiles)
-        t = mL2.tiles(ix);
-        [U S V] = svd(t.tform.T(1:2, 1:2));
-        detS(ix) = det(S);
-    end
-%     states = [mL2.tiles(:).state]==1;
-%     detS = detS(states); % remove entries for discarded tiles
-    scl(count) = sum((detS-1).^2);  % for affine
-    
-    %scl(count) = sum(([mL2.tiles(20).tform.A(2) mL2.tiles(20).tform.A(2)]-1).^2)/2;  % for higher order
-    %polynomials
-    solve_time(count) = toc(kkt);
-    disp(['time: ' num2str(solve_time(count))]);
-    count = count + 1;
-end
-explambda = [-2:0.5: 6];
-lambda = 10.^(explambda);
-figure;plot(explambda, mat2gray(err), 'LineWidth', 1.0, 'Color', [1 0 0]);
-hold on;plot(explambda, mat2gray(scl), 'LineWidth', 1.0,'Color', [0 0 1]);
+%[L, ~, ~, pm_mx] = load_point_matches(nfirst, nlast, rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
+
+
+[L, L_vec, pm_mx, err, scl, h] = ...
+    solver_regularization_parameter_sweep(nfirst, nlast, rcsource, pm, ...
+                                          opts, regstart, regfinish, step);
+
 
 %% solve
 
-opts.lambda = 1e2;
-opts.edge_lambda = 1e2;
-%[mL, A]= solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
+opts.lambda = 10^(-0.5);
+opts.edge_lambda = 10^(-0.5);
+% [mL2, A]= solve_slab(rcsource, pm, nfirst, nlast, rctarget_align, opts);
 [mL2, err_res, R] = solve_clusters(L_vec, opts, opts.stvec_flag);   % solves individual clusters and reassembles them into one
+% 
+delete_renderer_stack(rctarget_align);
 ingest_section_into_LOADING_collection(mL2, rctarget_align, rcsource, pwd, 1);
 resp = set_renderer_stack_state_complete(rctarget_align);
-
+kk_clock;
 % render
 
 

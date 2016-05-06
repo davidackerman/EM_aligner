@@ -51,7 +51,11 @@ parfor ix = 1:numel(obj.tiles)
     %trans(ix,:) =[x y]; 
 end
 
-[mu,sig] = normfit(S); % estimates mean and standard deviation
+%[mu,sig] = normfit(S); % estimates mean and standard deviation
+
+sig = std(S);
+mu = mean(S);
+
 
 indx = [find(S<(mu-lambda*sig)) find(S>(mu+lambda*sig))];
 for ix = 1:numel(indx)

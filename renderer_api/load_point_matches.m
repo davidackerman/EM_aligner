@@ -2,6 +2,11 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, nlast, 
 % Input: nfirst and nlast are zvalue of sections in rc
 %        rc and pm are structs with specifications for accessing
 %        collections of tile-specs and point-matches (that are related)
+%        see exmple below.
+%        (optional)
+%        nbr: number of neighboring sections to consider
+%        min_points: minimum number of points between two tiles
+%        xs_weight: weight factor for cross-section point matches
 % Output: Msection object L with field pm (which is a struct with fields M, adj, W and np), and tileIds
 %         M: is a cell array of size npx2, e.g. a set of point matches is given by M{1,1} for xy of
 %         the first set of points and M{1,2} for xy of the matching points
@@ -12,15 +17,19 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, nlast, 
 % are already ordered, but we need to be sure). This is why we need rc.
 % Second all point matches within the sections and across sections will be
 % downloaded from the pm database.
-% % Example rc and pm
-% % rc.stack = 'v9_acquire_LC_merged_2';
+%
+% % Example input:
+% % rc.stack = 'v12_align';
 % % rc.owner='flyTEM';
 % % rc.project='FAFB00';
 % % rc.server='http://tem-services.int.janelia.org:8080/render-ws/v1';
 % %
 % % pm.server = 'http://tem-services.int.janelia.org:8080/render-ws/v1';
 % % pm.owner  = 'flyTEM';
-% % pm.match_collection = 'v9_1';
+% % pm.match_collection = 'v12_dmesh';
+% % nbr = 3;
+% % min_points = 5;
+% % xs_weight = 1;
 %
 % Author: Khaled Khairy. Janelia Research Campus 2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,25 +63,10 @@ for zix = 1:numel(zu)
         count = count + 1;
     end
 end
-% [z, ia] = sort(z);
-% sectionId = sectionId(ia);
 %% get a list of all tiles for those sections
-
-
-%  % <sosi---- > this is how it should be done in the future --
-%  instantiation using rc and z has already been implemented, see
-%  Msection.m
-%  parfor ix = 1:numel(z)
-%      L(ix) = Msection(rc,z(ix));
-%  end
-%  L = concatenate_tiles(L); % concatenate all sections
-%  %%%% sosi />
-
-
 options = weboptions;
 options.Timeout = 20;
 clear t;
-parfor_progress(numel(zu));
 parfor ix = 1:numel(zu)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack, zu(ix));
@@ -83,12 +77,7 @@ parfor ix = 1:numel(zu)
         jt(jix).z = zu(ix);
     end
     t(ix).jt = jt;
-    parfor_progress;
 end
-parfor_progress(0);
-
-
-
 
 % concatenate all tile ids
 tIds = {};
@@ -105,9 +94,6 @@ end
 L = Msection(tiles);
 L = update_tile_sources(L, rc);
 
-
-
-
 %%%%%%%%%%%% check consistency
 % check that all renderer_ids in L are unique (this means that all tiles are unique)
 % if not then flag which ones are not
@@ -122,10 +108,6 @@ for ix = 1:numel(uqindx)
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
-
-
 % map renderer ids to their index position in L
 clear count_vec ;
 clear id_vec ;
@@ -135,7 +117,7 @@ parfor ix = 1:numel(tIds)
 end
 map_id = containers.Map(id_vec, count_vec);
 
-%% get point matches for each section
+%% get point matches for each section (montage)
 PM.M = {};
 PM.adj = [];
 PM.W = {};
@@ -151,11 +133,11 @@ for ix = 1:numel(ns)
             pm.server, pm.owner, pm.match_collection, sID{ix}{six});
         try
             jj = webread(urlChar, options);
-        catch err_ip_address
+        catch err_fetch_pm
+            kk_disp_err(err_fetch_pm)
             pause(1);
             jj = webread(urlChar,options); % try again
         end
-        
         n1(ix) = n1(ix) + numel(jj);
         for jix = 1:numel(jj)
             if size(jj(jix).matches.p',1)>=min_points
@@ -173,52 +155,14 @@ for ix = 1:numel(ns)
 end
 
 
-%% SOSI: --- concatenate PM and xPM in the order that will be used for filling A in the solution
-% the code below only allows up to three neighbors
-% [xPM2, n2] = get_cross_section_pm(2, pm, sectionId, map_id, min_points, xs_weight);%% get point matches to immediate neighbor
-% [xPM3, n3] = get_cross_section_pm(3, pm, sectionId, map_id, min_points, xs_weight);%% get point matches to immediate neighbor
-% %[xPM4, n4] = get_cross_section_pm(4, pm, sectionId, map_id, min_points, xs_weight);%% get point matches to immediate neighbor
-% 
-% clear M adj W np;
-% for ix = 1:numel(z)
-%     
-%     if ix ==1
-%         M   = PM(ix).M;
-%         adj = PM(ix).adj;
-%         W   = PM(ix).W;
-%         np = PM(ix).np(:);
-%         
-%     elseif ix ==2
-%         M   = [M;   xPM2(ix-1).M;       PM(ix).M];
-%         adj = [adj; xPM2(ix-1).adj;     PM(ix).adj];
-%         W   = [W;   xPM2(ix-1).W;       PM(ix).W];
-%         np =  [np;  xPM2(ix-1).np(:);   PM(ix).np(:)];
-%         
-%     elseif numel(xPM3)>=(ix-2)
-%         M   = [M;   xPM3(ix-2).M;       xPM2(ix-1).M;      PM(ix).M];
-%         adj = [adj; xPM3(ix-2).adj;     xPM2(ix-1).adj;    PM(ix).adj];
-%         W   = [W;   xPM3(ix-2).W;       xPM2(ix-1).W;      PM(ix).W];
-%         np =  [np;  xPM3(ix-2).np(:);   xPM2(ix-1).np(:);  PM(ix).np(:)];
-%     else
-%         M   = [M;   xPM2(ix-1).M;       PM(ix).M];
-%         adj = [adj; xPM2(ix-1).adj;     PM(ix).adj];
-%         W   = [W;   xPM2(ix-1).W;       PM(ix).W];
-%         np =  [np;  xPM2(ix-1).np(:);   PM(ix).np(:)];
-%     end
-% end
-% 
-% pm_mx = diag(n1);
-% if ~sum(n2==0) pm_mx = pm_mx + diag(n2,1);end
-% if ~sum(n3==0) pm_mx = pm_mx + diag(n3,2);end
-
-
-
 %% obtain cross-section point-matches
 xPM = {};
 n   = {};
 for pmix = 1:nbr
     [xPM{pmix}, n{pmix}] = get_cross_section_pm(pmix+1, pm, sID, map_id, min_points, xs_weight);%% get point matches to immediate neighbor
 end
+
+%% insert point-matches to generate final M, adj, W and np
 M   = [];
 adj = [];
 W   = [];
@@ -244,6 +188,7 @@ for ix = 1:numel(zu)   % loop over sections
     end
 end
 
+%% place point match information into Msection object L
 L.pm.M = M;
 L.pm.adj = adj;
 L.pm.W = W;
@@ -269,32 +214,48 @@ if ~(size(bb,1)==size(L.pm.adj,1))
     error('Rows in L.pm.adj should be unique');
 end
 
-
-
 % All renderer_id pairs must correspond to an adjacency pair: if not then report error
 L.G = graph(L.pm.adj(:,1), L.pm.adj(:,2), L.pm.np, {L.tiles(:).renderer_id});
 CC = table2cell(L.G.Edges(:,1));
-nCC = size(CC,1);
+%nCC = size(CC,1);
 C = [CC{:}];
 %C = reshape(C, nCC, 2);
 C1 = C(1:2:end);
 C2 = C(2:2:end);
+clear C CC;
 Lmap_renderer_id = L.map_renderer_id;
 Lpmadj = L.pm.adj;
-for tix = 1:numel(C1)
-    indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})],'rows'));
-    if isempty(indxL),
-        indxL      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{tix}) Lmap_renderer_id(C1{tix})],'rows'));
+indxL = zeros(numel(C1),1);
+parfor tix = 1:numel(C1)
+    %disp([num2str(tix) ' '  C1{tix} ' ' C2{tix}]);
+      r    = find(ismember(Lpmadj,[Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})],'rows'));
+    if isempty(r)
+      indxL(tix) = 0;
+    else
+        indxL(tix) = r;
+    end
+end
+
+indxL_indx = find(indxL==0);
+for tix = 1:numel(indxL_indx)
+    %disp(tix);
+    if indxL(indxL_indx(tix)) == 0
+        ind      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{indxL_indx(tix)}) Lmap_renderer_id(C1{indxL_indx(tix)})],'rows'));
         % swap the two in this case
-        temp = L.pm.adj(indx,1);L.pm.adj(indx,1) = L.pm.adj(indx,2);L.pm.adj(indx,2) = temp;
-        temp = L.pm.M{indxL,1};L.pm.M{indxL,1} = L.pm.M{indxL,2};L.pm.M{indxL,2} = temp;
+        temp = L.pm.adj((ind),1);
+        L.pm.adj(((ind)),1) = L.pm.adj(((ind)),2);
+        L.pm.adj(((ind)),2) = temp;
+
+        temp = L.pm.M{((ind)),1};
+        L.pm.M{((ind)),1} = L.pm.M{((ind)),2};
+        L.pm.M{((ind)),2} = temp;
     end
-    if isempty(indxL),
-        disp(tix);
-        disp([C1{tix} ' ' C2{tix}]);
-        disp([Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})])
-        error('indxL should never be empty');
-    end
+%     if indxL(indxL_indx(tix))==0
+%         disp(indxL_indx(tix));
+%         disp([C1{indxL_indx(tix)} ' ' C2{indxL_indx(tix)}]);
+%         disp([Lmap_renderer_id(C1{indxL_indx(tix)}) Lmap_renderer_id(C2{indxL_indx(tix)})])
+%         error('indxL should never be empty');
+%     end
 end
 
 

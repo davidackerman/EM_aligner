@@ -25,11 +25,17 @@ for explambda = [regstart:step: regfinish]
     % measure deformation
     parfor ix = 1:numel(mL2.tiles)
         t = mL2.tiles(ix);
-        [U S V] = svd(t.tform.T(1:2, 1:2));
+        tf = t.tform;
+        if isa(tf,'images.geotrans.PolynomialTransformation2D')
+            T = [t.tform.A([2 3])' t.tform.B([2 3])'];
+            [U S V] = svd(T(1:2, 1:2));
+        else
+            [U S V] = svd(t.tform.T(1:2, 1:2));
+        end
         detS(ix) = det(S);
     end
-%     states = [mL2.tiles(:).state]==1;
-%     detS = detS(states); % remove entries for discarded tiles
+    %     states = [mL2.tiles(:).state]==1;
+    %     detS = detS(states); % remove entries for discarded tiles
     scl(count) = sum((detS-1).^2);  % for affine
     
     %scl(count) = sum(([mL2.tiles(20).tform.A(2) mL2.tiles(20).tform.A(2)]-1).^2)/2;  % for higher order

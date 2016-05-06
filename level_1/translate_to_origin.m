@@ -13,7 +13,7 @@ for ix = 1:numel(obj.tiles)
     end
 end
 
-delta = 0;
+delta = 10000;
 dx = min(X(:)) + delta;%mL.box(1);
 dy = min(Y(:)) + delta;%mL.box(2);
 for ix = 1:numel(obj.tiles)

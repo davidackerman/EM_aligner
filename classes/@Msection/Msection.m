@@ -142,7 +142,7 @@ classdef Msection
                 end
             end
             
-            delta = 0;
+            delta = -(5000 + max([obj.tiles(1).W obj.tiles(1).H]));
             dx = min(X(:)) + delta;%mL.box(1);
             dy = min(Y(:)) + delta;%mL.box(2);
             for ix = 1:numel(obj.tiles)

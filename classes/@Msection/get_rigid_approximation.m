@@ -41,6 +41,11 @@ if nargin>1
    lsq_options.solver       = solver;
 end
 
+% if ~isempty(gcp('nocreate'))
+%     lsq_options.distributed = 1;
+% else
+%     lsq_options.distributed = 0;
+% end
 
 [mL,err, R,A, b, B, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = alignTEM_solver(obj, [], lsq_options);
 
@@ -89,7 +94,10 @@ lsq_options.pdegree         = 0;  %
 lsq_options.constraint_only = 0;
 lsq_options.lidfix          = 1;
 lsq_options.tfix            = numel(obj.tiles);
+
 lsq_options.constrain_edges = 0;
+lsq_options.edge_lambda         = 0;
+lsq_options.lambda              = 0;
 
 [mL2,errAb,R, At, bt, B, d, W, Kt, Lmt, xout, L2, U2, tB, td, invalid_translation] = alignTEM_solver(mL, [], lsq_options);
 errAb = norm(At*xout-bt);

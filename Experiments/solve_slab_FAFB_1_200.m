@@ -7,8 +7,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%% [0] configure collections and prepare quantities
 clc;kk_clock;
 
-nfirst = 355;
-nlast  = 364;
+nfirst = 1;
+nlast  = 300;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -34,13 +34,13 @@ pm.owner            = 'flyTEM';
 pm.match_collection = 'v12_dmesh';
 
 % configure solver
-opts.min_tiles = 40; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.min_tiles = 400; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';
-opts.min_points = 2;
-opts.nbrs = 6;
-opts.xs_weight = 1/20;
+opts.min_points = 5;
+opts.nbrs = 4;
+opts.xs_weight = 1/50;
 opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 1;
 
@@ -69,7 +69,7 @@ opts.edge_lambda = 10^(-1);
      solve_slab(rcsource, pm, nfirst, nlast, [], opts);
 %[mL, err_res, R] = solve_clusters(L_vec, opts, opts.stvec_flag);   % solves individual clusters and reassembles them into one
 %%
-% n = 4;
+% n = 3;
 % Lz = split_z(mL);
 % figure(1);show_map(Lz(n));
 % Lzv = split_z(concatenate_tiles(L_vec, opts.outlier_lambda));

@@ -169,6 +169,9 @@ else
     end
     
     %% determine edge tiles if required
+    if options.edge_lambda==options.lambda,
+        options.constrain_edges=0;
+    end
     if options.constrain_edges
         if isempty(L(lix).edge_tiles)
             L(lix).edge_tiles = get_edge_tiles(L(lix));

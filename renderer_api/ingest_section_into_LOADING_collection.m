@@ -15,7 +15,7 @@ if nargin<5, translate_to_positive_space = 1;end
 if ~stack_exists(rc_base), error('base collection not found');end
 
 if ~stack_exists(rc_target)
-    disp('Target collection not found, creating new collection in state: ''Loading''');
+    %disp('Target collection not found, creating new collection in state: ''Loading''');
     resp = create_renderer_stack(rc_target);
 end
 if stack_complete(rc_target)

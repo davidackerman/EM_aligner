@@ -93,6 +93,7 @@ options.minpmblock = 0;
 options.minpmblock_cross = 0;
 
 %% concatenate point_matches
+if isempty(pairs), error('No point-matches found: aborting');end
 [Lin] = pairs_to_pm(L, options, pairs);
 %% add a weights vector to pm struct
 w = [];

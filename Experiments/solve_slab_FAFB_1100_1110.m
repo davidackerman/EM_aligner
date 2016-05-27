@@ -7,8 +7,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%% [0] configure collections and prepare quantities
 clc;kk_clock;
 
-nfirst = 550;
-nlast  = 1000;
+nfirst = 1100;
+nlast  = 1200;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -34,12 +34,12 @@ pm.owner            = 'flyTEM';
 pm.match_collection = 'v12_dmesh';
 
 % configure solver
-opts.min_tiles = 40; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.min_tiles = 400; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';
-opts.min_points = 2;
-opts.nbrs = 6;
+opts.min_points = 5;
+opts.nbrs = 4;
 opts.xs_weight = 1/20;
 opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 1;
@@ -54,7 +54,7 @@ dir_out = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_slabs';
 % step = 0.5;
 % 
 % [L, ~, ~, pm_mx] = load_point_matches(nfirst, nlast, rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
-% 
+
 
 % [L, L_vec, pm_mx, err, scl, h] = ...
 %     solver_regularization_parameter_sweep(nfirst, nlast, rcsource, pm, ...

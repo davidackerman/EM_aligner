@@ -3,7 +3,7 @@
 # To be nice to others, avoid requesting more than 60 nodes.
 # When the cluster is busy, you may want to decrease node count to get running since
 # Spark job won't start until number of requested nodes are available.
-NUMBER_OF_SPARK_NODES=${17}
+NUMBER_OF_SPARK_NODES=6
 
 # source data parameters
 SERVICE_HOST=$1 #"10.40.3.162:8080"      # use IP address for tem-services until DNS issue is resolved

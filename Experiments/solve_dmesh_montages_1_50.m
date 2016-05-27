@@ -1,7 +1,7 @@
 clc; clear all;
 kk_clock;
 nfirst = 1;
-nlast  = 200;
+nlast  = 50;
 
 
 % configure source collection
@@ -55,22 +55,18 @@ opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 opts.lambda = 10^(-1);
 opts.edge_lambda = 10^(-1);
-opts.small_region_lambda = 10^(2); % (relevant only for montage)
-opts.small_region = 10; % (relevant only for montage) connected components with fewer tiles than that
 opts.solver = 'backslash';
 opts.min_points = 5;
 opts.nbrs = 0;
 opts.xs_weight = 1/100;
 opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
 opts.distributed = 0;
-opts.base_collection = []; % 
-opts.conn_comp = 1;
+opts.base_collection = []; % use rough collection to  place connected 
+                           % components relative to each other
+
 
 
 % solve montages and ingest into collection
-resp = delete_renderer_stack(rctarget_montage);
-resp = create_renderer_stack(rctarget_montage);
-
 err = {};
 R = {};
 failed_list = [];

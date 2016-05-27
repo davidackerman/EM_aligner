@@ -36,55 +36,62 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, nlast, 
 if nargin<5, nbr = 4;end  % number of neighbors to check
 if nargin<6, min_points = 0;end
 if nargin<7, xs_weight = 1;end
-%% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
-urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
-    rc.baseURL, rc.owner, rc.project, rc.stack);
-js = webread(urlChar);
-sectionId = {js(:).sectionId};
-[z, ia]   = sort(([js(:).z]));
-sectionId = sectionId(ia);
-
-
-indx = find(z>=nfirst & z<=nlast);
-sectionId = sectionId(indx);% determine the sectionId list we will work with
-z         = z(indx);        % determine the zvalues (this is also the spatial order)
-
-% we need unique values, and we need to know how many sectionId's correspond to each unique z value
-% usually it is one, but sometimes we have hi/lo dose or other regions
-[zu, ia, ic] = unique(z);
-count = 1;
-sID = {};
-for zix = 1:numel(zu)
-    ns(zix) =  numel(find(ic==zix));
-    vec = {};
-    for six = 1:ns(zix)
-        vec{six} = sectionId{count};
-        sID{zix} = vec; 
-        count = count + 1;
-    end
-end
+% %% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
+% urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
+%     rc.baseURL, rc.owner, rc.project, rc.stack);
+% js = webread(urlChar);
+% sectionId = {js(:).sectionId};
+% [z, ia]   = sort(([js(:).z]));
+% sectionId = sectionId(ia);
+% 
+% 
+% indx = find(z>=nfirst & z<=nlast);
+% sectionId = sectionId(indx);% determine the sectionId list we will work with
+% z         = z(indx);        % determine the zvalues (this is also the spatial order)
+% 
+% % we need unique values, and we need to know how many sectionId's correspond to each unique z value
+% % usually it is one, but sometimes we have hi/lo dose or other regions
+% [zu, ia, ic] = unique(z);
+% count = 1;
+% sID = {};
+% for zix = 1:numel(zu)
+%     ns(zix) =  numel(find(ic==zix));
+%     vec = {};
+%     for six = 1:ns(zix)
+%         vec{six} = sectionId{count};
+%         sID{zix} = vec; 
+%         count = count + 1;
+%     end
+% end
+[zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
 %% get a list of all tiles for those sections
 options = weboptions;
 options.Timeout = 20;
 clear t;
+tilecount = [];
 parfor ix = 1:numel(zu)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack, zu(ix));
     j = webread(urlChar, options);
     jt = tile;
+    tilecount(ix) = numel(j);
     for jix = 1:numel(j)
         jt(jix) = tile(j(jix));
         jt(jix).z = zu(ix);
     end
     t(ix).jt = jt;
 end
-
+ntiles = sum(tilecount);
 % concatenate all tile ids
-tIds = {};
-tiles = [];
+tIds = cell(ntiles,1);
+tiles(ntiles) = tile;
+cnt = 1;
 for ix = 1:numel(zu)
-    tIds = [tIds {t(ix).jt.renderer_id}];
-    tiles = [tiles t(ix).jt];
+    tIds(cnt:cnt+tilecount(ix)-1) = {t(ix).jt.renderer_id};
+    tiles(cnt:cnt+tilecount(ix)-1) = t(ix).jt;
+    cnt = cnt + tilecount(ix);
+%     tIds = [tIds {t(ix).jt.renderer_id}];
+%     tiles = [tiles t(ix).jt];
 end
 
 % loop over tiles to set tile id
@@ -92,21 +99,21 @@ parfor ix = 1:numel(tiles)
     tiles(ix).id = ix;
 end
 L = Msection(tiles);
-L = update_tile_sources(L, rc);
+%L = update_tile_sources(L, rc);
 
-%%%%%%%%%%%% check consistency
-% check that all renderer_ids in L are unique (this means that all tiles are unique)
-% if not then flag which ones are not
-rids = {L.tiles(:).renderer_id};
-[un idx_last idx] = unique(rids);
-uqindx = accumarray(idx(:),(1:length(idx))',[],@(x) {sort(x)});
-for ix = 1:numel(uqindx)
-    if numel(uqindx{ix})>1, 
-        id = L.tiles(uqindx{ix}(1)).renderer_id;
-        disp([num2str(numel(uqindx{ix})) ' copies of id: ' id ' found.']);
-    end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%% check consistency
+% % check that all renderer_ids in L are unique (this means that all tiles are unique)
+% % if not then flag which ones are not
+% rids = {L.tiles(:).renderer_id};
+% [un idx_last idx] = unique(rids);
+% uqindx = accumarray(idx(:),(1:length(idx))',[],@(x) {sort(x)});
+% for ix = 1:numel(uqindx)
+%     if numel(uqindx{ix})>1, 
+%         id = L.tiles(uqindx{ix}(1)).renderer_id;
+%         disp([num2str(numel(uqindx{ix})) ' copies of id: ' id ' found.']);
+%     end
+% end
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % map renderer ids to their index position in L
 clear count_vec ;
@@ -162,7 +169,7 @@ for pmix = 1:nbr
     [xPM{pmix}, n{pmix}] = get_cross_section_pm(pmix+1, pm, sID, map_id, min_points, xs_weight);%% get point matches to immediate neighbor
 end
 
-%% insert point-matches to generate final M, adj, W and np
+%% generate final M, adj, W and np
 M   = [];
 adj = [];
 W   = [];
@@ -214,49 +221,69 @@ if ~(size(bb,1)==size(L.pm.adj,1))
     error('Rows in L.pm.adj should be unique');
 end
 
-% All renderer_id pairs must correspond to an adjacency pair: if not then report error
-L.G = graph(L.pm.adj(:,1), L.pm.adj(:,2), L.pm.np, {L.tiles(:).renderer_id});
-CC = table2cell(L.G.Edges(:,1));
-%nCC = size(CC,1);
-C = [CC{:}];
-%C = reshape(C, nCC, 2);
-C1 = C(1:2:end);
-C2 = C(2:2:end);
-clear C CC;
-Lmap_renderer_id = L.map_renderer_id;
-Lpmadj = L.pm.adj;
-indxL = zeros(numel(C1),1);
-parfor tix = 1:numel(C1)
-    %disp([num2str(tix) ' '  C1{tix} ' ' C2{tix}]);
-      r    = find(ismember(Lpmadj,[Lmap_renderer_id(C1{tix}) Lmap_renderer_id(C2{tix})],'rows'));
-    if isempty(r)
-      indxL(tix) = 0;
-    else
-        indxL(tix) = r;
-    end
-end
-
-indxL_indx = find(indxL==0);
-for tix = 1:numel(indxL_indx)
-    %disp(tix);
-    if indxL(indxL_indx(tix)) == 0
-        ind      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{indxL_indx(tix)}) Lmap_renderer_id(C1{indxL_indx(tix)})],'rows'));
-        % swap the two in this case
-        temp = L.pm.adj((ind),1);
-        L.pm.adj(((ind)),1) = L.pm.adj(((ind)),2);
-        L.pm.adj(((ind)),2) = temp;
-
-        temp = L.pm.M{((ind)),1};
-        L.pm.M{((ind)),1} = L.pm.M{((ind)),2};
-        L.pm.M{((ind)),2} = temp;
-    end
-%     if indxL(indxL_indx(tix))==0
-%         disp(indxL_indx(tix));
-%         disp([C1{indxL_indx(tix)} ' ' C2{indxL_indx(tix)}]);
-%         disp([Lmap_renderer_id(C1{indxL_indx(tix)}) Lmap_renderer_id(C2{indxL_indx(tix)})])
-%         error('indxL should never be empty');
+% % All renderer_id pairs must correspond to an adjacency pair: if not then report error
+% L.G = graph(L.pm.adj(:,1), L.pm.adj(:,2), L.pm.np, {L.tiles(:).renderer_id});
+% CC = table2cell(L.G.Edges(:,1));
+% %nCC = size(CC,1);
+% C = [CC{:}];
+% %C = reshape(C, nCC, 2);
+% C1 = C(1:2:end);
+% C2 = C(2:2:end);
+% % C1 and C2 are lists of corresponding tiles pId qId as listed in pm database
+% clear C CC;
+% Lmap_renderer_id = L.map_renderer_id;
+% Lpmadj = L.pm.adj;
+% indxL = zeros(numel(C1),1);
+% for tix = 1:numel(C1)
+%     %disp([num2str(tix) ' '  C1{tix} ' ' C2{tix}]);
+%       r    = find(ismember(Lpmadj,...
+%           [Lmap_renderer_id(C1{tix}) ...
+%           Lmap_renderer_id(C2{tix})],'rows'));  % slow
+%     if isempty(r)
+%       indxL(tix) = 0; % identify as swapped
+%     else
+%         indxL(tix) = r;
 %     end
-end
+%     
+%     
+% % %     % sosi
+% % %     tix1 = Lmap_renderer_id(C1{tix});
+% % %     tix2 = Lmap_renderer_id(C2{tix});
+% % %     if (L.tiles(tix1).z==8 && L.tiles(tix2).z==9) ||  ...
+% % %             (L.tiles(tix1).z==9 && L.tiles(tix2).z==8)
+% % %     disp([num2str([tix r L.tiles(tix1).z L.tiles(tix2).z]) ' ' ...
+% % %         L.tiles(tix1).renderer_id ' ' L.tiles(tix2).renderer_id]);
+% % %     end
+%           
+% end
+% 
+% indxL_indx = find(indxL==0);
+% for tix = 1:numel(indxL_indx)
+%     %disp(tix);
+%     %if indxL(indxL_indx(tix)) == 0
+%         ind      = find(ismember(Lpmadj,[Lmap_renderer_id(C2{indxL_indx(tix)}) Lmap_renderer_id(C1{indxL_indx(tix)})],'rows'));
+%        
+% % %         % sosi
+% % %         tix1 = L.pm.adj((ind),1);
+% % %         tix2 = L.pm.adj((ind),2);
+% % %         disp([num2str([tix ind L.tiles(tix1).z L.tiles(tix2).z]) ' ' ...
+% % %               L.tiles(tix1).renderer_id ' ' L.tiles(tix2).renderer_id]);
+%         % swap the two in this case
+%         temp = L.pm.adj((ind),1);
+%         L.pm.adj(((ind)),1) = L.pm.adj(((ind)),2);
+%         L.pm.adj(((ind)),2) = temp;
+% 
+%         temp = L.pm.M{((ind)),1};
+%         L.pm.M{((ind)),1} = L.pm.M{((ind)),2};
+%         L.pm.M{((ind)),2} = temp;
+%     %end
+% %     if indxL(indxL_indx(tix))==0
+% %         disp(indxL_indx(tix));
+% %         disp([C1{indxL_indx(tix)} ' ' C2{indxL_indx(tix)}]);
+% %         disp([Lmap_renderer_id(C1{indxL_indx(tix)}) Lmap_renderer_id(C2{indxL_indx(tix)})])
+% %         error('indxL should never be empty');
+% %     end
+% end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -289,9 +316,25 @@ if numel(sID)>=n
                 for jix = 1:numel(j)
                     if size(j(jix).matches.p',1)>=min_points
                         if isKey(map_id, j(jix).pId) && isKey(map_id, j(jix).qId)
-                            xPM(ix-(n-1)).M{count,1}   = j(jix).matches.p';
-                            xPM(ix-(n-1)).M{count,2}   = j(jix).matches.q';
-                            xPM(ix-(n-1)).adj(count,:) = [map_id(j(jix).pId) map_id(j(jix).qId)];
+
+% %                             % sosi
+% %                             if str2double(sID{ix}{six1})==10
+% %                                 disp([map_id(j(jix).pId)<map_id(j(jix).qId) ...
+% %                                      n (ix-(n-1)) ix map_id(j(jix).pId) map_id(j(jix).qId)]);
+% %                             end
+                            
+                            % obtain map ids
+                            midp = map_id(j(jix).pId);
+                            midq = map_id(j(jix).qId);
+                            if midp<midq
+                                xPM(ix-(n-1)).M{count,1}   = j(jix).matches.p';
+                                xPM(ix-(n-1)).M{count,2}   = j(jix).matches.q';
+                                xPM(ix-(n-1)).adj(count,:) = [midp midq];
+                            else
+                                xPM(ix-(n-1)).M{count,1}   = j(jix).matches.q';
+                                xPM(ix-(n-1)).M{count,2}   = j(jix).matches.p';
+                                xPM(ix-(n-1)).adj(count,:) = [midq midp];
+                            end
                             xPM(ix-(n-1)).W{count,1}   = fac * j(jix).matches.w';         % relative weights of point matches within this group
                             xPM(ix-(n-1)).np(count)  = size(j(jix).matches.p',1);    %  we are recording the number of point matches between those two tiles
                             count = count + 1;

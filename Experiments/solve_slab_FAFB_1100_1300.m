@@ -7,8 +7,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%% [0] configure collections and prepare quantities
 clc;kk_clock;
 
-nfirst = 23;
-nlast  = 28;
+nfirst = 1100;
+nlast  = 1300;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -34,15 +34,15 @@ pm.owner            = 'flyTEM';
 pm.match_collection = 'v12_dmesh';
 
 % configure solver
-opts.min_tiles = 3; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.min_tiles = 400; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';
 opts.min_points = 5;
 opts.nbrs = 4;
-opts.xs_weight = 1/10;
+opts.xs_weight = 1/20;
 opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
-opts.distributed = 0;
+opts.distributed = 1;
 
 % configure storage
 dir_out = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_slabs';
@@ -69,16 +69,16 @@ opts.edge_lambda = 10^(-1);
      solve_slab(rcsource, pm, nfirst, nlast, [], opts);
 %[mL, err_res, R] = solve_clusters(L_vec, opts, opts.stvec_flag);   % solves individual clusters and reassembles them into one
 %%
-n = 4;
-Lz = split_z(mL);
-figure(1);show_map(Lz(n));
-Lzv = split_z(concatenate_tiles(L_vec, opts.outlier_lambda));
-figure(2);show_map(Lzv(n));
+% n = 4;
+% Lz = split_z(mL);
+% figure(1);show_map(Lz(n));
+% Lzv = split_z(concatenate_tiles(L_vec, opts.outlier_lambda));
+% figure(2);show_map(Lzv(n));
 %%
-% delete_renderer_stack(rctarget_align);
-% ingest_section_into_LOADING_collection(mL, rctarget_align, rcsource, pwd, 1);
-% resp = set_renderer_stack_state_complete(rctarget_align);
-% kk_clock;
+delete_renderer_stack(rctarget_align);
+ingest_section_into_LOADING_collection(mL, rctarget_align, rcsource, pwd, 1);
+resp = set_renderer_stack_state_complete(rctarget_align);
+kk_clock;
 %% store slab
 % % str = sprintf('slab_%d_to_%d.mat', nfirst, nlast);
 % % fn = [dir_out '/' str];

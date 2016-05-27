@@ -15,6 +15,7 @@ classdef tile
         id;
         renderer_id = '0';
         tform = affine2d;      % transformation
+        confidence = [];       % store confidence interval on estimated parameters
         col;
         row;
         cam;

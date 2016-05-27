@@ -1,12 +1,5 @@
-% Example script to solve a FAFBv12 slab for an existing set of point matches
-%
-% Assumes that all the work for generating point-matches has been done
-% at the tile level
-%
-% Author: Khaled Khairy
-%%%%%%%%%%%%%%%%%%%%%%%%% [0] configure collections and prepare quantities
-clc;kk_clock;
-
+% generate example input for solve_slab_SL
+clear all;
 nfirst = 1;
 nlast  = 10;
 
@@ -42,51 +35,53 @@ opts.xs_weight = 1/20;  % small numbers ==> less weight for cross-layer points r
 opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
                        % 1 = regularize against input collection
 opts.conn_comp = 1;    % 1 = solve individual connected components             
-opts.distributed = 0;  % 1 = use currently active Matlab cluster if available
+opts.distributed = 0;  % 1 = use currently active Matlab cluster if available for solver step
 opts.lambda = 10^(-1);
 opts.edge_lambda = 10^(-1);
 opts.small_region_lambda = 10^(1);
 opts.small_region = 10;
-
 opts.calc_confidence = 1;
 opts.translation_fac = 1.0;
-%% solve
+%%
+sl.solver_options = opts;
+sl.source_collection = rcsource;
+sl.source_point_match_collection = pm;
+sl.target_collection = rctarget_align;
+sl.first_section = nfirst;
+sl.last_section = nlast;
+sl.verbose = 1;
 
-[mL, pm_mx, err, R, L_vec, ntiles, PM, sectionId_load, z_load] = ...
-    solve_slab(rcsource, pm, nfirst, nlast, [], opts);
-
-%% ingest into Renderer database (optional);
-delete_renderer_stack(rctarget_align);  % delete existing collection if present
-ingest_section_into_LOADING_collection(mL, rctarget_align, rcsource, pwd, 1); % ingest
-resp = set_renderer_stack_state_complete(rctarget_align);  % set to state COMPLETE
-
-
+fn = [pwd '/sample_solve_slab_input.json'];
+str = savejson('', sl);
+fid = fopen(fn,'w');
+fprintf(fid,str);
+fclose(fid);
+%% make sure we can read this file
+options = loadjson(fileread(fn));
 
 
-% %% (optional) look at a box in the middle of the section to spot-check alignment
-% scale = 1.0;
-% n = nlast-nfirst;
-% dir_temp_render = '/scratch/khairyk';
-% % [section_box, bbox, url] = get_section_bounds_renderer(rctarget_align, round((nlast-nfirst)/2));
-% % x = section_box(1)+section_box(3)/2;
-% % y = section_box(2)+section_box(4)/2;
-% 
-% x = 6300;
-% y = 12500;
-% 
-% W = 1000;
-% H = 1000;
-% Wbox = [x y  W H];
-% M = zeros(W*scale, H*scale,n);
-% parfor z = 1:n
-%     z_eff = z + nfirst-1;
-%     %disp(z_eff);
-%     [im, v, url] = get_image_box_renderer(rctarget_align, z_eff, Wbox, scale, dir_temp_render, rctarget_align.stack);
-%     M(:,:,z) = mat2gray(im);
-% end
-% %
-% for imix = 1:n
-%     imshow(M(:,:,imix));
-%     drawnow;
-%     pause(0.5);
-% end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

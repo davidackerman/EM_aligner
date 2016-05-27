@@ -137,7 +137,7 @@ if ~strcmp(options.solver,'backslash')...
     c2 = resvec/norm(Lm);
     R  = [c1(:) c2(:)];
 else 
-    R = 0;
+    R = K*x2-Lm;
 end
 
 if options.debug && ~strcmp(options.solver,'backslash')...

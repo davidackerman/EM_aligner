@@ -25,7 +25,7 @@ rcsource.verbose        = 1;
 
 % configure montage collection
 
-rctarget_montage.stack          = ['v12_montage'];
+rctarget_montage.stack          = ['EXP_dmesh_montage_' num2str(nfirst) '_' num2str(nlast)];
 rctarget_montage.owner          ='flyTEM';
 rctarget_montage.project        = 'FAFB00';
 rctarget_montage.service_host   = '10.37.5.60:8080';
@@ -48,10 +48,15 @@ rctarget_align.service_host   = '10.37.5.60:8080';
 rctarget_align.baseURL        = ['http://' rctarget_rough.service_host '/render-ws/v1'];
 rctarget_align.verbose        = 1;
 
-% configure point-match collection
-pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
-pm.owner            = 'flyTEM';
-pm.match_collection = 'FAFBv12_append_00';
+% configure point-match source collection
+pmsource.server           = 'http://10.40.3.162:8080/render-ws/v1';
+pmsource.owner            = 'flyTEM';
+pmsource.match_collection = 'v12_dmesh';
+
+% configure point-match append collection
+pmappend.server           = 'http://10.40.3.162:8080/render-ws/v1';
+pmappend.owner            = 'flyTEM';
+pmappend.match_collection = 'v12_dmesh_append';
 
 % configure montage-scape point-match generation ( for rough alignment)
 ms.service_host                 = rctarget_montage.service_host;
@@ -63,9 +68,9 @@ ms.last                         = num2str(nlast);
 
 ms.fd_size                      = '8';
 ms.min_sift_scale               = '0.55'; % 0.55
-ms.max_sift_scale               = '0.1';
+ms.max_sift_scale               = '0.8';
 ms.steps                        = '3'; % 3
-ms.scale                        = '0.30';    % normally less than 0.05 -- can be large (e.g. 0.2) for very small sections (<100 tiles)
+ms.scale                        = '0.05';    % normally less than 0.05 -- can be large (e.g. 0.2) for very small sections (<100 tiles)
 ms.similarity_range             = '10';    % maximum number of layer for similarity comparisons
 ms.skip_similarity_matrix       = 'y';
 ms.skip_aligned_image_generation= 'y';
@@ -92,59 +97,54 @@ SIFTopts.matchMinInlierRatio = 0.0;
 
 
 
+%% generate montages
+% configure solver
+opts.min_tiles = 20; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
+opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
+opts.lambda = 10^(0);
+opts.edge_lambda = 10^(0);
+opts.small_region_lambda = 10^(2); % (relevant only for montage)
+opts.small_region = 10; % (relevant only for montage) connected components with fewer tiles than that
+opts.solver = 'backslash';
+opts.min_points = 5;
+opts.nbrs = 0;
+opts.xs_weight = 1/100;
+opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
+opts.distributed = 0;
+opts.base_collection = []; % 
+opts.conn_comp = 1;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
-    rcsource.baseURL, rcsource.owner, rcsource.project, rcsource.stack);
-j = webread(urlChar);
-sectionId = {j(:).sectionId};
-z         = [j(:).z];
-indx = find(z>=nfirst & z<=nlast);
 
-sectionId = sectionId(indx);% determine the sectionId list we will work with
-z         = z(indx);        % determine the zvalues (this is also the spatial order)
-[z, ia] = sort(z);
-sectionId = sectionId(ia);
-%% [1] generate montage for individual sections and generate montage collection
-% L = Msection;
-% L(numel(z)) = Msection;
-% for lix = 1:numel(z)
-%     L(lix)                  = Msection(rcsource, z(lix));  % tiles will have stage translations and when requested provide LC images.
-%     L(lix).dthresh_factor   = 3;
-%     L(lix)                  = update_XY(L(lix));
-%     L(lix)                  = update_adjacency(L(lix));
-%     [L(lix), js]            = alignTEM_inlayer(L(lix));
-%     L(lix).sectionID        = sectionId(lix);
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     %%% ingest js into point matches database
-%     %%% this needs to be done using webwrite --- sosi ---  until then <sigh> we will use curl
-%     fn = ['temp_' num2str(randi(100000)) '_' num2str(lix) '.json'];
-%     fid = fopen(fn, 'w');
-%     fwrite(fid,js);
-%     fclose(fid);
-%     urlChar = sprintf('%s/owner/%s/matchCollection/%s/matches/', ...
-%         pm.server, pm.owner, pm.match_collection);
-%     cmd = sprintf('curl -X PUT --connect-timeout 30 --header "Content-Type: application/json" --header "Accept: application/json" -d "@%s" "%s"',...
-%         fn, urlChar);
-%     [a, resp]= evalc('system(cmd)');
-%     %disp(a);    disp(resp);
-%     delete(fn);
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% end
-% opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-% mL = concatenate_tiles(L, opts.outlier_lambda);
-% mL = translate_to_origin(mL);
-% translate_to_origin = 0;
-% ingest_section_into_renderer_database_overwrite(mL, rctarget_montage, rcsource, pwd, translate_to_origin);
-% mL = update_tile_sources(mL, rctarget_montage);
-% L_montage = split_z(mL);
+% solve montages and ingest into collection
+resp = delete_renderer_stack(rctarget_montage);
+resp = create_renderer_stack(rctarget_montage);
+
+err = {};
+R = {};
+failed_list = [];
+count = 1;
+for lix = nfirst:nlast
+    disp(['Solving section: ' num2str(lix) ' of ' num2str(nlast)]);
+    try
+    [mL1, A, err{lix}, R{lix}]= solve_slab(rcsource, pmsource, lix, lix, [], opts);
+     catch err_solving
+         kk_disp_err(err_solving);
+         failed_list = [failed_list lix];
+    end
+    try
+        ingest_section_into_LOADING_collection(mL1, rctarget_montage, rcsource, pwd, 1);
+    catch err_ingesting
+         kk_disp_err(err_ingesting);
+    end
+
+end
+resp = set_renderer_stack_state_complete(rctarget_montage);
 
 %% [2] generate montage-scapes and montage-scape point-matches
 
 [L2] = generate_montage_scapes_SIFT_point_matches(ms);
-L2v = L2;
+
 % %% filter point matches using RANSAC
 geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
 geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';
@@ -152,9 +152,9 @@ geoTransformEst.Transform = 'Affine';%'Nonreflective similarity';%'Affine';%
 geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
 geoTransformEst.MaximumRandomSamples = 1000;
 geoTransformEst.DesiredConfidence = 99.95;
-for pmix = 1:size(L2v.pm.M,1)
-    m1 = L2v.pm.M{pmix,1};
-    m2 = L2v.pm.M{pmix,2};
+for pmix = 1:size(L2.pm.M,1)
+    m1 = L2.pm.M{pmix,1};
+    m2 = L2.pm.M{pmix,2};
     % Invoke the step() method on the geoTransformEst object to compute the
     % transformation from the |distorted| to the |original| image. You
     % may see varying results of the transformation matrix computation because
@@ -162,19 +162,19 @@ for pmix = 1:size(L2v.pm.M,1)
     [tform_matrix, inlierIdx] = step(geoTransformEst, m2, m1);
     m1 = m1(inlierIdx,:);
     m2 = m2(inlierIdx,:);
-    L2v.pm.M{pmix,1} = m1;
-    L2v.pm.M{pmix,2} = m2;
-    w = L2v.pm.W{pmix};
-    L2v.pm.W{pmix} = w(inlierIdx);
-    L2v.pm.np(pmix) = numel(w(inlierIdx));
+    L2.pm.M{pmix,1} = m1;
+    L2.pm.M{pmix,2} = m2;
+    w = L2.pm.W{pmix};
+    L2.pm.W{pmix} = w(inlierIdx);
+    L2.pm.np(pmix) = numel(w(inlierIdx));
 end
 
 % we need to check whether we have one connected component or more 
 L2.G = graph(L2.pm.adj(:,1), L2.pm.adj(:,2));
 nconn1 = numel(unique(conncomp(L2.G)));
 
-L2v.G = graph(L2v.pm.adj(:,1), L2v.pm.adj(:,2), L2v.pm.np);
-nconn2 = numel(unique(conncomp(L2v.G)));
+L2.G = graph(L2.pm.adj(:,1), L2.pm.adj(:,2), L2.pm.np);
+nconn2 = numel(unique(conncomp(L2.G)));
 if nconn2~=1, 
     disp(['Number of connected components original: ' num2str(nconn1)]);
     disp(['Number of connected components pruned: ' num2str(nconn2)]);    
@@ -195,7 +195,7 @@ end
 %% [3] rough alignment solve for montage-scapes
 
 % solve
-[mLR, errR, mLS] = get_rigid_approximation(L2v);  % generate rigid approximation to use as regularizer
+[mLR, errR, mLS] = get_rigid_approximation(L2);  % generate rigid approximation to use as regularizer
 [mL3, errA] = solve_affine_explicit_region(mLR); % obtain an affine solution
 mL3s = split_z(mL3);
 %% [4] apply rough alignment to montaged sections (L_montage) and generate "rough_aligned" collection  %% %%%%%% sosi
@@ -516,13 +516,13 @@ js = pairs2json(MP); % generate json blob to be ingested into point-match databa
 
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% ingest js into point matches database
-%%% this needs to be done using webwrite --- sosi ---  until then <sigh> we will use curl
+%%% this needs to be done using webwrite --- sosi ---  until then we will use curl
 fn = ['temp_' num2str(randi(100000)) '_' num2str(lix) '.json'];
 fid = fopen(fn, 'w');
 fwrite(fid,js);
 fclose(fid);
 urlChar = sprintf('%s/owner/%s/matchCollection/%s/matches/', ...
-    pm.server, pm.owner, pm.match_collection);
+    pmappend.server, pmappend.owner, pmappend.match_collection);
 cmd = sprintf('curl -X PUT --connect-timeout 30 --header "Content-Type: application/json" --header "Accept: application/json" -d "@%s" "%s"',...
     fn, urlChar);
 [a, resp]= evalc('system(cmd)');

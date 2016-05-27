@@ -1,9 +1,11 @@
-function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid] = alignTEM_solver(L, P, options)
+function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid] = ...
+        alignTEM_solver(L, P, options)
 %% works as is, but needs  refactoring bacause: 
 % [1] we don't use P anymore and 
 % [2] all tiles are expected to be in L (which is not an array)
 % [3] we should not even need L, but 
-% [4] should be able to solve given point-matches for a connected component.
+% [4] should be able to solve given point-matches for a connected component
+%       in case of no regularization, and any other set if regularized
 % [5] We need to express constraints in a flexible way.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Purpose: solve for transformation coefficients using the set of point-matches.

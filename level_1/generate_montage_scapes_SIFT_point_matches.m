@@ -28,7 +28,7 @@ function [Lin] = generate_montage_scapes_SIFT_point_matches(ms)
 % Author: Khaled Khairy: Janelia Research Campus. Copyright 2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 check_input(ms);
-if ~isfield(ms, 'number_of_spark_nodes'), ms.number_of_spark_nodes = 2;end
+if ~isfield(ms, 'number_of_spark_nodes'), ms.number_of_spark_nodes = num2str(2);end
 %% clean up any previous jobs
 dir_spark_work = [ms.base_output_dir '/' ms.project '/' ms.stack  '/' ms.run_dir];
 kk_mkdir(dir_spark_work);
@@ -37,7 +37,7 @@ cmd_str = [ms.script ' ' ms.service_host ' ' ms.owner ' ' ms.project ' '...
            ms.min_sift_scale ' ' ms.max_sift_scale ' ' ms.steps ' ' ...
            ms.scale ' ' ms.similarity_range ' ' ms.skip_similarity_matrix ' ' ...
            ms.skip_aligned_image_generation ' ' ms.base_output_dir ' ' ...
-           ms.run_dir ' ' ms.number_of_spark_nodes];
+           ms.run_dir];% ' ' ms.number_of_spark_nodes];
 [a, resp_str] = system(cmd_str);
 disp(resp_str)
 %% wait for files to finish generating
@@ -54,9 +54,20 @@ while exist(fn_matches,'file')~=2
     end
     pause(30);
 end
-
-
 fn_ids     = [dir_solver '/ids.txt'];
+%% check that all image files exist
+montage_scape_gen_error = 0;
+for imix = str2double(ms.first):str2double(ms.last)
+    fn_im = sprintf('%s/layer_images/%.1f.png', dir_spark_work,imix);
+    if exist(fn_im,'file')~=2
+        disp([num2str(imix) ' -- Missing montage scape image: ' fn_im]);
+        montage_scape_gen_error = 1;
+    end
+end
+if montage_scape_gen_error,
+        error('Not all montage scapes were generated. Aborting');
+end
+
 
 %% read montage-scape image metainformation from fn_ids and point-matches
 disp('Reading data ...');tic
@@ -120,6 +131,17 @@ Lin.pm.M(delix,:) = [];
 %Lin = update_adjacency(Lin);
 pm = Lin.pm;
 
+%% check that all montage scapes are present in Lin
+ll = split_z(Lin);
+zp = [ll(:).z];
+zz = str2double(ms.first):str2double(ms.last)-ms.first + 1;
+setd = setdiff(zz,zp);
+if ~isempty(setd), 
+    disp('Disconnected montage scapes: index');
+    disp(setd);
+    disp(z(setd));
+    error('Montage scapes must form a fully connected set');
+end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%
 function check_input(ms)

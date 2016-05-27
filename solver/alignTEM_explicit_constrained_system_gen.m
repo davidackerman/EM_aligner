@@ -1,6 +1,5 @@
 function [B,d, tB, td] = alignTEM_explicit_constrained_system_gen(L, options, tdim, ncoeff, sf)
-% % construct regularization matrix B and vector d  from alignBK's solver
-% output
+% % construct regularization matrix B and vector d  
 % % tB and td have the translation factor mutiplied to x and y for use in
 % the regularized system construction
 

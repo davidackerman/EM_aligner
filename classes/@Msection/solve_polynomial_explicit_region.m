@@ -1,4 +1,5 @@
-function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_polynomial_explicit_region(obj, pdegree, opts)
+function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] ...
+    = solve_polynomial_explicit_region(obj, pdegree, opts)
 % Returns the matrix solution for a contiguous region
 %
 %%%%%%%%%%%% SOSI: complete error checks and options 
@@ -56,9 +57,17 @@ deg                                 = 180;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% overrides
 if nargin>2, 
-     if isfield(opts, 'solver'), lsq_options.solver             = opts.solver;end
-     if isfield(opts, 'lambda'), lsq_options.lambda             = opts.lambda;end
-     if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda   = opts.edge_lambda;end
-     if isfield(opts, 'use_ilu'), lsq_options.use_ilu           = opts.use_ilu;end
+     if isfield(opts, 'translation_fac'), lsq_options.translation_fac = ...
+             opts.translation_fac;end
+     if isfield(opts, 'solver'), lsq_options.solver = opts.solver;end
+     if isfield(opts, 'lambda'), lsq_options.lambda = opts.lambda;end
+     if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda = opts.edge_lambda;end
+     if isfield(opts, 'constrain_edges'), lsq_options.constrain_edges = ...
+             opts.constrain_edges;end
+     if isfield(opts, 'lidfix'), lsq_options.lidfix = opts.lidfix; end
+     if isfield(opts, 'tfix'), lsq_options.tfix = opts.tfix; end
+     if isfield(opts, 'distributed'), lsq_options.distributed = ...
+             opts.distributed; end
 end
-[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = alignTEM_solver(obj, [],  lsq_options);
+[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
+    alignTEM_solver(obj, [],  lsq_options);

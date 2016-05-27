@@ -32,27 +32,35 @@ pm.owner            = 'flyTEM';
 pm.match_collection = 'v12_dmesh';
 
 % configure solver
-opts.min_tiles = 5; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.min_tiles = 50; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded post-solution
 opts.solver = 'backslash';
-opts.min_points = 5;
+opts.min_points = 2;
 opts.nbrs = 4;      % how many neighboring sections to include in point-match loading
 opts.xs_weight = 1/20;  % small numbers ==> less weight for cross-layer points relative to montage points
 opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
                        % 1 = regularize against input collection
-                       
-opts.distributed = 1;  % 1 = use currently active Matlab cluster if available
+opts.conn_comp = 1;    % 1 = solve individual connected components             
+opts.distributed = 0;  % 1 = use currently active Matlab cluster if available
 opts.lambda = 10^(-1);
 opts.edge_lambda = 10^(-1);
+opts.small_region_lambda = 10^(1);
+opts.small_region = 10;
+
+opts.calc_confidence = 1;
+opts.translation_fac = 1.0;
 %% solve
 
-[mL] = solve_slab(rcsource, pm, nfirst, nlast, [], opts);
+[mL, pm_mx, err, R, L_vec, ntiles, PM, sectionId_load, z_load] = ...
+    solve_slab(rcsource, pm, nfirst, nlast, [], opts);
 
 %% ingest into Renderer database (optional);
 delete_renderer_stack(rctarget_align);  % delete existing collection if present
 ingest_section_into_LOADING_collection(mL, rctarget_align, rcsource, pwd, 1); % ingest
 resp = set_renderer_stack_state_complete(rctarget_align);  % set to state COMPLETE
+
+
 
 
 % %% (optional) look at a box in the middle of the section to spot-check alignment

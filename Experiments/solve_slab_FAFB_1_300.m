@@ -7,8 +7,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%% [0] configure collections and prepare quantities
 clc;kk_clock;
 
-nfirst = 355;
-nlast  = 364;
+nfirst = 550;
+nlast  = 1000;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';

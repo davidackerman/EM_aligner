@@ -1,4 +1,4 @@
-function [mL, err, R, L_s_mL] = solve_clusters(L_vec, opts, stvec_flag)
+function [mL, err, R, L_s_mL, w] = solve_clusters(L_vec, opts, stvec_flag)
 % % returns a solved fully assembled coherent group of tiles
 % % that could be made of more than one cluster (connected component)
 % % 
@@ -22,8 +22,10 @@ function [mL, err, R, L_s_mL] = solve_clusters(L_vec, opts, stvec_flag)
 % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global L dref zC xr yr cm
 
-
+if ~isfield(opts, 'calc_conf'), opts.calc_confidence = 0;end
 if nargin<3, stvec_flag = 0;end  % in that case we do not assume a starting value, and perform rigid fit
+lambda = opts.lambda;
+edge_lambda = opts.edge_lambda;
 
 %% determine how clusters are related to place after registration
 zC = {}; % store uniqe z values spanned by a component
@@ -39,7 +41,7 @@ end
 %%
 L_s_mL = Msection; % array of connected components
 err = [];
-R = {};
+R = [];
 
 for cix = 1:numel(L_vec)
     %disp(['Processing: ' num2str(cix) ' with #tiles: ' num2str(numel(L_vec(cix).tiles))]);
@@ -47,7 +49,7 @@ for cix = 1:numel(L_vec)
         
         if stvec_flag==0
             %%% perform rigid transformation
-            [ll2r, errR, mL, is, it]  = get_rigid_approximation(L_vec(cix), opts.solver);
+            [ll2r, errR, mL, is, it, Res]  = get_rigid_approximation(L_vec(cix), opts.solver);
             
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -150,15 +152,43 @@ for cix = 1:numel(L_vec)
             ll2r = L_vec(cix);
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if opts.degree==0
-            L_s_mL(cix) = ll2r;
-        elseif opts.degree==1
-            [L_s_mL(cix), err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(ll2r, opts);
-        elseif opts.degree>1
-            [ll3, err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(ll2r, opts);
-            [L_s_mL(cix), err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td] = solve_polynomial_explicit_region(ll3,opts.degree, opts);
+        if numel(ll2r.tiles)<=opts.small_region
+            opts.lambda = opts.small_region_lambda;
+            opts.edge_lambda = opts.small_region_lambda;
+        else
+            opts.lambda = lambda;
+            opts.edge_lambda = edge_lambda;
         end
-        R(cix) = {[Res]};
+        if opts.degree==0
+            ll2r.pm = [];
+            L_s_mL(cix) = ll2r;
+            R = [R Res(:)'];
+        elseif opts.degree==1
+            [lsolved, err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
+                invalid] = solve_affine_explicit_region(ll2r, opts);
+            R = [R Res(:)'];
+            lsolved.pm = [];
+            L_s_mL(cix) = lsolved;
+        elseif opts.degree>1
+            [ll3] = solve_affine_explicit_region(ll2r, opts);
+            clear ll2r;
+            tic
+            [lsolved, err(cix), Res] =...
+                solve_polynomial_explicit_region(ll3,opts.degree, opts);
+            toc
+            R = [R Res(:)'];
+            lsolved.pm = [];
+            L_s_mL(cix) = lsolved;
+        end
+        %R(cix) = {[Res]};
+        %R = [R Res(:)'];
+        if opts.calc_confidence
+        % estimate confidence interval
+        w{cix} = bootstrp(100, @solve_AxB, Lm, K);
+        else
+            w{cix} = [];
+        end
+            
     end
 
 end

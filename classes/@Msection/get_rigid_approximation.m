@@ -1,4 +1,5 @@
-function [obj, errAb, mL, invalid_similarity, invalid_translation] = get_rigid_approximation(obj, solver)
+function [obj, errAb, mL, invalid_similarity, invalid_translation, R] = ...
+    get_rigid_approximation(obj, solver)
 %% calculates an approximation to a rigid transformation using the combination
 % [1] Similarity constained
 % [2] Rescaling
@@ -47,7 +48,8 @@ end
 %     lsq_options.distributed = 0;
 % end
 
-[mL,err, R,A, b, B, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = alignTEM_solver(obj, [], lsq_options);
+[mL,err, R,A, b, B, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
+    alignTEM_solver(obj, [], lsq_options);
 
 
 %% %% adjust scale--- mL
@@ -99,7 +101,8 @@ lsq_options.constrain_edges = 0;
 lsq_options.edge_lambda         = 0;
 lsq_options.lambda              = 0;
 
-[mL2,errAb,R, At, bt, B, d, W, Kt, Lmt, xout, L2, U2, tB, td, invalid_translation] = alignTEM_solver(mL, [], lsq_options);
+[mL2,errAb,R, At, bt, B, d, W, Kt, Lmt, xout, L2, U2, tB, td, invalid_translation] =...
+    alignTEM_solver(mL, [], lsq_options);
 errAb = norm(At*xout-bt);
 obj.tiles = mL2.tiles;  % only tile transformations are changed (not point-match information)
 

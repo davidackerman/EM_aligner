@@ -52,13 +52,19 @@ deg                                 = 180;
 %% override options provided in opts
 if nargin>1, 
     
+     if isfield(opts, 'translation_fac'), lsq_options.translation_fac = ...
+             opts.translation_fac;end
      if isfield(opts, 'solver'), lsq_options.solver = opts.solver;end
      if isfield(opts, 'lambda'), lsq_options.lambda = opts.lambda;end
      if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda = opts.edge_lambda;end
-     if isfield(opts, 'constrain_edges'), lsq_options.constrain_edges = opts.constrain_edges;end
+     if isfield(opts, 'constrain_edges'), lsq_options.constrain_edges = ...
+             opts.constrain_edges;end
      if isfield(opts, 'lidfix'), lsq_options.lidfix = opts.lidfix; end
      if isfield(opts, 'tfix'), lsq_options.tfix = opts.tfix; end
+     if isfield(opts, 'distributed'), lsq_options.distributed = ...
+             opts.distributed; end
 
 end
 %% solve
-[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = alignTEM_solver(obj, [],  lsq_options);
+[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
+    alignTEM_solver(obj, [],  lsq_options);

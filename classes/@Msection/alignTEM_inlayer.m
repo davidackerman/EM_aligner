@@ -9,9 +9,9 @@ function [obj, js, err, L2] = alignTEM_inlayer(obj)
 obj  = update_XY(obj);
 obj  = update_adjacency(obj);
 %% generate point matches
-min_pm = 8;
-[L2] = generate_point_matches(obj, min_pm); % also makes sure features are calculated
-
+min_pm = 15;
+[L2] = generate_point_matches(obj, min_pm, 'true'); % also makes sure features are calculated
+disp(L2.pm.M);
 %% decompose into connected components
 [L_vec, a] = reduce_to_connected_components(L2);
 %% solve components and collect

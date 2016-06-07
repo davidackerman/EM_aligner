@@ -23,6 +23,11 @@ function [mL, err, R, L_s_mL, w] = solve_clusters(L_vec, opts, stvec_flag)
 global L dref zC xr yr cm
 
 if ~isfield(opts, 'calc_conf'), opts.calc_confidence = 0;end
+if ~isfield(opts, 'small_region'), 
+    opts.small_region = 1; 
+    opts.small_region_labda = 1.0;
+end
+
 if nargin<3, stvec_flag = 0;end  % in that case we do not assume a starting value, and perform rigid fit
 lambda = opts.lambda;
 edge_lambda = opts.edge_lambda;

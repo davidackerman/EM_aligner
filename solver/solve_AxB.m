@@ -32,7 +32,7 @@ function [x2, R] = solve_AxB(K,Lm,options,d)
 % Author: Khaled Khairy: Copyright 2016. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ~isfield(options, 'distributed'), options.distributed = 1;end
+if ~isfield(options, 'distributed'), options.distributed = 0;end
 x2 = [];
 R  = []; 
 
@@ -66,6 +66,7 @@ if strcmp(options.solver, 'lsqlin')
 elseif strcmp(options.solver, 'backslash')
     if options.verbose,disp('------------ Performing backslash x2 = K\Lm solution ');end
     if options.distributed
+        disp('Using distributed Ax=b');
         x2 = gather(distributed(K)\distributed(Lm));
     else
         x2 = K\Lm;

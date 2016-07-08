@@ -103,6 +103,17 @@ lsq_options.lambda              = 0;
 
 [mL2,errAb,R, At, bt, B, d, W, Kt, Lmt, xout, L2, U2, tB, td, invalid_translation] =...
     alignTEM_solver(mL, [], lsq_options);
+
+%%% sosi --- 
+%%%
+% [obj.tiles(1).tform.T mL2.tiles(1).tform.T]
+% mL3 = mL2;mL3.tiles(end) = [];
+% for tix = 1:numel(mL3.tiles), mL3.tiles(tix).state = 1;end; 
+% layer_explorer(mL3);
+% mL4 = obj;mL4.tiles(end) = [];
+% show_map(mL3);figure;show_map(mL4);
+%%%%
+for tix = 1:numel(mL2.tiles), mL2.tiles(tix).state = 1;end;
 errAb = norm(At*xout-bt);
 obj.tiles = mL2.tiles;  % only tile transformations are changed (not point-match information)
 

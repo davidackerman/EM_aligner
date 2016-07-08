@@ -33,6 +33,7 @@ function [x2, R] = solve_AxB(K,Lm,options,d)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if ~isfield(options, 'distributed'), options.distributed = 0;end
+disp(['Using distributed: ' num2str(options.distributed)]);
 x2 = [];
 R  = []; 
 

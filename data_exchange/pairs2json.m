@@ -25,61 +25,120 @@ function js0 = pairs2json(MP, fn)
 % % 		}
 % % 	}
 % % ]
-
+js0 = [];
 npairs = numel(MP);
-js0 = '[';
-for mix = 1:npairs
-    js1 = sprintf(...
-    '\n\t{\n\t\t"pGroupId": "%s", "pId": "%s", "qGroupId": "%s", "qId": "%s",\n\t\t"matches": {\n', ...
-    MP{mix}.pz, MP{mix}.pId, MP{mix}.qz, MP{mix}.qId);
-    str1 = sprintf('\t\t\t"p": [[');
-    for pxix = 1:size(MP{mix}.p,1)
-        str1 = [str1 num2str(MP{mix}.p(pxix,1))];
-        if pxix<size(MP{mix}.p,1), str1 = [str1 ','];end
+if nargin==1
+    js0 = '[';
+    for mix = 1:npairs
+        js1 = sprintf(...
+            '\n\t{\n\t\t"pGroupId": "%s", "pId": "%s", "qGroupId": "%s", "qId": "%s",\n\t\t"matches": {\n', ...
+            MP{mix}.pz, MP{mix}.pId, MP{mix}.qz, MP{mix}.qId);
+        str1 = sprintf('\t\t\t"p": [[');
+        for pxix = 1:size(MP{mix}.p,1)
+            %             str1 = [str1 num2str(MP{mix}.p(pxix,1))];
+            str1 = [str1 sprintf('%.6f', MP{mix}.p(pxix,1))];
+            if pxix<size(MP{mix}.p,1), str1 = [str1 ','];end
+        end
+        str1 = [str1 '],['];
+        
+        for pix = 1:size(MP{mix}.p,1)
+            %             str1 = [str1 num2str(MP{mix}.p(pix,2))];
+            str1 = [str1 sprintf('%.6f', MP{mix}.p(pix,2))];
+            if pix<size(MP{mix}.p,1), str1 = [str1 ','];end
+        end
+        str1 = [str1 ']],'];
+        
+        str2 = sprintf('\n\t\t\t"q": [[');
+        for qix = 1:size(MP{mix}.q,1)
+            %             str2 = [str2 num2str(MP{mix}.q(qix,1))];
+            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,1))];
+            if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
+        end
+        str2 = [str2 '],['];
+        
+        for qix = 1:size(MP{mix}.q,1)
+            %             str2 = [str2 num2str(MP{mix}.q(qix,2))];
+            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,2))];
+            if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
+        end
+        str2 = [str2 ']],'];
+        
+        w = ones(size(MP{mix}.q,1),1);
+        str3 = sprintf('\n\t\t\t"w": [');
+        for qix = 1:size(MP{mix}.q,1)
+            %             str3 = [str3 num2str(w(qix))];
+            str3 = [str3 sprintf('%.6f', w(qix))];
+            if qix<size(MP{mix}.q,1), str3 = [str3 ','];end
+        end
+        str3 = [str3 ']'];
+        if ~(mix==npairs),
+            str3 = sprintf('%s\n\t\t}\n\t},', str3);
+        else
+            str3 = sprintf('%s\n\t\t}\n\t}', str3);
+        end
+        
+        js0 = [js0 js1 str1 str2 str3];
+        
     end
-    str1 = [str1 '],['];
+    js0 = [js0 sprintf('\n]')];
     
-    for pix = 1:size(MP{mix}.p,1)
-        str1 = [str1 num2str(MP{mix}.p(pix,2))];
-        if pix<size(MP{mix}.p,1), str1 = [str1 ','];end
-    end
-    str1 = [str1 ']],'];
+elseif nargin>1
     
-    str2 = sprintf('\n\t\t\t"q": [[');
-    for qix = 1:size(MP{mix}.q,1)
-        str2 = [str2 num2str(MP{mix}.q(qix,1))];
-        if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
+    disp('Writing to file:');
+    disp(fn);
+    fid = fopen(fn, 'w');
+    fprintf(fid, '[');
+    for mix = 1:npairs
+        js1 = sprintf(...
+            '\n\t{\n\t\t"pGroupId": "%s", "pId": "%s", "qGroupId": "%s", "qId": "%s",\n\t\t"matches": {\n', ...
+            MP{mix}.pz, MP{mix}.pId, MP{mix}.qz, MP{mix}.qId);
+        str1 = sprintf('\t\t\t"p": [[');
+        for pxix = 1:size(MP{mix}.p,1)
+            %             str1 = [str1 num2str(MP{mix}.p(pxix,1))];
+            str1 = [str1 sprintf('%.6f', MP{mix}.p(pxix,1))];
+            if pxix<size(MP{mix}.p,1), str1 = [str1 ','];end
+        end
+        str1 = [str1 '],['];
+        
+        for pix = 1:size(MP{mix}.p,1)
+            %             str1 = [str1 num2str(MP{mix}.p(pix,2))];
+            str1 = [str1 sprintf('%.6f', MP{mix}.p(pix,2))];
+            if pix<size(MP{mix}.p,1), str1 = [str1 ','];end
+        end
+        str1 = [str1 ']],'];
+        
+        str2 = sprintf('\n\t\t\t"q": [[');
+        for qix = 1:size(MP{mix}.q,1)
+            %             str2 = [str2 num2str(MP{mix}.q(qix,1))];
+            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,1))];
+            if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
+        end
+        str2 = [str2 '],['];
+        
+        for qix = 1:size(MP{mix}.q,1)
+            %             str2 = [str2 num2str(MP{mix}.q(qix,2))];
+            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,2))];
+            if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
+        end
+        str2 = [str2 ']],'];
+        
+        w = ones(size(MP{mix}.q,1),1);
+        str3 = sprintf('\n\t\t\t"w": [');
+        for qix = 1:size(MP{mix}.q,1)
+            %             str3 = [str3 num2str(w(qix))];
+            str3 = [str3 sprintf('%.6f', w(qix))];
+            if qix<size(MP{mix}.q,1), str3 = [str3 ','];end
+        end
+        str3 = [str3 ']'];
+        if ~(mix==npairs),
+            str3 = sprintf('%s\n\t\t}\n\t},', str3);
+        else
+            str3 = sprintf('%s\n\t\t}\n\t}', str3);
+        end
+        
+        fprintf(fid,'%s%s%s%s', js1,str1, str2, str3);
+        
     end
-    str2 = [str2 '],['];
-    
-    for qix = 1:size(MP{mix}.q,1)
-        str2 = [str2 num2str(MP{mix}.q(qix,2))];
-        if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
-    end
-    str2 = [str2 ']],'];
-    
-    w = ones(size(MP{mix}.q,1),1);
-    str3 = sprintf('\n\t\t\t"w": [');
-    for qix = 1:size(MP{mix}.q,1)
-        str3 = [str3 num2str(w(qix))];
-        if qix<size(MP{mix}.q,1), str3 = [str3 ','];end
-    end
-    str3 = [str3 ']'];
-    if ~(mix==npairs), 
-        str3 = sprintf('%s\n\t\t}\n\t},', str3);
-    else
-        str3 = sprintf('%s\n\t\t}\n\t}', str3);
-    end
-
-    js0 = [js0 js1 str1 str2 str3];
-
-end
-js0 = [js0 sprintf('\n]')];
-
-if nargin>1
-disp('Writing to file');
-disp(fn);
-fid = fopen(fn, 'w');
-fwrite(fid,js0);
-fclose(fid);
+    fprintf(fid,'\n]');
+    fclose(fid);
 end

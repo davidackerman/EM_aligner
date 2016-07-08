@@ -38,6 +38,7 @@ classdef tile
         SURF_NumScaleLevels = 6;
         SURF_MetricThreshold = 1000;
         dir_temp_render = '/scratch/khairyk';% there is no elegant way to do this. [a resp] = system('whoami'); dir_temp_render = ['/scratch/' resp];
+        renderer_client = '/groups/flyTEM/flyTEM/render/bin/render.sh';
         fetch_local = 0;
         
     end
@@ -73,14 +74,14 @@ classdef tile
                 end
                 % check if we have a list of transformations, in which case
                 % we need
-                if numel(p.transforms.specList)>1,
-                    p.transforms.specList = p.transforms.specList(end);
-                end
+%                 if numel(p.transforms.specList)>1,
+%                     p.transforms.specList = p.transforms.specList(end);
+%                 end
                 
-                Tstr = p.transforms.specList.dataString;
+                Tstr = p.transforms.specList(end).dataString;
                 Tdouble    = str2double(strsplit(Tstr));
 
-                if strcmp(p.transforms.specList.className, 'mpicbg.trakem2.transform.AffineModel2D')
+                if strcmp(p.transforms.specList(end).className, 'mpicbg.trakem2.transform.AffineModel2D')
                     T(3,3) = 1;
                     T(1,1) = Tdouble(1);
                     T(2,1) = Tdouble(2);
@@ -175,7 +176,7 @@ classdef tile
 
             fn = [obj.dir_temp_render '/tile_image_' num2str(randi(1000)) '_' obj.renderer_id '.jpg'];
             % we will try four times
-            cmd = sprintf('/groups/flyTEM/flyTEM/render/bin/render.sh --memory 7g --out %s --parameters_url "%s"', fn, url);
+            cmd = sprintf('%s --memory 7g --out %s --parameters_url "%s"', obj.renderer_client, fn, url);
             [a, resp_str] = system(cmd);
             file_ready = 0;
             count = 1;

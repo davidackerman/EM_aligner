@@ -1,16 +1,17 @@
 function obj = update_adjacency(obj)
 % update tile adjacency matrix
 % Usage: obj = update_adjacency(obj)
+% Assumes equal tile dimensions..... sosi
 %
 % Note: 
 %       - depends on statistics toolbox because of pdist2
 % Author: Khaled Khairy Janelia Research Campus -- 2015
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-LARGE = 50000;
+LARGE = 1000;
 if numel(obj.tiles)<LARGE
 obj.update_tile_info_switch = -1; % just use the first tile's W and H for all
-obj = update_tile_info(obj);
+%obj = update_tile_info(obj);
 H = obj.tiles(1).H;
 W = obj.tiles(1).W;
 obj = update_XY(obj);
@@ -25,7 +26,7 @@ elseif isa(obj.G,'graph')
     obj.A = adjacency(obj.G);
 else
     obj.A = [];
-    warning('No adjacency matrix was generated');
+    %warning(['No adjacency matrix was generated -- LARGE set to ' num2str(LARGE)]);
 end
 
 function [D,T] = pdist2plus(p1,p2)

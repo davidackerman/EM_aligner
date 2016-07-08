@@ -1,4 +1,4 @@
-function [obj, A, S] = filter_based_on_tile_area(obj, options)
+function [obj, A, S] = filter_based_on_tile_area(obj, lambda)
 % Marks spurious tiles (highly deformed) with a state of -3, based on
 % deviation from mean of a distribution of tile perimeter.
 % This is a heuristic, since highly deformed tiles tend to be long and thin
@@ -13,9 +13,10 @@ function [obj, A, S] = filter_based_on_tile_area(obj, options)
 
 if nargin<2
     lambda = 1.0;
-else
-    lambda = options.lambda;
+elseif isstruct(lambda)
+    lambda = lambda.lambda;
 end
+disp(['filtering outliers based on perimeter using lambda = ' num2str(lambda)]);
 A = [];
 S = [];
 obj = update_tile_info(obj);		% we don't need adjacency information in this file, but make sure tile info is up to date

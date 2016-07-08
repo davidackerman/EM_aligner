@@ -29,15 +29,15 @@ end
 % construct sub-matrices for cross-layer
 A_ij = cell(numel(P), 2);
 b_ij = cell(numel(P), 1);
-for ix = 1:numel(P)
-    if P{ix}.id1==lfix
-        [A_ij{ix,1}, A_ij{ix,2}, b_ij{ix}] = alignTEM_objective_cross(P{ix}.M, P{ix}.adj, tf_i{lidfix}, 1, options.pdegree,sf);
-    elseif P{ix}.id2==lfix
-        [A_ij{ix,1}, A_ij{ix,2}, b_ij{ix}] = alignTEM_objective_cross(P{ix}.M, P{ix}.adj, tf_i{lidfix}, 2, options.pdegree,sf);
-    else
-        [A_ij{ix,1}, A_ij{ix,2}, b_ij{ix}] = alignTEM_objective_cross(P{ix}.M, P{ix}.adj, [], [], options.pdegree, sf);
-    end
-end
+% for ix = 1:numel(P)
+%     if P{ix}.id1==lfix
+%         [A_ij{ix,1}, A_ij{ix,2}, b_ij{ix}] = alignTEM_objective_cross(P{ix}.M, P{ix}.adj, tf_i{lidfix}, 1, options.pdegree,sf);
+%     elseif P{ix}.id2==lfix
+%         [A_ij{ix,1}, A_ij{ix,2}, b_ij{ix}] = alignTEM_objective_cross(P{ix}.M, P{ix}.adj, tf_i{lidfix}, 2, options.pdegree,sf);
+%     else
+%         [A_ij{ix,1}, A_ij{ix,2}, b_ij{ix}] = alignTEM_objective_cross(P{ix}.M, P{ix}.adj, [], [], options.pdegree, sf);
+%     end
+% end
 nP = numel(P);
 % cleanup
 %clear P

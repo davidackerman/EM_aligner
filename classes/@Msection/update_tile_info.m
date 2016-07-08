@@ -26,10 +26,14 @@ elseif obj.update_tile_info_switch == -1
     % set all tile H and W fields to that of the first one
     %disp('One-time updating of tile info to first-tile info! (Fast)');
     obj.tiles(1) = set_info(obj.tiles(1));
-    for ix = 2:numel(obj.tiles)
-        obj.tiles(ix).H = obj.tiles(1).H;
-        obj.tiles(ix).W = obj.tiles(1).W;
+    H = obj.tiles(1).H;
+    W = obj.tiles(1).W;
+    tiles = obj.tiles;
+    parfor ix = 2:numel(obj.tiles)
+        tiles(ix).H = H;
+        tiles(ix).W = W;
     end
+    obj.tiles = tiles;
     obj.update_tile_info_switch = 0;
     %disp('Done: Update tile info.');
 end

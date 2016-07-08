@@ -12,8 +12,8 @@
 %% [0] configure collections and prepare quantities
 clc; clear all;
 kk_clock;
-nfirst = 1;
-nlast  = 2000;
+nfirst = 350;
+nlast  = 1000;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -57,7 +57,7 @@ ms.fd_size                      = '8';
 ms.min_sift_scale               = '0.55';
 ms.max_sift_scale               = '1.0';
 ms.steps                        = '3';
-ms.scale                        = '0.035';    % normally less than 0.05 -- can be large (e.g. 0.2) for very small sections (<100 tiles)
+ms.scale                        = '0.05';    % normally less than 0.05 -- can be large (e.g. 0.2) for very small sections (<100 tiles)
 ms.similarity_range             = '15';
 ms.skip_similarity_matrix       = 'y';
 ms.skip_aligned_image_generation= 'y';
@@ -65,17 +65,62 @@ ms.base_output_dir              = '/nobackup/flyTEM/spark_montage';
 ms.run_dir                      = ['scale_' ms.scale];
 ms.script                       = '/groups/flyTEM/home/khairyk/EM_aligner/renderer_api/generate_montage_scape_point_matches.sh';%'../unit_tests/generate_montage_scape_point_matches_stub.sh'; %
 ms.number_of_spark_nodes        = '2.0';
-% configure fine alignment
-DX = 5;   % number of divisions of the total bounding box in x
-DY = 5;
-scale = 1.0;
-depth = 3;  % largest distance (in layers) considered for neighbors
 
-[zu, sID, sectionId] = get_section_ids(rcsource, nfirst, nlast);
+[zu, sID, sectionId, z, ns] = get_section_ids(rcsource, nfirst, nlast);
 
 %% [2] generate montage-scapes and montage-scape point-matches
+run_now = 1;
+[L2, needs_correction, pmfn, zsetd, zrange, t] = generate_montage_scapes_SIFT_point_matches(ms, run_now);
 
-[L2] = generate_montage_scapes_SIFT_point_matches(ms);
+%% [2'] correct if needed
+if needs_correction   %%%%%%%%%% manually correct
+    disp(zdetd);
+    [~, ai] = sort(zrange(:,2),'ascend');
+    disp('Available connected tiles:');
+    disp(zrange(ai,:));
+    
+    % define point-match pairs that need to be connected
+    c = [1 2; 18 19;26 27];
+    
+    p = 3;
+    im1 = imread(t(c(p,1)).path);
+    im2 = imread(t(c(p,2)).path);
+    cpselect(im1,im2);
+    
+    im1p = movingPoints4;
+    im2p = fixedPoints4;
+    %%% try SURF first
+%         p1  = detectSURFFeatures(im1, 'NumOctaves', 10,...
+%                                    'NumScaleLevels', 5,...
+%                                    'MetricThreshold', 1000);
+%                                
+%     [f1, vp1]  = extractFeatures(im1,  p1);
+%     [f2, vp2]  = extractFeatures(im2,  p1);
+%     [m1, m2, ~]  = im_pair_match_features(f1, vp1, f2, vp2);
+%     showMatchedFeatures(im1,im2,im1p,im2p, 'montage', 'PlotOptions', {'ro', 'g+', 'w-'});h2 = findobj('Type', 'line');for lix = 1:numel(h2), set(h2(lix), 'LineWidth',2);end
+%     
+    
+    %%% use cpselect for each image pair manually and append point-match file with new point-matches
+        fid = fopen(pmfn, 'a+');
+        
+     str = '';
+    for pix = 1:size(im1p,1)
+    str = [str sprintf('%.0f\t%.12f\t%.12f\t%.0f\t%.12f\t%.12f\n', ...
+        t(c(p,1)).id, im1p(pix,1),im1p(pix,2), t(c(p,2)).id, im2p(pix,1),im2p(pix,2))];
+    end
+
+    fprintf(fid, '%s', str);
+    fclose(fid);
+    
+
+    
+    % manually run all corrections then re-run point-match generation
+    run_now = 0;
+    [L2, needs_correction, pmfn,zsetd, zrange, t] = generate_montage_scapes_SIFT_point_matches(ms, run_now);
+    
+    
+end
+
 
 
 % %% filter point matches using RANSAC
@@ -119,12 +164,14 @@ end
 [mL3, errA] = solve_affine_explicit_region(mLR); % obtain an affine solution
 mL3s = split_z(mL3);
 %% [4] apply rough alignment to montaged sections (L_montage) and generate "rough_aligned" collection  %% %%%%%% sosi
-
+indx = find(zu-floor(zu)>0);
+zu(indx) = [];
 % load montages
 parfor zix = 1:numel(zu), 
     L_montage(zix) = Msection(rctarget_montage, zu(zix));
 end
 
+%%%% apply rough alignment solution to montages
 for lix = 1:numel(L_montage), L_montage(lix) = get_bounding_box(L_montage(lix));end
 mL3 = get_bounding_box(mL3);
 Wbox = [mL3.box(1) mL3.box(3) mL3.box(2)-mL3.box(1) mL3.box(4)-mL3.box(3)];disp(Wbox);
@@ -149,6 +196,9 @@ for lix = 1:numel(L_montage)
 end
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 mL = concatenate_tiles(L3, opts.outlier_lambda);
+
+
+%%% ingest into renderer database as rough collection
 ingest_section_into_renderer_database_overwrite(mL,rctarget_rough, rcsource, pwd);
 
 

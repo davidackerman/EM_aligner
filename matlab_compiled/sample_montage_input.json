@@ -26,7 +26,7 @@
 		"verbose": 1
 	},
 	"target_collection": {
-		"stack": "Test_llm_00",
+		"stack": "Test_llm_01",
 		"owner": "flyTEM",
 		"project": "test",
 		"service_host": "10.37.5.60:8080",
@@ -34,5 +34,7 @@
 		"verbose": 1
 	},
 	"section_number": 15,
+    "scratch": "/scratch/khairyk",
+    "renderer_client": "/groups/flyTEM/flyTEM/render/bin/render.sh",
 	"verbose": 1
 }

@@ -78,6 +78,7 @@ parfor ix = 1:numel(zu)
     for jix = 1:numel(j)
         jt(jix) = tile(j(jix));
         jt(jix).z = zu(ix);
+        
     end
     t(ix).jt = jt;
 end
@@ -95,8 +96,11 @@ for ix = 1:numel(zu)
 end
 
 % loop over tiles to set tile id
-parfor ix = 1:numel(tiles)
+for ix = 1:numel(tiles)
     tiles(ix).id = ix;
+    tiles(ix).owner = rc.owner;
+    tiles(ix).project = rc.project;
+    tiles(ix).stack = rc.stack;
 end
 L = Msection(tiles);
 %L = update_tile_sources(L, rc);
@@ -163,12 +167,13 @@ end
 
 
 %% obtain cross-section point-matches
+disp('Obtaining cross-layer point_matches');
 xPM = {};
 n   = {};
-for pmix = 1:nbr
+parfor pmix = 1:nbr
     [xPM{pmix}, n{pmix}] = get_cross_section_pm(pmix+1, pm, sID, map_id, min_points, xs_weight);%% get point matches to immediate neighbor
 end
-
+disp('Generating final point match struct');
 %% generate final M, adj, W and np
 M   = [];
 adj = [];
@@ -220,7 +225,7 @@ if any(sum(pm_mx)==0), disp('Warning: defective pm connectivity matrix');end
 if ~(size(bb,1)==size(L.pm.adj,1))
     error('Rows in L.pm.adj should be unique');
 end
-
+disp('Point-match loading complete');
 % % All renderer_id pairs must correspond to an adjacency pair: if not then report error
 % L.G = graph(L.pm.adj(:,1), L.pm.adj(:,2), L.pm.np, {L.tiles(:).renderer_id});
 % CC = table2cell(L.G.Edges(:,1));

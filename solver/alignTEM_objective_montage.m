@@ -199,19 +199,21 @@ for pair_number = 1:size(M,1)           % loop over the pairs
     %%% This is relevant for translation only
     %if (tfix_flag)   % currently only in the case of polynomial degree zero (i.e. translation only)
     if tdim==2
-        if adj(pair_number,1)==tfix,
             Ib = [Ib;rvec(:)];
             Sb = [Sb;-(vec1(:)-vec2(:))];
-            %disp([pair_number adj(pair_number,:)]);
-            %%% sosi
-            
-        elseif adj(pair_number,2)==tfix,    % then we need to place x and y values into b
-            Ib = [Ib;rvec(:)];
-            Sb = [Sb;-(vec1(:)-vec2(:))];
-        else
-            Ib = [Ib;rvec(:)];
-            Sb = [Sb;-(vec1(:) - vec2(:))];
-        end
+%         if adj(pair_number,1)==tfix,
+%             Ib = [Ib;rvec(:)];
+%             Sb = [Sb;-(vec1(:)-vec2(:))];
+%             %disp([pair_number adj(pair_number,:)]);
+%             %%% sosi
+%             
+%         elseif adj(pair_number,2)==tfix,    % then we need to place x and y values into b
+%             Ib = [Ib;rvec(:)];
+%             Sb = [Sb;-(vec1(:)-vec2(:))];
+%         else
+%             Ib = [Ib;rvec(:)];
+%             Sb = [Sb;-(vec1(:) - vec2(:))];
+%         end
     end
     if tdim>2
         if adj(pair_number,1)==tfix,

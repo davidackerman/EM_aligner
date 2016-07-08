@@ -74,6 +74,12 @@ for ix = 1:size(chnks,1)
     disp([zfirst(ix) zlast(ix)]);
     [L_vec, tIds, PM, pm_mx{ix}, sectionId_load, z_load]  = ...
                    load_point_matches(zfirst(ix), zlast(ix), rc, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
+    %L_vec = translate_to_origin(L_vec);
+    if opts.use_peg
+        L_vec = add_translation_peggs(L_vec, opts.peg_npoints, opts.peg_weight);
+    end
+    %L_vec.pm = filter_pm(L_vec.pm);
+    
     %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %     %% The solver can only handle clusters of tiles that are sufficiently connected
     %     %  Orphan tiles are not allowed, nor tiles with too few point matches
@@ -81,13 +87,22 @@ for ix = 1:size(chnks,1)
     if opts.conn_comp ==1
         [L_vec, ntiles] = reduce_to_connected_components(L_vec);
         L_vec(ntiles<opts.min_tiles) = [];
+        if numel(L_vec)==1,
+            disp('One component found');
+        end
     else
         ntiles = numel(L_vec.tiles);
-        %disp('Will solve all tiles  as one component');
+        disp('Will solve all tiles  as one component');
     end
     %% Solve: Provide the collection of connected components and they will each be individually solved
     if ~isempty(L_vec)
     [mL, err{ix}, R{ix}] = solve_clusters(L_vec, opts, opts.stvec_flag);   % solves individual clusters and reassembles them into one
+    
+    if opts.use_peg
+    %%% if translation pegs were used, eliminate last tile
+    mL.tiles(end) = [];
+    mL = update_adjacency(mL);
+    end
     %%%% ingest into Renderer database
     %     cd(dir_temp);    save(collection{ix}, 'mL', 'rc', 'pm', 'opts', 'chnks', 'sectionId', 'z');
     else

@@ -12,8 +12,8 @@
 %% [0] configure collections and prepare quantities
 clc; clear all;
 kk_clock;
-nfirst = 1100;
-nlast  = 1400;
+nfirst = 1000;
+nlast  = 1700;
 
 % configure source collection
 rcsource.stack          = 'v12_acquire_merged';
@@ -57,7 +57,7 @@ pm.match_collection = 'v12_dmesh';
 %% 
 % configure solver
 opts.min_tiles = 10; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
-opts.degree = 2;    % 1 = affine, 2 = second order polynomial, maximum is 3
+opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded post-solution
 opts.solver = 'backslash';
 opts.min_points = 5;
@@ -67,8 +67,8 @@ opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting 
                        % 1 = regularize against input collection
                        
 opts.distributed = 1;  % 1 = use Matlab cluster for solving matrix
-opts.lambda = 10^(2);
-opts.edge_lambda = 10^(2);
+opts.lambda = 10^(0);
+opts.edge_lambda = 10^(0);
 opts.calc_confidence = 1;
 opts.conn_comp = 0; 
 opts.translation_fac = 1.0;

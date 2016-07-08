@@ -13,7 +13,7 @@ function resp = append_renderer_stack(rc,rc_base,fn, MET_format)
 %
 % Author: Khaled Khairy. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-verbose = 0;
+verbose = 1;
 check_input(rc, rc_base, fn, MET_format);
 
 str1_source     = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rc.baseURL, rc.owner, rc_base.project);  
@@ -30,7 +30,13 @@ strcmd          = [str9 str10 str1_source target_project str2 str3 str11 str6   
 
 
 try
+    if verbose, 
+        kk_clock();
+        disp('Issuing system command to ingest:');
+        disp(strcmd);
+    end
     [a, resp] = system(strcmd);
+    
 catch err_cmd_exec
     kk_disp_err(err_cmd_exec);
     error(['Error executing: ' strcmd]);
@@ -43,9 +49,11 @@ end
 
 
 if verbose,
+    
     disp(strcmd);
-    disp(a);
-    disp(resp);
+    kk_clock();
+   % disp(a);
+   % disp(resp);
 end
 
 %%

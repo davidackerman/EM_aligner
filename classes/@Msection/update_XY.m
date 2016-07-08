@@ -1,8 +1,8 @@
-function [obj, P, Pix] = update_XY(obj)
+function [obj, P, Pix, pcell] = update_XY(obj, n)
 % update the working arrays X and Y that record center position of
 % tiles
 % Note: This information is in principle in individual tile objects but is handy to have.
-n = 55+4;
+if nargin<2, n = 55+4;end
 obj.X = zeros(numel(obj.tiles), 1);
 obj.Y = zeros(numel(obj.tiles), 1);
 if nargout>1
@@ -12,7 +12,7 @@ else
     P = [];
     Pix = [];
 end
-
+pcell = {};
 if strcmp(class(obj.tiles(1).tform), 'images.geotrans.PolynomialTransformation2D')...
         || strcmp(class(obj.tiles(1).tform), 'nonlin2d')
 %     disp(' update_XY under testing for polynomials');
@@ -60,9 +60,10 @@ else
         bo = [aa;bb];
         p = bo*obj.tiles(tix).tform.T;
         p = p(:,1:2);
-        
+        pcell{tix} = p;
         P(tix,:)   = p(:)';
         Pix(tix,:) = ones(1,n)*tix;
+        
         end
     end
 end
@@ -71,4 +72,29 @@ if nargout>1
 P = reshape(P, numel(obj.tiles) * n, 2);
     Pix = reshape(Pix,numel(obj.tiles)*n,1);
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

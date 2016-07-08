@@ -26,5 +26,5 @@ for ix = 1:numel(fn)
 astr = [astr sprintf(' -a /groups/flyTEM/home/khairyk/mwork_nogit/fileexchange/jsonlab/%s',fn(ix).name)];
 end
 
-str = sprintf('mcc -m -R -nodesktop -v montage_section_SL.m %s;', astr);
+str = sprintf('mcc -m -R -nodesktop -v montage_section_SL_prll.m %s;', astr);
 eval(str);

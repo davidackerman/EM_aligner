@@ -93,8 +93,8 @@ classdef Msection
                     z  = arg2; % is the z position of the section
                     
                     % % get a list of all tiles
-                    urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
-                        rc.baseURL, rc.owner, rc.project, rc.stack, z);
+                    urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+                        rc.baseURL, rc.owner, rc.project, rc.stack, (z));
                     j = webread(urlChar);
                     % generate the tiles
                     jt = tile;
@@ -111,6 +111,7 @@ classdef Msection
                     obj = Msection(jt);
                     obj = update_tile_sources(obj, rc);
                     obj.sectionID = sectionID;
+                    if ~isempty(obj.tiles), obj = update_tile_info(obj);end
                 end
                 
                 %%%%%% import from layout file
@@ -120,9 +121,10 @@ classdef Msection
                     obj = import_from_layout_txt(obj, arg1, arg2);
                     obj = generate_hash_tables(obj);
                     obj = update_adjacency(obj);
+                    if ~isempty(obj.tiles), obj = update_tile_info(obj);end
                 end
             end
-            if ~isempty(obj.tiles), obj = update_tile_info(obj);end
+            
             obj = configure_registration(obj);
             obj = tile_pos_gen(obj);
             %if nnz(obj.A)==0, warning('No adjacency information in A');end
@@ -142,12 +144,14 @@ classdef Msection
                 end
             end
             
-            delta = -(5000 + max([obj.tiles(1).W obj.tiles(1).H]));
+            delta = 0;% -(5000 + max([obj.tiles(1).W obj.tiles(1).H]));
             dx = min(X(:)) + delta;%mL.box(1);
             dy = min(Y(:)) + delta;%mL.box(2);
-            for ix = 1:numel(obj.tiles)
-                obj.tiles(ix) = translate_tile(obj.tiles(ix), [dx dy]);
+            tiles = obj.tiles;
+            parfor ix = 1:numel(obj.tiles)
+                tiles(ix) = translate_tile(tiles(ix), [dx dy]);
             end
+            obj.tiles = tiles;
             
         end
     end

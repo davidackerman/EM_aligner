@@ -19,11 +19,12 @@ w_i = cell(numel(L),1);
 tf_i = cell(numel(L),1);
 pdegree = options.pdegree;
 for ix = 1:numel(L)
+    ntiles = numel(L(ix).tiles);
     [A_i{ix}, b_i{ix},w_i{ix}, tf_i{ix}] = alignTEM_objective_montage(...
         L(ix).pm, ...
         L(ix).z==lfix,...    % equals one if this is the layer with the fixed tile
         tfix, ...
-        pdegree, sf);
+        pdegree, sf, ntiles);
 end
 
 % construct sub-matrices for cross-layer

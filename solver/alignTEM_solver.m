@@ -176,21 +176,30 @@ else
     end
     if options.constrain_edges
         if isempty(L(lix).edge_tiles)
-            L(lix).edge_tiles = get_edge_tiles(L(lix));
+            disp('Finding edge tiles ...');
+            % split into z and determine edges for each z
+            ll = split_z(L(lix));
+            etix = [];
+            for lix = 1:numel(ll)
+                ll(lix).edge_tiles = get_edge_tiles(ll(lix));
+                etix = [etix; ll(lix).edge_tiles];  % assumes that field edge_tiles has been updated
+            end
+            %L(lix).edge_tiles = get_edge_tiles(L(lix));
+            disp('Done!');
             %warning('No edge tiles found --- calculating');
         end
         if options.verbose,disp('------------ Using edge constraints');end
         fac_inner = 1;
         %etix = [sum(L.A,2)<4]'; % logical vector of edge tiles
-        etix = [];
-        for lix = 1:numel(L)
-            etix = [etix; L(lix).edge_tiles];  % assumes that field edge_tiles has been updated
-        end
-        etix = etix';
-        etix = etix*options.edge_lambda ;   % edge tiles get extra constraint
-        etix(etix==0) = fac_inner; % inner tiles get a value typically 1
-        etix = etix(ones(tdim,1), :);
-        etix = etix(:);
+%         etix = [];
+%         for lix = 1:numel(L)
+%             etix = [etix; L(lix).edge_tiles];  % assumes that field edge_tiles has been updated
+%         end
+         etix = etix';
+         etix = etix*options.edge_lambda ;   % edge tiles get extra constraint
+         etix(etix==0) = fac_inner; % inner tiles get a value typically 1
+         etix = etix(ones(tdim,1), :);
+         etix = etix(:);
         tB(1:size(tB,1)+1:end) = diag(tB).*etix;
         td = td.*etix;
 

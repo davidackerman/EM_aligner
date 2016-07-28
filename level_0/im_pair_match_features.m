@@ -16,29 +16,29 @@ m1  = vp1(index_pairs(:,1));
 m2  = vp2(index_pairs(:,2));
 
 
-disp('Estimating geometric transform');tic
-[tform,m2,m1] = estimateGeometricTransform(m2.Location,m1.Location, 'affine');
-tform_matrix = tform.T;
-disp('Done');toc
+% disp('Estimating geometric transform');tic
+% [tform,m2,m1] = estimateGeometricTransform(m2.Location,m1.Location, 'affine');
+% tform_matrix = tform.T;
+% disp('Done');toc
 
-% warning off;
+warning off;
 % %%% constructing the geoTransformEst object requires providing a 
 % %%% transformation
-% geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
-% geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';
-% geoTransformEst.Transform = 'Affine';%'Nonreflective similarity';%'Affine';%
-% geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
-% geoTransformEst.MaximumRandomSamples = 5000;
-% geoTransformEst.DesiredConfidence = 99.95;
-% 
-% 
-% % Invoke the step() method on the geoTransformEst object to compute the
-% % transformation from the |distorted| to the |original| image. You
-% % may see varying results of the transformation matrix computation because
-% % of the random sampling employed by the RANSAC algorithm.
-% [tform_matrix, inlierIdx] = step(geoTransformEst, m2.Location, m1.Location);
-% m1 = m1(inlierIdx);
-% m2 = m2(inlierIdx);
+geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
+geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';
+geoTransformEst.Transform = 'Affine';%'Nonreflective similarity';%'Affine';%
+geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
+geoTransformEst.MaximumRandomSamples = 5000;
+geoTransformEst.DesiredConfidence = 99.95;
+
+
+% Invoke the step() method on the geoTransformEst object to compute the
+% transformation from the |distorted| to the |original| image. You
+% may see varying results of the transformation matrix computation because
+% of the random sampling employed by the RANSAC algorithm.
+[tform_matrix, inlierIdx] = step(geoTransformEst, m2.Location, m1.Location);
+m1 = m1(inlierIdx).Location;
+m2 = m2(inlierIdx).Location;
 %%%%%%%%%%%%%%%%%%%%
 warning on;
 

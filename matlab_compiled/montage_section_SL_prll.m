@@ -22,6 +22,7 @@ L.dthresh_factor = 1.2;                             % factor x tile diagonal = s
 for tix = 1:numel(L.tiles)
     L.tiles(tix).dir_temp_render = sl.scratch;
     L.tiles(tix).renderer_client = sl.renderer_client;
+    L.tiles(tix).fetch_local = 0;
 end
 if sl.verbose
     disp('section data imported --- registration initiated');
@@ -70,7 +71,7 @@ ingest_section_into_LOADING_collection(mL, sl.target_collection,...
 resp = set_renderer_stack_state_complete(sl.target_collection);  % set to state COMPLETE
 
 if sl.verbose
-    disp(resp);
+    %disp(resp);
     disp('Finished montage and ingestion');
     kk_clock();
 end

@@ -134,7 +134,7 @@ PM.adj = [];
 PM.W = {};
 PM.np = [];
 n1 = [];
-for ix = 1:numel(ns)
+parfor ix = 1:numel(ns)
     %disp(ix);
     count = 1;
     n1(ix) = 0;
@@ -205,7 +205,8 @@ L.pm.M = M;
 L.pm.adj = adj;
 L.pm.W = W;
 L.pm.np = np;
-
+% %% tiles that are not connected to any other tiles must be eliminated
+% adjids = {L.tiles(adj(:)).renderer_id};
 %% %%%%%%%%%%%%%%%%%%%%%%%%% diagnostics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % section adjacency point-match count matrix
 pm_mx = diag(n1);
@@ -226,7 +227,18 @@ if ~(size(bb,1)==size(L.pm.adj,1))
     error('Rows in L.pm.adj should be unique');
 end
 disp('Point-match loading complete');
-% % All renderer_id pairs must correspond to an adjacency pair: if not then report error
+
+% check for descripancies between adjacency indices and number of tiles
+ntiles = max(L.pm.adj(:));
+if ntiles~=numel(L.tiles)
+    disp('Discrepancy between number of tiles and availability of point-matches');
+    disp(ntiles)
+    disp(numel(L.tiles));
+end
+
+
+        
+% % % All renderer_id pairs must correspond to an adjacency pair: if not then report error
 % L.G = graph(L.pm.adj(:,1), L.pm.adj(:,2), L.pm.np, {L.tiles(:).renderer_id});
 % CC = table2cell(L.G.Edges(:,1));
 % %nCC = size(CC,1);

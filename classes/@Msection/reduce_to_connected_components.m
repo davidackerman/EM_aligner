@@ -29,16 +29,22 @@ bins = unique(b);
 % disp(occur(indx));
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% 
-for bix = 1:numel(bins)
-    indx = b==bins(bix);
-    if sum(indx)>mintiles && numel(bins)>1
-        L_vec(bix) = reduce_to_tile_subset(obj, find(indx));
-    else
-        L_vec(bix) = Msection(obj.tiles(indx));
+%%
+if numel(bins)>1
+    for bix = 1:numel(bins)
+        indx = b==bins(bix);
+        if sum(indx)>mintiles
+            L_vec(bix) = reduce_to_tile_subset(obj, find(indx));
+        else
+            L_vec(bix) = Msection(obj.tiles(indx));
+        end
+        ntiles(bix) = sum(indx);
+        
     end
-    ntiles(bix) = sum(indx);
-    
+    [a, c] = sort(ntiles, 'descend');
+    L_vec = L_vec(c);
+else
+    L_vec = obj;
+    a = numel(obj.tiles);
 end
-[a, c] = sort(ntiles, 'descend');
-L_vec = L_vec(c);
+

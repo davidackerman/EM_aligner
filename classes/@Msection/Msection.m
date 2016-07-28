@@ -103,6 +103,9 @@ classdef Msection
                     parfor jix = 1:numel(j)
                         jt(jix) = tile(j(jix));
                         jt(jix).z = z;
+                        jt(jix).project = arg1.project;
+                        jt(jix).owner = arg1.owner;
+                        jt(jix).stack = arg1.stack;
                     end
                     % loop over tiles to set tile id
                     parfor ix = 1:numel(jt)
@@ -144,7 +147,7 @@ classdef Msection
                 end
             end
             
-            delta = 0;% -(5000 + max([obj.tiles(1).W obj.tiles(1).H]));
+            delta = -(5000 + max([obj.tiles(1).W obj.tiles(1).H]));
             dx = min(X(:)) + delta;%mL.box(1);
             dy = min(Y(:)) + delta;%mL.box(2);
             tiles = obj.tiles;

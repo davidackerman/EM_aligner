@@ -28,3 +28,7 @@ end
 
 str = sprintf('mcc -m -R -nodesktop -v montage_section_SL_prll.m %s;', astr);
 eval(str);
+
+
+
+% cd /groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled

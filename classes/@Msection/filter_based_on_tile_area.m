@@ -21,23 +21,33 @@ A = [];
 S = [];
 obj = update_tile_info(obj);		% we don't need adjacency information in this file, but make sure tile info is up to date
 
+% assuming all tiles have the same transformation model
+if strcmp(class(obj.tiles(1).tform), 'affine2d')
+    affine = 1;
+end
+
+
+
+tiles = obj.tiles;
+map_display_fac = obj.map_display_fac;
+
 %%% determine polygonal areas
-parfor ix = 1:numel(obj.tiles)
-    if strcmp(class(obj.tiles(ix).tform), 'affine2d')
-        x = obj.tiles(ix).tform.T(3,1);
-        y = obj.tiles(ix).tform.T(3,2);
+parfor ix = 1:numel(tiles)
+    if affine
+        x = tiles(ix).tform.T(3,1);
+        y = tiles(ix).tform.T(3,2);
     else
         x = 0;
         y = 0;
     end
-    Px = [x; x + obj.tiles(ix).W/obj.map_display_fac; x + obj.tiles(ix).W/obj.map_display_fac; x];
-    Py = [y; y; y + obj.tiles(ix).H/obj.map_display_fac; y+obj.tiles(ix).H/obj.map_display_fac];
+    Px = [x; x + tiles(ix).W/map_display_fac; x + tiles(ix).W/map_display_fac; x];
+    Py = [y; y; y + tiles(ix).H/map_display_fac; y+tiles(ix).H/map_display_fac];
     
     %%% transform the points
-    if strcmp(class(obj.tiles(ix).tform), 'affine2d')
-        P = [Px(:) Py(:) [1 1 1 1]']*obj.tiles(ix).tform.T;
+    if strcmp(class(tiles(ix).tform), 'affine2d')
+        P = [Px(:) Py(:) [1 1 1 1]']*tiles(ix).tform.T;
     else
-        P = transformPointsInverse(obj.tiles(ix).tform,[Px Py]);
+        P = transformPointsInverse(tiles(ix).tform,[Px Py]);
     end
     % check polygon area
     A(ix) = polyarea(P(:,1), P(:,2));
@@ -60,7 +70,8 @@ mu = mean(S);
 
 indx = [find(S<(mu-lambda*sig)) find(S>(mu+lambda*sig))];
 for ix = 1:numel(indx)
-    disp(['Outlier tile found: ' num2str(indx(ix))]);
+    disp(['Outlier tile found: ' num2str(indx(ix)) ' .... setting state to -3.']);
+    
     obj.tiles(indx(ix)).state = -3;
 end
 

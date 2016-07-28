@@ -1,4 +1,5 @@
-function [append_resp] = ingest_section_into_LOADING_collection(mL,rc_target, rc_base, dir_work, translate_to_positive_space)
+function [append_resp] = ingest_section_into_LOADING_collection(...
+    mL,rc_target, rc_base, dir_work, translate_to_positive_space)
 % This is a high-level function that:
 %* Ingests the data into an existing collection,
 %* creates one if the collection doesn't already exist

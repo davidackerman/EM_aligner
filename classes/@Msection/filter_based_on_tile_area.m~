@@ -16,14 +16,16 @@ if nargin<2
 elseif isstruct(lambda)
     lambda = lambda.lambda;
 end
-disp(['filtering outliers using lambda = ' num2str(lambda)]);
+disp(['filtering outliers based on perimeter using lambda = ' num2str(lambda)]);
 A = [];
 S = [];
 obj = update_tile_info(obj);		% we don't need adjacency information in this file, but make sure tile info is up to date
-
+if strcmp(class(obj.tiles(ix).tform), 'affine2d')
+    affine = 1;
+end
 %%% determine polygonal areas
 parfor ix = 1:numel(obj.tiles)
-    if strcmp(class(obj.tiles(ix).tform), 'affine2d')
+    if affine
         x = obj.tiles(ix).tform.T(3,1);
         y = obj.tiles(ix).tform.T(3,2);
     else
@@ -60,7 +62,8 @@ mu = mean(S);
 
 indx = [find(S<(mu-lambda*sig)) find(S>(mu+lambda*sig))];
 for ix = 1:numel(indx)
-    disp(['Outlier tile found: ' num2str(indx(ix))]);
+    disp(['Outlier tile found: ' num2str(indx(ix)) ' .... setting state to -3.']);
+    
     obj.tiles(indx(ix)).state = -3;
 end
 

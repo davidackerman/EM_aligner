@@ -68,13 +68,26 @@ ms.number_of_spark_nodes        = '2.0';
 
 [zu, sID, sectionId, z, ns] = get_section_ids(rcsource, nfirst, nlast);
 
+%% define target directores and file names for storage
+dir_rough_intermediate_store = '/nobackup/flyTEM/khairy/FAFB00v13/montage_scape_pms';
+target_solver_path = [dir_rough_intermediate_store '/solver_' num2str(nfirst) '_' num2str(nlast) ];
+target_ids = [precalc_solver_path '/ids.txt'];
+target_matches = [precalc_solver_path '/matches.txt'];
+target_layer_images = [target_solver_path];
 %% [2] generate montage-scapes and montage-scape point-matches
-% precalc_ids = '/nobackup/flyTEM/khairy/FAFB00v13/montage_scape_pms/solver_1to400_01.00_400.00/ids.txt';
-% precalc_matches = '/nobackup/flyTEM/khairy/FAFB00v13/montage_scape_pms/solver_1to400_01.00_400.00/matches.txt';
-% precalc_path = '/nobackup/flyTEM/khairy/FAFB00v13/montage_scape_pms/solver_1to400_01.00_400.00';
 run_now = 1;
-[L2, needs_correction, pmfn, zsetd, zrange, t] = ...
-    generate_montage_scapes_SIFT_point_matches(ms, run_now, precalc_ids, precalc_matches, precalc_path);
+[L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str, fn_ids] = ...
+    generate_montage_scapes_SIFT_point_matches(ms, run_now);
+
+%% organize directories/files and store intermediate data
+source_layer_images = [dir_spark_work '/layer_images'];
+kk_mkdir(target_layer_images);
+movefile(source_layer_images, target_layer_images);
+movefile(pmfn, target_matches);
+movefile(fn_ids, target_matches);
+
+
+
 
 %% [2'] correct if needed
 if needs_correction   %%%%%%%%%% manually correct
@@ -125,36 +138,39 @@ if needs_correction   %%%%%%%%%% manually correct
     
     % manually run all corrections then re-run point-match generation
     run_now = 0;
-    [L2, needs_correction, pmfn,zsetd, zrange, t] = generate_montage_scapes_SIFT_point_matches(ms, run_now);
+    [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str,...
+        fn_ids] = generate_montage_scapes_SIFT_point_matches(ms, run_now);
     
     
 end
 %%
-disp('Filtering point-matches using RANSAC');
+% disp('Filtering point-matches using RANSAC');
+% 
+% % %% filter point matches using RANSAC
+% geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
+% geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';
+% geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';%
+% geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
+% geoTransformEst.MaximumRandomSamples = 1500;
+% geoTransformEst.DesiredConfidence = 99.99;
+% for pmix = 1:size(L2.pm.M,1)
+%     m1 = L2.pm.M{pmix,1};
+%     m2 = L2.pm.M{pmix,2};
+%     % Invoke the step() method on the geoTransformEst object to compute the
+%     % transformation from the |distorted| to the |original| image. You
+%     % may see varying results of the transformation matrix computation because
+%     % of the random sampling employed by RANSAC.
+%     [tform_matrix, inlierIdx] = step(geoTransformEst, m2, m1);
+%     m1 = m1(inlierIdx,:);
+%     m2 = m2(inlierIdx,:);
+%     L2.pm.M{pmix,1} = m1;
+%     L2.pm.M{pmix,2} = m2;
+%     w = L2.pm.W{pmix};
+%     L2.pm.W{pmix} = w(inlierIdx);
+% end
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% %% filter point matches using RANSAC
-geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
-geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';
-geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';%
-geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
-geoTransformEst.MaximumRandomSamples = 1500;
-geoTransformEst.DesiredConfidence = 99.99;
-for pmix = 1:size(L2.pm.M,1)
-    m1 = L2.pm.M{pmix,1};
-    m2 = L2.pm.M{pmix,2};
-    % Invoke the step() method on the geoTransformEst object to compute the
-    % transformation from the |distorted| to the |original| image. You
-    % may see varying results of the transformation matrix computation because
-    % of the random sampling employed by RANSAC.
-    [tform_matrix, inlierIdx] = step(geoTransformEst, m2, m1);
-    m1 = m1(inlierIdx,:);
-    m2 = m2(inlierIdx,:);
-    L2.pm.M{pmix,1} = m1;
-    L2.pm.M{pmix,2} = m2;
-    w = L2.pm.W{pmix};
-    L2.pm.W{pmix} = w(inlierIdx);
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 % % check point match quality
 % for lix = 1%:size(L2.pm.adj,1)

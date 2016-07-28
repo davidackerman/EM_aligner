@@ -34,13 +34,14 @@ classdef tile
         validPoints = [];     % point locations corresponding to features
         featuresMethod = 'SURF'; % method to be used for calculating features
         % surf paramters
-        SURF_NumOctaves = 3;
-        SURF_NumScaleLevels = 6;
-        SURF_MetricThreshold = 1000;
+        SURF_NumOctaves = 2;
+        SURF_NumScaleLevels = 8;
+        SURF_MetricThreshold = 1500;
         dir_temp_render = '/scratch/khairyk';% there is no elegant way to do this. [a resp] = system('whoami'); dir_temp_render = ['/scratch/' resp];
         renderer_client = '/groups/flyTEM/flyTEM/render/bin/render.sh';
         fetch_local = 0;
-        
+        scale = 1;
+
     end
     
     
@@ -84,7 +85,7 @@ classdef tile
                 if strcmp(p.transforms.specList(end).className, 'mpicbg.trakem2.transform.AffineModel2D')
                     T(3,3) = 1;
                     T(1,1) = Tdouble(1);
-                    T(2,1) = Tdouble(2);
+                    T(1,2) = Tdouble(2);
                     T(2,1) = Tdouble(3);
                     T(2,2) = Tdouble(4);
                     T(3,1) = Tdouble(5);
@@ -142,7 +143,7 @@ classdef tile
             % will use the renderer client script if obj.fetch_local==0;
             % will ask the renderer service to render if obj.fetch_local == -1
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if nargin<2, filter='true';end
+            if nargin<2, filter='false';end
             if nargin<3, scale = 1.0;end
             if obj.fetch_local==1
                 im = imread(obj.path);
@@ -162,8 +163,8 @@ classdef tile
                     im = histeq(im);
                 end
             end
-            mask = get_mask(obj);
-            im(~mask) = 0;
+            %mask = get_mask(obj);
+            %im(~mask) = 0;
         end
         %% Rendering by invoking a local client
         function im = get_image_renderer_client(obj, scale, filter)
@@ -171,8 +172,8 @@ classdef tile
 %             url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?scale=%s&filter=%s',...
 %                 obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, num2str(scale), filter);
 
-            url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?filter=%s',...
-                obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, filter);
+            url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?scale=%.1f&filter=%s',...
+                obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, scale, filter);
 
             fn = [obj.dir_temp_render '/tile_image_' num2str(randi(1000)) '_' obj.renderer_id '.jpg'];
             % we will try four times
@@ -187,12 +188,12 @@ classdef tile
             end
             try
                 pause(1.0);
-                im = imread(fn, 'jpeg');
+                im = imread(fn, 'jpg');
             catch err_reading_image
                 kk_disp_err(err_reading_image);
                 disp('Retrying');
                 pause(1.0);
-                im = imread(fn, 'jpeg');
+                im = imread(fn, 'jpg');
             end
             im = rgb2gray(im);
             delete(fn);

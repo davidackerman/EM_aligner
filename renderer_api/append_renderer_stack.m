@@ -16,7 +16,7 @@ function resp = append_renderer_stack(rc,rc_base,fn, MET_format)
 verbose = 1;
 check_input(rc, rc_base, fn, MET_format);
 
-str1_source     = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rc.baseURL, rc.owner, rc_base.project);  
+str1_source     = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST";', rc.baseURL, rc.owner, rc_base.project);  
 target_project  = sprintf('TARGET_PROJECT="%s";', rc.project);
 str2            = sprintf('SOURCE_STACK="%s";', rc_base.stack);
 str3            = sprintf('TARGET_STACK="%s";', rc.stack);
@@ -36,7 +36,7 @@ try
         disp(strcmd);
     end
     [a, resp] = system(strcmd);
-    
+    if verbose, disp(resp);end
 catch err_cmd_exec
     kk_disp_err(err_cmd_exec);
     error(['Error executing: ' strcmd]);

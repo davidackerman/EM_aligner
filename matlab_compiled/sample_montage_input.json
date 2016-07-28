@@ -26,7 +26,7 @@
 		"verbose": 1
 	},
 	"target_collection": {
-		"stack": "Test_llm_01",
+		"stack": "Test_llm_02_prll",
 		"owner": "flyTEM",
 		"project": "test",
 		"service_host": "10.37.5.60:8080",

@@ -8,7 +8,7 @@ function obj = update_adjacency(obj)
 % Author: Khaled Khairy Janelia Research Campus -- 2015
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-LARGE = 1000;
+LARGE = 20000;
 if numel(obj.tiles)<LARGE
 obj.update_tile_info_switch = -1; % just use the first tile's W and H for all
 %obj = update_tile_info(obj);
@@ -17,9 +17,9 @@ W = obj.tiles(1).W;
 obj = update_XY(obj);
 a = [obj.X(:) obj.Y(:)];
 
-%d = pdist2(a,a);        % depends on statistic toolbox  -------- Sosi: not good for large numbers of tiles
+d = pdist2(a,a);        % depends on statistic toolbox  -------- Sosi: not good for large numbers of tiles
 
-d = pdist2plus(a,a);
+%d = pdist2plus(a,a);
 dthresh = sqrt(H^2 + W^2) * obj.dthresh_factor;   % diagonal of the tile times factor
 obj.A = sparse(triu(d<dthresh,1));
 elseif isa(obj.G,'graph')

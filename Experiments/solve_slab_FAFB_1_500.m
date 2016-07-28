@@ -39,22 +39,22 @@ opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';
 opts.min_points = 5;
 opts.nbrs = 4;
-opts.xs_weight = 1/10;
+opts.xs_weight = 1/200;
 opts.stvec_flag = 0;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 1;
 
-% % test for best regularization parameter
-% % This is the smallest that does not cause shrinkage of tiles
-regstart = -2;
-regfinish = 5;
-step = 0.5;
-
-%[L, ~, ~, pm_mx] = load_point_matches(nfirst, nlast, rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
-
-
-[L, L_vec, pm_mx, err, scl, h] = ...
-    solver_regularization_parameter_sweep(nfirst, nlast, rcsource, pm, ...
-                                          opts, regstart, regfinish, step);
+% % % % test for best regularization parameter
+% % % % This is the smallest that does not cause shrinkage of tiles
+% % regstart = -2;
+% % regfinish = 5;
+% % step = 0.5;
+% % 
+% % %[L, ~, ~, pm_mx] = load_point_matches(nfirst, nlast, rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
+% % 
+% % 
+% % [L, L_vec, pm_mx, err, scl, h] = ...
+% %     solver_regularization_parameter_sweep(nfirst, nlast, rcsource, pm, ...
+% %                                           opts, regstart, regfinish, step);
 
 
 %% solve

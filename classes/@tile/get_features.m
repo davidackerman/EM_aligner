@@ -2,8 +2,10 @@ function obj = get_features(obj, filter)
 
 if nargin<2, filter='none';end
 % im1 = get_warped_image(obj, filter);
+tic
+disp(['Tile fetches local = ' num2str(obj.fetch_local)]);
 im1 = get_image(obj, filter);
-
+toc
 if strcmp(obj.featuresMethod,'MSER')
     regionsObj = detectMSERFeatures(im1, 'RegionAreaRange', [500 40000], 'MaxAreaVariation', 0.15);
     [f1, vp1] = extractFeatures(im1, regionsObj);
@@ -20,11 +22,10 @@ end
 if strcmp(obj.featuresMethod, 'SURF')
     % USE SURF
  %    p1  = detectSURFFeatures(im1, 'NumOctaves', 3, 'NumScaleLevels', 6);
- 
     p1  = detectSURFFeatures(im1, 'NumOctaves', obj.SURF_NumOctaves,...
                                    'NumScaleLevels', obj.SURF_NumScaleLevels,...
                                    'MetricThreshold', obj.SURF_MetricThreshold);
-                               
+                         
     [f1, vp1]  = extractFeatures(im1,  p1);
 end
 if strcmp(obj.featuresMethod, 'BRISK')

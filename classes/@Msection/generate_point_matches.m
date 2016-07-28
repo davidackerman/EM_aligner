@@ -6,8 +6,9 @@ function [obj, M, adj] = generate_point_matches(obj, thresh, filter)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin<2, thresh = 12;end;
 if nargin<3, filter = 'true';end
+if nargin<4, ncluster = 28;end
 
-if isempty(obj.A), 
+if isempty(obj.A),
     warning('No adjacency matrix found, calculating');
     obj = update_XY(obj);
     obj = update_adjacency(obj);
@@ -17,19 +18,31 @@ if size(obj.A,1)~=numel(obj.tiles)
     obj = update_XY(obj);
     obj  = update_adjacency(obj);
 end
+disp('Neighbor threshold factor used:');
+disp(obj.dthresh_factor);
+obj  = update_adjacency(obj);
+if isdeployed
+    delete(gcp('nocreate'));
+    disp('Starting parallel pool');
+    
+    
+    parpool(ncluster);
+    poolobj = gcp('nocreate');
+    disp(['Parallel pool created. Pool size: ' num2str(poolobj.NumWorkers)]);
+    
+end
 
-
-
-delete(gcp('nocreate'));
-disp('Starting parallel pool');
-
-
-parpool(12);
-poolobj = gcp('nocreate');
-disp(['Parallel pool created. Pool size: ' num2str(poolobj.NumWorkers)]);
-
+if isdeployed
+    disp('Calculating features for all tiles...');
+    tic;
+end
+%for tix = 1:numel(obj.tiles), obj.tiles(tix).fetch_local = 1;end
 [obj] = calculate_tile_features(obj, filter);
 
+if isdeployed
+    toc
+    disp('Done!');
+end
 
 [r, c] = ind2sub(size(obj.A), find(obj.A));  % neighbors are determined by the adjacency matrix
 
@@ -42,53 +55,55 @@ np = zeros(numel(r),1);
 delpix = zeros(numel(r),1, 'uint32');
 %count = 1;
 disp('Calculating point matches using parfor .... ');
+tic
 %parfor_progress(numel(r));
 parfor pix = 1: numel(r)
-    disp(['Point matching: ' num2str(pix) ' of ' num2str(numel(r))]);
-%     try
-        f1 = mL2_tiles(r(pix)).features;
-        f2 = mL2_tiles(c(pix)).features;
-        vp1 = mL2_tiles(r(pix)).validPoints;
-        vp2 = mL2_tiles(c(pix)).validPoints;
-        [m1, m2, ~]  = im_pair_match_features(f1, vp1, f2, vp2);
-%         
-%         M(pix,:) = {[m1.Location],[m2.Location]};
-%         adj(pix,:) = [r(pix) c(pix)];
-%         W(pix) = {[ones(size(m1.Location,1),1) * 1/(1+ abs(mL2_tiles(r(pix)).z-mL2_tiles(c(pix)).z))]};
-%         np(pix)  = size(m1.Location,1);
-%         %%%% mark for removal point-matches that don't have enough point pairs
-%         if size(m1.Location,1)<thresh
-%             delpix(pix) = 1;
-%         end
-        
-        
-                
-        M(pix,:) = {[m1],[m2]};
-        adj(pix,:) = [r(pix) c(pix)];
-        W(pix) = {[ones(size(m1,1),1) * 1/(1+ abs(mL2_tiles(r(pix)).z-mL2_tiles(c(pix)).z))]};
-        np(pix)  = size(m1,1);
-        %%%% mark for removal point-matches that don't have enough point pairs
-        if size(m1,1)<thresh
-            delpix(pix) = 1;
-        end
-        
-        
-        
-        
-        
-%     catch err_pmatching
-%         kk_disp_err(err_pmatching);
-%         delpix(pix) = 1;
-%     end
-%    parfor_progress;
+    %    disp(['Point matching: ' num2str(pix) ' of ' num2str(numel(r))]);
+    %     try
+    f1 = mL2_tiles(r(pix)).features;
+    f2 = mL2_tiles(c(pix)).features;
+    vp1 = mL2_tiles(r(pix)).validPoints;
+    vp2 = mL2_tiles(c(pix)).validPoints;
+    [m1, m2, ~]  = im_pair_match_features(f1, vp1, f2, vp2);
+    %
+    %         M(pix,:) = {[m1.Location],[m2.Location]};
+    %         adj(pix,:) = [r(pix) c(pix)];
+    %         W(pix) = {[ones(size(m1.Location,1),1) * 1/(1+ abs(mL2_tiles(r(pix)).z-mL2_tiles(c(pix)).z))]};
+    %         np(pix)  = size(m1.Location,1);
+    %         %%%% mark for removal point-matches that don't have enough point pairs
+    %         if size(m1.Location,1)<thresh
+    %             delpix(pix) = 1;
+    %         end
+    
+    
+    
+    M(pix,:) = {[m1],[m2]};
+    adj(pix,:) = [r(pix) c(pix)];
+    W(pix) = {[ones(size(m1,1),1) * 1/(1+ abs(mL2_tiles(r(pix)).z-mL2_tiles(c(pix)).z))]};
+    np(pix)  = size(m1,1);
+    %%%% mark for removal point-matches that don't have enough point pairs
+    if size(m1,1)<thresh
+        delpix(pix) = 1;
+    end
+    
+    
+    
+    
+    
+    %     catch err_pmatching
+    %         kk_disp_err(err_pmatching);
+    %         delpix(pix) = 1;
+    %     end
+    %    parfor_progress;
 end
 %parfor_progress(0);
+toc
 disp('Done!');
-
+if isdeployed
 
 disp('Deleting parallel pool');
 delete(poolobj);
-
+end
 
 if isempty(M), error('No matches found');end;
 delpix = logical(delpix);
@@ -120,9 +135,9 @@ obj.pm.np = np;
 % %     [f{tix}, vp{tix}] = get_features(obj.tiles(tix).get_image(),method);% % extract matching point pairs using Matlab's SURF
 % % end
 % % disp('Done!');
-% % 
+% %
 % % %% obtain matching point pairs for each set of overlaping tiles
-% % 
+% %
 % % [r, c] = ind2sub(size(obj.A), find(obj.A(:)));
 % % pcount = 0;
 % % M = {};
@@ -130,14 +145,14 @@ obj.pm.np = np;
 % % disp('Generating point matches...');
 % % for ix = 1:numel(r)
 % %     if verbose, disp([num2str(ix) ' of ' num2str(numel(r))]);end
-% % 
+% %
 % %     [m1, m2]= im_pair_match_features(f{r(ix)}, vp{r(ix)}, f{c(ix)}, vp{c(ix)});
-% %     
+% %
 % %         pcount = pcount + 1;
 % %         M{pcount, 1} = m1;
 % %         M{pcount, 2} = m2;
 % %         adj = [adj; r(ix) c(ix)];
-% %    
+% %
 % % end
 % % disp('Done!');
 

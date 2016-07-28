@@ -1,4 +1,4 @@
-function [A, b, w, tfix] = alignTEM_objective_montage(pm,tfix_flag, tfix, degree, sf)
+function [A, b, w, tfix] = alignTEM_objective_montage(pm,tfix_flag, tfix, degree, sf, ntiles)
 M = pm.M;
 adj = pm.adj;
 if ~isfield(pm,'W')
@@ -15,7 +15,7 @@ else
     using_SURF_points = 0;
 end
 
-ntiles = max(adj(:));
+%ntiles = max(adj(:));
 
 %% determine number of point-pairs for preallocation
 np_vec = zeros(size(M,1),1);
@@ -28,7 +28,7 @@ for ix = 1:size(M,1)
 end
 n = 2*sum(np_vec);
 %% calculate A
-m = tdim * max(adj(:));         % max(adj(:)) gives the number of tiles
+m = tdim * ntiles;         % max(adj(:)) gives the number of tiles
 w = zeros(n,1);
 I = zeros(n*tdim,1);
 J= zeros(n*tdim,1);

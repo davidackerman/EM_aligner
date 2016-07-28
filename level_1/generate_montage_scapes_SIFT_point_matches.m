@@ -1,4 +1,4 @@
-function [Lin, needs_correction, fn_matches, zsetd, zrange, t] = ...
+function [Lin, needs_correction, fn_matches, zsetd, zrange, t, dir_spark_work, cmd_str, fn_ids] = ...
     generate_montage_scapes_SIFT_point_matches(ms, run_now, precalc_ids, precalc_matches, precalc_path)
 %% Returns an Msection object with registered montage-scapes as tiles
 % Depends on :
@@ -32,12 +32,15 @@ check_input(ms);
 needs_correction = 0;
 zsetd = [];
 zrange = [];
+cmd_str = '';
+dir_spark_work = '';
 t = tile;
 if nargin<2, run_now = 1;end
 if ~isfield(ms, 'number_of_spark_nodes'), ms.number_of_spark_nodes = num2str(2);end
 %% clean up any previous jobs
 dir_spark_work = [ms.base_output_dir '/' ms.project '/' ms.stack  '/' ms.run_dir];
-if run_now, kk_mkdir(dir_spark_work);
+if run_now, 
+    kk_mkdir(dir_spark_work);
     %% construct and submit point-match calculation for montage scapes
     cmd_str = [ms.script ' ' ms.service_host ' ' ms.owner ' ' ms.project ' '...
         ms.stack ' ' ms.first ' ' ms.last ' ' ms.fd_size ' ' ...
@@ -61,7 +64,7 @@ while exist(fn_matches,'file')~=2
     else
         disp(['Waiting for file: ' dir_solver '*/matches.txt']);
     end
-    pause(30);
+    pause(240);
 end
 fn_ids     = [dir_solver '/ids.txt'];
 else
@@ -167,7 +170,7 @@ ll = split_z(Lin);
 zp = [ll(:).z] + str2double(ms.first)-1;
 zz = (str2double(ms.first):str2double(ms.last)) ;
 setd = setdiff(zz,zp);
-zsetd = z(setd);
+zsetd = z(setd-str2double(ms.first)+1);
 if ~isempty(setd),
     disp('Disconnected montage scapes: index');
     disp([setd(:) zsetd]);

@@ -1,5 +1,5 @@
 function [obj, errAb, mL, invalid_similarity, invalid_translation, R] = ...
-    get_rigid_approximation(obj, solver)
+    get_rigid_approximation(obj, solver, opts)
 %% calculates an approximation to a rigid transformation using the combination
 % [1] Similarity constained
 % [2] Rescaling
@@ -37,24 +37,36 @@ lsq_options.ilu_udiag       = 1;
 lsq_options.restart         = 10;
 lsq_options.tol             = 1e-16;
 lsq_options.maxit           = 10000;
+lsq_options.apply_scaling   = 1;
 
 if nargin>1
    lsq_options.solver       = solver;
 end
 
-% if ~isempty(gcp('nocreate'))
-%     lsq_options.distributed = 1;
-% else
-%     lsq_options.distributed = 0;
-% end
-
+if ~isempty(gcp('nocreate'))
+    lsq_options.distributed = 1;
+else
+    lsq_options.distributed = 0;
+    if isfield(opts, 'distributed'), lsq_options.distributed = opts.distributed;end
+end
+if isdeployed
+    disp('Rigid solution using configuration:')
+    disp(lsq_options);
+    disp('-----------------------------------');
+end
 [mL,err, R,A, b, B, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
     alignTEM_solver(obj, [], lsq_options);
 
 
 %% %% adjust scale--- mL
+if nargin>2
+    if isfield(opts, 'apply_scaling'), lsq_options.apply_scaling = opts.apply_scaling;end
+end
+if lsq_options.apply_scaling
 mtiles = mL.tiles;
+disp('Applying re-scaling');
 parfor ix = 1:numel(mL.tiles)
+    
     %disp([ix mL.tiles(ix).tform.T(1) mL.tiles(ix).tform.T(5)]);
     %imshow(get_warped_image(mL.tiles(ix)));
     t = mL.tiles(ix);
@@ -67,6 +79,10 @@ parfor ix = 1:numel(mL.tiles)
     %pause(1);
 end
 mL.tiles = mtiles;
+else
+    disp('skipping re-scaling');
+end
+
 %% transform point matches in order to translate
 M = mL.pm.M;
 adj = mL.pm.adj;
@@ -100,6 +116,13 @@ lsq_options.tfix            = numel(obj.tiles);
 lsq_options.constrain_edges = 0;
 lsq_options.edge_lambda         = 0;
 lsq_options.lambda              = 0;
+
+if isdeployed
+    disp('Translation-only solution using configuration:')
+    disp(lsq_options);
+    disp('-----------------------------------');
+end
+
 
 [mL2,errAb,R, At, bt, B, d, W, Kt, Lmt, xout, L2, U2, tB, td, invalid_translation] =...
     alignTEM_solver(mL, [], lsq_options);

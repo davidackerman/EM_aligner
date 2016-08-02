@@ -238,32 +238,32 @@ for ix = 5  %11:numel(scale)
 end
 
 %% render optional
-w = 2000;
-h = 2000;
-Wbox = [62318-w/2 54676-h/2 w h];
-scale = 1.0;
-% z = 250;
-% [im, v, url] = get_image_box_renderer(rctarget_align, z, Wbox, scale);
-%  imshow(im);
-
-% %
-im = zeros(Wbox(3)*scale, Wbox(4) * scale, numel([nfirst:nlast]));
-vec = [nfirst:nlast];
-vec = vec(:);
-parfor ix = 1:numel(vec)
-    disp(ix);
-%     try
-        im(:,:, ix)= get_image_box_renderer(rctarget_align, vec(ix), Wbox, scale);
-
-%     catch err
-%         disp(['Err: ' num2str(ix)']);
-%     end
-end
-im = mat2gray(im);
-implay(im);
-
-
-
+% w = 2000;
+% h = 2000;
+% Wbox = [62318-w/2 54676-h/2 w h];
+% scale = 1.0;
+% % z = 250;
+% % [im, v, url] = get_image_box_renderer(rctarget_align, z, Wbox, scale);
+% %  imshow(im);
+% 
+% % %
+% im = zeros(Wbox(3)*scale, Wbox(4) * scale, numel([nfirst:nlast]));
+% vec = [nfirst:nlast];
+% vec = vec(:);
+% parfor ix = 1:numel(vec)
+%     disp(ix);
+% %     try
+%         im(:,:, ix)= get_image_box_renderer(rctarget_align, vec(ix), Wbox, scale);
+% 
+% %     catch err
+% %         disp(['Err: ' num2str(ix)']);
+% %     end
+% end
+% im = mat2gray(im);
+% implay(im);
+% 
+% im1 = permute(im,[3 1 2]);
+% imshow(im1(:,:,1));daspect([49 4 4]);
 
 
 

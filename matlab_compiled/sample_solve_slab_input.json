@@ -40,5 +40,6 @@
 	},
 	"first_section": 1,
 	"last_section": 10,
+    "temp_dir":"/scratch",
 	"verbose": 1
 }

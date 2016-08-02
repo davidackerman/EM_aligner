@@ -91,7 +91,7 @@ for imix = str2double(ms.first):str2double(ms.last)
     counter = counter + 1;
 end
 if montage_scape_gen_error,
-    error('Not all montage scapes were generated. Aborting');
+    warning('Not all montage scapes were generated. Aborting');
 end
 
 
@@ -170,15 +170,16 @@ ll = split_z(Lin);
 zp = [ll(:).z] + str2double(ms.first)-1;
 zz = (str2double(ms.first):str2double(ms.last)) ;
 setd = setdiff(zz,zp);
-zsetd = z(setd-str2double(ms.first)+1);
-if ~isempty(setd),
-    disp('Disconnected montage scapes: index');
-    disp([setd(:) zsetd]);
-    %disp(z(setd));
-    warning('Montage scapes must form a fully connected set');
-    needs_correction = 1;
+if ~montage_scape_gen_error,
+    zsetd = z(setd-str2double(ms.first)+1);
+    if ~isempty(setd),
+        disp('Disconnected montage scapes: index');
+        disp([setd(:) zsetd]);
+        %disp(z(setd));
+        warning('Montage scapes must form a fully connected set');
+        needs_correction = 1;
+    end
 end
-
 % generate a graph and analyze which pieces are
 % disconnected (probably better)
 [L_vec, ntiles] = reduce_to_connected_components(Lin);

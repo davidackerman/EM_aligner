@@ -63,7 +63,7 @@ function [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str, 
 
 %% define target directores and file names for storage
 %dir_rough_intermediate_store = '/nobackup/flyTEM/khairy/FAFB00v13/montage_scape_pms';
-
+diary on;
 target_solver_path = [dir_rough_intermediate_store '/solver_' num2str(nfirst) '_' num2str(nlast) ];
 target_ids = [target_solver_path '/ids.txt'];
 target_matches = [target_solver_path '/matches.txt'];
@@ -97,9 +97,11 @@ end
 counter = 1;
 for imix = str2double(ms.first):str2double(ms.last)
     fn_im = sprintf('%s/layer_images/%.1f.png', target_solver_path,imix);
-    L2.tiles(counter).path = fn_im;
-    t(imix).path = fn_im;
-    counter = counter + 1;
+    if exist(fn_im, 'file');
+        L2.tiles(counter).path = fn_im;
+        t(imix).path = fn_im;
+        counter = counter + 1;
+    end
 end
 
 if needs_correction==0
@@ -208,46 +210,48 @@ if needs_correction==0
     
     mL3s = split_z(mL3);
     %% [4] apply rough alignment to montaged sections (L_montage) and generate "rough_aligned" collection  %% %%%%%% sosi
-    disp('Applying transformation to full set');
+    disp('Apply rough alignment to full set of montaged sections:');
     indx = find(zu-floor(zu)>0);
     zu(indx) = [];
+    diary off;
+    diary on;
     % load montages
-    disp('Loading montages');
+    disp('-- Loading montages');
+    tic
     parfor zix = 1:numel(zu),
         L_montage(zix) = Msection(rctarget_montage, zu(zix));
     end
-    
+    toc
     %%%% apply rough alignment solution to montages
-    disp('Applying transformation to whole set');
+    disp('-- Retrieve bounding box for each section');
+    tic
     parfor lix = 1:numel(L_montage), L_montage(lix) = get_bounding_box(L_montage(lix));end
-    mL3obj.update_tile_info_switch = -1;
+    mL3.update_tile_info_switch = -1;
     mL3 = get_bounding_box(mL3);
     Wbox = [mL3.box(1) mL3.box(3) mL3.box(2)-mL3.box(1) mL3.box(4)-mL3.box(3)];disp(Wbox);
     wb1 = Wbox(1);
     wb2 = Wbox(2);
-    
-    
-    L3 = L_montage;
+    toc
+    disp('-- Perform transformation for all tiles in each section');
+    tic
     fac = str2double(ms.scale); %0.25;
-    
     smx = [fac 0 0; 0 fac 0; 0 0 1]; %scale matrix
     invsmx = [1/fac 0 0; 0 1/fac 0; 0 0 1];
     tmx2 = [1 0 0; 0 1 0; -wb1 -wb2 1]; % translation matrix for montage_scape stack
-    
     for lix = 1:numel(L_montage)
          b1 = L_montage(lix).box;
          dx = b1(1);dy = b1(3);
         tmx1 = [1 0 0; 0 1 0; -dx -dy 1];  % translation matrix for section box
-        for tix = 1:numel(L3(lix).tiles)
-            newT = L3(lix).tiles(tix).tform.T * tmx1 * smx * mL3s(lix).tiles(1).tform.T * tmx2 * (invsmx);
+        for tix = 1:numel(L_montage(lix).tiles)
+            newT = L_montage(lix).tiles(tix).tform.T * tmx1 * smx * mL3s(lix).tiles(1).tform.T * tmx2 * (invsmx);
             %newT = L3(lix).tiles(tix).tform.T * tmx1 * invsmx * mL3s(lix).tiles(1).tform.T * tmx1 * (smx);
-            L3(lix).tiles(tix).tform.T = newT;
+            L_montage(lix).tiles(tix).tform.T = newT;
         end
-        L3(lix) = update_XY(L3(lix));
+        L_montage(lix) = update_XY(L_montage(lix));
     end
     opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-    mL = concatenate_tiles(L3, opts.outlier_lambda);
-    
+    L_montage = concatenate_tiles(L_montage);
+    toc
 %     %%%% sosi
 %     t32 = L3(32).tiles(15); disp(t32.tform.T);
 %     t33 = L3(33).tiles(15);disp(t33.tform.T);
@@ -256,10 +260,15 @@ if needs_correction==0
     
     
     %%% ingest into renderer database as rough collection
-    disp('Ingesting into renderer database using overwrite.');
-    ingest_section_into_renderer_database_overwrite(mL,rctarget_rough, rcsource, pwd);
-    
-    
+        disp('-- Ingest into renderer database using overwrite.');
+        diary off;
+    diary on;
+
+    tic
+    ingest_section_into_renderer_database_overwrite(L_montage,rctarget_rough, rcsource, pwd);
+    toc
+    disp('Done!');
+    diary off;
     
     
     

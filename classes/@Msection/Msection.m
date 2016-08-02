@@ -95,7 +95,14 @@ classdef Msection
                     % % get a list of all tiles
                     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
                         rc.baseURL, rc.owner, rc.project, rc.stack, (z));
+                    try
                     j = webread(urlChar);
+                    catch err_reading
+                        kk_disp_err(err_reading);
+                        disp('Trying again...');
+                        j = webread(urlChar);
+                        disp('Success!');
+                    end
                     % generate the tiles
                     jt = tile;
                     sectionID = j(1).layout.sectionId;
@@ -151,8 +158,9 @@ classdef Msection
             dx = min(X(:)) + delta;%mL.box(1);
             dy = min(Y(:)) + delta;%mL.box(2);
             tiles = obj.tiles;
-            parfor ix = 1:numel(obj.tiles)
-                tiles(ix) = translate_tile(tiles(ix), [dx dy]);
+            for ix = 1:numel(tiles)
+%                 tiles(ix) = translate_tile(tiles(ix), [dx dy]);
+                tiles(ix).tform.T([3 6]) = tiles(ix).tform.T([3 6])-[dx dy];
             end
             obj.tiles = tiles;
             

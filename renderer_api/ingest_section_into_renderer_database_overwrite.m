@@ -11,7 +11,7 @@ function resp_append = ...
 %
 % Author: Khaled Khairy. Janelia Research Campus.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+diary on;
 if nargin<5, translate_to_positive_space = 1;end
 disp('Deleting obsolete renderer collection');
 resp = delete_renderer_stack(rc_target);
@@ -20,12 +20,16 @@ resp = create_renderer_stack(rc_target);
 
 %% distributed version
 disp('Translate to origin');
+diary off;
+diary on;
 mL = translate_to_origin(mL);
 translate_to_positive_space = 0;
 complete = 0;
 disp('Splitting into sections to prepare for distributed ingestion');
+diary off;diary on;
 zmL = split_z(mL);
-disp('Start distributed process to populate new renderer collection');
+disp('Start distributed process to populate new renderer collection');diary off;diary on;
+
 resp_append = {};
 
 
@@ -37,9 +41,11 @@ parfor ix = 1:numel(zmL)
     disp('--------------');
     resp_append{ix} = ingest_section_into_renderer_database(zmL(ix), rc_target, rc_base, dir_work, translate_to_positive_space, complete);
 end
-disp('Completing stack');
+disp('Completing stack');diary off;diary on;
+
 resp = set_renderer_stack_state_complete(rc_target);
-disp('Done with ingestion');
+disp('Done with ingestion');diary off;diary on;
+
 
 
 %% non-distributed

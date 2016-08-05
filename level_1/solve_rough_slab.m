@@ -1,7 +1,7 @@
 function [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str, fn_ids, ...
     target_solver_path, target_ids, target_matches, target_layer_images] = ...
     ...
-    solve_rough_slab(rcsource, rctarget_montage, rctarget_rough,ms, nfirst, nlast, dir_rough_intermediate_store, ...
+    solve_rough_slab(dir_store_rough_slab, rcsource, rctarget_montage, rctarget_rough,ms, nfirst, nlast, dir_rough_intermediate_store, ...
     run_now, precalc_ids, precalc_matches, precalc_path)
 %
 % Author: Khaled Khairy
@@ -76,12 +76,14 @@ if run_now==0
 end
     
     
-%% [2] generate montage-scapes and montage-scape point-matches
+%% [2] START SPARK: generate montage-scapes and montage-scape point-matches
 if run_now
-    [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str, fn_ids] = ...
+    [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work,...
+        cmd_str, fn_ids, missing_images, existing_images] = ...
         generate_montage_scapes_SIFT_point_matches(ms, run_now);
 else
-    [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str, fn_ids] = ...
+    [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work,...
+        cmd_str, fn_ids, missing_images, existing_images] = ...
         generate_montage_scapes_SIFT_point_matches(ms, run_now, precalc_ids, precalc_matches, precalc_path);
 end
 
@@ -93,15 +95,14 @@ movefile(source_layer_images, target_layer_images);
 movefile(pmfn, target_matches);
 movefile(fn_ids, target_ids);
 end
+[zu, sID, sectionId, z, ns, zuf] = get_section_ids(rcsource, nfirst, nlast);
+zuf(find(intersect(zu, missing_images))) = [];
 
-counter = 1;
-for imix = str2double(ms.first):str2double(ms.last)
-    fn_im = sprintf('%s/layer_images/%.1f.png', target_solver_path,imix);
-    if exist(fn_im, 'file');
-        L2.tiles(counter).path = fn_im;
-        t(imix).path = fn_im;
-        counter = counter + 1;
-    end
+for imix = 1:numel(zuf)%str2double(ms.first):str2double(ms.last)
+    fn_im = sprintf('%s/layer_images/%.1f.png', target_solver_path,zuf(imix));
+    L2.tiles(imix).path = fn_im;
+    t(imix).path = fn_im;
+%     counter = counter + 1;
 end
 
 if needs_correction==0
@@ -201,7 +202,7 @@ if needs_correction==0
     %% [3] rough alignment solve for montage-scapes
     disp('Solving');
     % solve
-    rigid_opts.apply_scaling=1;
+    rigid_opts.apply_scaling = 1;
     [mLR, errR, mLS] = get_rigid_approximation(L2, 'backslash', rigid_opts);  % generate rigid approximation to use as regularizer
     mL3 = mLR;
 %     affine_opts.lambda = 1e-3;
@@ -252,13 +253,14 @@ if needs_correction==0
     opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
     L_montage = concatenate_tiles(L_montage);
     toc
-%     %%%% sosi
-%     t32 = L3(32).tiles(15); disp(t32.tform.T);
-%     t33 = L3(33).tiles(15);disp(t33.tform.T);
-%     t34 = L3(34).tiles(17);disp(t34.tform.T);
     
-    
-    
+    % save 
+    try
+    fn = sprintf('%s//rough_aligned_slab_%d_%d.mat', dir_store_rough_slab, nfirst, nlast);
+    save(fn, 'L_montage', 'rctarget_rough', 'rcsource');
+    catch err_save
+        kk_err_disp(err_save);
+    end
     %%% ingest into renderer database as rough collection
         disp('-- Ingest into renderer database using overwrite.');
         diary off;

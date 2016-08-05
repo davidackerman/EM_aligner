@@ -1,4 +1,5 @@
-function [Lin, needs_correction, fn_matches, zsetd, zrange, t, dir_spark_work, cmd_str, fn_ids] = ...
+function [Lin, needs_correction, fn_matches, zsetd, zrange, t, ...
+    dir_spark_work, cmd_str, fn_ids, missing_images, existing_images] = ...
     generate_montage_scapes_SIFT_point_matches(ms, run_now, precalc_ids, precalc_matches, precalc_path)
 %% Returns an Msection object with registered montage-scapes as tiles
 % Depends on :
@@ -80,13 +81,18 @@ disp(dir_spark_work);
 %% check that all image files exist
 montage_scape_gen_error = 0;
 fn_ims = {};
+missing_images = [];
+existing_images = [];
 counter = 1;
 for imix = str2double(ms.first):str2double(ms.last)
     fn_im = sprintf('%s/layer_images/%.1f.png', dir_spark_work,imix);
     fn_ims{counter} = fn_im;
     if exist(fn_im,'file')~=2
+        missing_images = [missing_images imix];
         disp([num2str(imix) ' -- Missing montage scape image: ' fn_im]);
         montage_scape_gen_error = 1;
+    else
+        existing_images = [existing_images imix];
     end
     counter = counter + 1;
 end

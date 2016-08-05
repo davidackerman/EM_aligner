@@ -13,7 +13,7 @@ function resp = append_renderer_stack(rc,rc_base,fn, MET_format)
 %
 % Author: Khaled Khairy. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-verbose = 1;
+verbose = 0;
 check_input(rc, rc_base, fn, MET_format);
 
 str1_source     = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST";', rc.baseURL, rc.owner, rc_base.project);  
@@ -44,7 +44,7 @@ end
 
 if strfind(resp, 'caught exception'),
     disp(resp);
-    error('append_renderer_stack: server reported an error');
+    warning('append_renderer_stack: server reported an error');
 end
 
 

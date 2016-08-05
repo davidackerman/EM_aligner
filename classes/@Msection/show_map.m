@@ -1,4 +1,4 @@
-function [obj, h, rh, A] = show_map(obj, option, style, fz, col)
+function [obj, h, rh, A, cm] = show_map(obj, option, style, fz, col)
 % show map of all tiles within the layer
 % Usage: obj = show_map(obj, option, style, font_size)
 %           option (default: 'all')  'all', 'registered only', 'marked for removal'
@@ -50,7 +50,7 @@ end
 % fz = 10;
 % specify color for each tile based on its state and plot a rectangle
 % representing the tile
-obj = update_tile_info(obj);		% we don't need adjacency information in this file
+%obj = update_tile_info(obj);		% we don't need adjacency information in this file
 %obj = update_adjacency(obj);
 %% determine the edge tiles
 etix = get_edge_tiles(obj);
@@ -110,6 +110,7 @@ for ix = 1:numel(obj.tiles)
                 
                 % check polygon area
                 A(ix) = polyarea(P(:,1), P(:,2));
+                cm(ix,:) = sum([P(:,1)/4 P(:,2)/4],1);
                 if strcmp(style,'transparent')
                     patch( P(:,1), P(:,2),c,  'EdgeColor', 'w', 'FaceColor', 'none');
                 elseif strcmp(style, 'filled')

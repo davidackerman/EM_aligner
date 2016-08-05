@@ -139,9 +139,9 @@ classdef Msection
             obj = tile_pos_gen(obj);
             %if nnz(obj.A)==0, warning('No adjacency information in A');end
         end
-        function obj = translate_to_origin(obj)
+        function obj = translate_to_origin(obj, deltao)
             % mL = get_bounding_box(mL);
-            
+            if nargin==1, deltao = [0 0];end
             for ix = 1:numel(obj.tiles)
                 if isa(obj.tiles(ix).tform,  'images.geotrans.PolynomialTransformation2D')
                     X(ix) = obj.tiles(ix).tform.A(1);
@@ -160,7 +160,7 @@ classdef Msection
             tiles = obj.tiles;
             for ix = 1:numel(tiles)
 %                 tiles(ix) = translate_tile(tiles(ix), [dx dy]);
-                tiles(ix).tform.T([3 6]) = tiles(ix).tform.T([3 6])-[dx dy];
+                tiles(ix).tform.T([3 6]) = tiles(ix).tform.T([3 6])-[dx dy] - deltao;
             end
             obj.tiles = tiles;
             

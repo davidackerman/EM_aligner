@@ -1,4 +1,4 @@
-function [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast)
+function [zu, sID, sectionId, z, ns, zuf] = get_section_ids(rc, nfirst, nlast)
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
     rc.baseURL, rc.owner, rc.project, rc.stack);
 js = webread(urlChar);
@@ -12,6 +12,7 @@ z         = z(indx);        % determine the zvalues (this is also the spatial or
 
 % we need unique values, and we need to know how many sectionId's correspond to each unique z value
 % usually it is one, but sometimes we have hi/lo dose or other regions
+[zuf, ia, ic] = unique(floor(z));
 [zu, ia, ic] = unique(z);
 count = 1;
 sID = {};

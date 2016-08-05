@@ -32,15 +32,26 @@ disp('Start distributed process to populate new renderer collection');diary off;
 
 resp_append = {};
 
-
-% parfor ix = 1:numel(zmL)
-parfor ix = 1:numel(zmL)
-    disp('--------------');
-    disp('Ingesting section: ');
-    disp(ix);
-    disp('--------------');
-    resp_append{ix} = ingest_section_into_renderer_database(zmL(ix), rc_target, rc_base, dir_work, translate_to_positive_space, complete);
+if numel(zmL)<=110
+    parfor ix = 1:numel(zmL)
+        resp_append{ix} = ingest_section_into_renderer_database(zmL(ix),...
+            rc_target, rc_base, dir_work, translate_to_positive_space,...
+            complete);
+    end
+    
+else
+    for ix = 1:numel(zmL)
+        disp('--------------');
+        disp('Ingesting section: ');
+        disp(ix);
+        disp('--------------');
+        resp_append{ix} = ingest_section_into_renderer_database(zmL(ix),...
+            rc_target, rc_base, dir_work, translate_to_positive_space,...
+            complete);
+    end
+    
 end
+
 disp('Completing stack');diary off;diary on;
 
 resp = set_renderer_stack_state_complete(rc_target);

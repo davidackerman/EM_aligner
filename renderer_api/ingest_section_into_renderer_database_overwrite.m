@@ -32,7 +32,7 @@ disp('Start distributed process to populate new renderer collection');diary off;
 
 resp_append = {};
 
-if numel(zmL)<=110
+if numel(zmL)<=310
     parfor ix = 1:numel(zmL)
         resp_append{ix} = ingest_section_into_renderer_database(zmL(ix),...
             rc_target, rc_base, dir_work, translate_to_positive_space,...

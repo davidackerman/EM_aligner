@@ -27,5 +27,6 @@ end
 mL3 = Msection([mL3_(:).tiles]);
 
 if ~isempty(options.lambda)
+    disp('Filtering tiles');
 [mL3, A, S] = filter_based_on_tile_area(mL3, options);
 end

@@ -204,7 +204,7 @@ else
         td = td.*etix;
 
     end
-    
+    %% %%%%%%%%%%%%%%%%%%%%%%%%%% solve  %%%%%%%%%%%%%%%%%%%%%%%%%
     if strcmp(options.solver,'backslash--noreg')
         if options.verbose,disp('------------ Performing backslash -- no reg');end
         K = A;

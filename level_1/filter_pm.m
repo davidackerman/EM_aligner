@@ -1,14 +1,32 @@
 function pm = filter_pm(pm)
 warning off;
+
+
+
+
+
+% % %% filter point matches using RANSAC
+% geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
+% geoTransformEst.Method = 'Random Sample Consensus (RANSAC)'; %'Least Median of Squares';%
+% geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';%
+% geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
+% geoTransformEst.MaximumRandomSamples = 1000;
+% geoTransformEst.DesiredConfidence = 99.99;
+% geoTransformEst.PixelDistanceThreshold = 1.0;
+
 % %% filter point matches using RANSAC
 geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
 geoTransformEst.Method = 'Random Sample Consensus (RANSAC)'; %'Least Median of Squares';%
-geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';%
+geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';
 geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
-geoTransformEst.MaximumRandomSamples = 1000;
+geoTransformEst.MaximumRandomSamples = 3000;
 geoTransformEst.DesiredConfidence = 99.99;
+geoTransformEst.PixelDistanceThreshold = 0.01;
 
-geoTransformEst.PixelDistanceThreshold = 1.0;
+
+
+
+
 
 M = pm.M;
 W = pm.W;

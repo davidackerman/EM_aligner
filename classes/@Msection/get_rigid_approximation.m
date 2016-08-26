@@ -59,8 +59,10 @@ end
 
 
 %% %% adjust scale--- mL
+scale_fac = ones(numel(mL.tiles),1);
 if nargin>2
     if isfield(opts, 'apply_scaling'), lsq_options.apply_scaling = opts.apply_scaling;end
+    if isfield(opts, 'scale_fac'), scale_fac = opts.scale_fac;end
 end
 if lsq_options.apply_scaling
 mtiles = mL.tiles;
@@ -71,7 +73,7 @@ parfor ix = 1:numel(mL.tiles)
     %imshow(get_warped_image(mL.tiles(ix)));
     t = mL.tiles(ix);
     [U S V] = svd(t.tform.T(1:2, 1:2));
-    T = U * [1 0; 0 1] * V';
+    T = U * [scale_fac(ix) 0; 0 scale_fac(ix)] * V';
     t.tform.T(1:2,1:2) = T;
     %t.tform.T([3 6]) = t.tform.T([3 6]) * 1/S;
     mtiles(ix) = t;

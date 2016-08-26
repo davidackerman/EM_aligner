@@ -159,8 +159,19 @@ classdef Msection
             dy = min(Y(:)) + delta;%mL.box(2);
             tiles = obj.tiles;
             for ix = 1:numel(tiles)
+                if isa(obj.tiles(ix).tform,  'images.geotrans.PolynomialTransformation2D')
+                    A = tiles(ix).tform.A;
+                    B = tiles(ix).tform.B;
+                    tform = tiles(ix).tform;
+                    A(1) = A(1)-dx-deltao(1);
+                    B(1) = B(1)-dy-deltao(2);
+                    tform = images.geotrans.PolynomialTransformation2D(A,B);
+                    tiles(ix).tform = tform;
+                    
+                else
 %                 tiles(ix) = translate_tile(tiles(ix), [dx dy]);
                 tiles(ix).tform.T([3 6]) = tiles(ix).tform.T([3 6])-[dx dy] - deltao;
+                end
             end
             obj.tiles = tiles;
             

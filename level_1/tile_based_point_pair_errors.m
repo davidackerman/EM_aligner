@@ -38,7 +38,7 @@ function [mL, tpr, minconf, maxconf] = tile_based_point_pair_errors(mL, A, xout,
         
         
         %% split into z and display
-        ml = split_z(mL);
-        [obj, h, rh, A, minconf, maxconf] = show_map_confidence(ml(j), [1], minconf, maxconf);
-        
+%         ml = split_z(mL);
+%         [obj, h, rh, A, minconf, maxconf] = show_map_confidence(ml(j), [1], minconf, maxconf);
+%         
        

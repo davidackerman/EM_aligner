@@ -1,11 +1,24 @@
 function [zu, sID, sectionId, z, ns, zuf] = get_section_ids(rc, nfirst, nlast)
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
     rc.baseURL, rc.owner, rc.project, rc.stack);
-js = webread(urlChar);
+options = weboptions('Timeout', 30);
+try
+js = webread(urlChar, options);
+catch err_webread
+    disp('get_section_ids: failed to read... retrying');
+    js = webread(urlChar, options);
+    disp('Success!');
+end
+    
 sectionId = {js(:).sectionId};
 [z, ia]   = sort(([js(:).z]));
 sectionId = sectionId(ia);
 
+if nargin==1,   % then find all sections in this collection
+    nfirst = min(z(:));
+    nlast = max(z(:));
+    disp(['Section range (z values): ' num2str(nfirst) ' to ' num2str(nlast)]);
+end
 indx = find(z>=nfirst & z<=nlast);
 sectionId = sectionId(indx);% determine the sectionId list we will work with
 z         = z(indx);        % determine the zvalues (this is also the spatial order)

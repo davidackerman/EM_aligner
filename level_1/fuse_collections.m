@@ -18,37 +18,20 @@ X1 = {};
 Y1 = {};
 X2 = {};
 Y2 = {};
-
-for zix = 1%numel(zu1)    
-    %disp([zu1(zix) zu2(zix)]);
-    %[x1, y1, tids1] = section_get_tile_centers(rcfixed,zu1(zix));
-    %[x2, y2, tids2] = section_get_tile_centers(rcmoving,zu2(zix));
-
-%     L1 = Msection(rcfixed,zu1(zix));
-%     tids1 = {};
-%     for jix = 1:numel(L1.tiles)
-%         tids1{jix} = L1.tiles(jix).renderer_id;
-%     end
-%     x1 = L1.X;y1 = L1.Y;
-%     L2 = Msection(rcmoving,zu2(zix));
-%     tids2 = {};
-%     for jix = 1:numel(L2.tiles)
-%         tids2{jix} = L2.tiles(jix).renderer_id;
-%     end
-%     x2 = L2.X;y2 = L2.Y;
-% 
-%     [x1, y1, tids1, L1f] = get_tile_centers(rcfixed, zu1(zix));
-%     disp([L1.X x1 L1.Y y1]);
-    
+Tvec =  zeros(numel(zu1),9);
+for zix = 1:numel(zu1)
     [x1, y1, tids1] = get_tile_centers(rcfixed, zu1(zix));
     [x2, y2, tids2] = get_tile_centers(rcmoving, zu2(zix));
-
     [~,ia,ib] = intersect(tids1,tids2);
-    
-        X1{zix} = [x1(ia)'];
-        Y1{zix} = [y1(ia)'];
-        X2{zix} = [x2(ib)'];
-        Y2{zix} = [y2(ib)'];
+    X1{zix} = [x1(ia)'];
+    Y1{zix} = [y1(ia)'];
+    X2{zix} = [x2(ib)'];
+    Y2{zix} = [y2(ib)'];
+    a = [x1(ia) y1(ia)];
+    b = [x2(ib) y2(ib)];
+    warning off;[tform] = cp2tform(b, a, 'nonreflective similarity');warning on;
+    t = [tform.tdata.T];
+    Tvec(zix,:) = t(1:9);
 end
 X1 = cell2mat(X1)';
 Y1 = cell2mat(Y1)';
@@ -57,6 +40,14 @@ Y2 = cell2mat(Y2)';
 
 toc
 disp('Done!');
+% Tvec = sum(Tvec)/size(Tvec,1);
+% T = reshape(Tvec(end,:), 3, 3);
+% 
+% scale = sqrt(T(1).^2 + T(1,2).^2);
+% theta = atan(T(2,1)/T(1));
+% R = [cos(theta) -sin(theta);sin(theta) cos(theta)];
+% T(1:2,1:2) = R;
+
 %% % sosi
 % L = Msection(rcfixed, 1);
 % rc = rcfixed;
@@ -64,102 +55,91 @@ disp('Done!');
 % ingest_section_into_renderer_database_overwrite(L,rc, rcsource, pwd, 1);
 % Lr= Msection(rc,1);
 % delete_renderer_stack(rc);
-
-
-
 %% sosi --- visualize
-% figure;plot3(X1, Y1, Z1, 'b*');drawnow;pause(1);hold on;plot3(X2,Y2,Z2,'r*');
+% figure;plot(X1, Y1, 'b*');drawnow;pause(1);hold on;plot(X2,Y2,'r*');
 %% find rotation/translation to overlap tile centers
-disp('Determining rotation and translation based on overlap region.....');
+% disp('Determining rotation and translation based on overlap region.....');
 A = [X1 Y1];
 B = [X2 Y2];
-[tform] = cp2tform(B, A, 'nonreflective similarity');
-T = tform.tdata.T;
-disp('Done!');
+% warning off;[tform] = cp2tform(B, A, 'nonreflective similarity');warning on;
+% T = tform.tdata.T;
+% disp('Done!');
 
-% assert(size(A,1)==size(B,1));
-% centroid_A = mean(A);
-% centroid_B = mean(B);
+
+assert(size(A,1)==size(B,1));
+centroid_A = mean(A);
+centroid_B = mean(B);
 % disp('-- Building linear system for rotation');
-% N = size(A,1);
-% H = (A-repmat(centroid_A,N,1))' * (B-repmat(centroid_B,N,1));
-% [U,S,V] = svd(H);
-% R = V*U';
-% if det(R)<0  % detect reflection special case
-%     V(:,1) = V(:,1) * (-1);
-%     R = V*U';
-% end
-% disp('-- building linear system for translation');
-% % find translation
-% % t = -R*centroid_A' + centroid_B';
-% % T = R;
-% % T2 = zeros(3,3);
-% % T2(3,3) = 1;
-% % T2([3 6]) = -t(:)';
-% 
-% % U = [X1 Y1];% + repmat(t(:)', length(X1),1);
-% % V = [X2 Y2] *R;
-% % warning off; x = ones(length(X1),2)\(V-U);warning on;
-% % V = V - repmat(x(1,:), length(X1),1);
-% % T2 = zeros(3,3);
-% % T2(3,3) = 1;
-% % T2([3 6]) = x(1,:);
-% 
-
+N = size(A,1);
+H = (A-repmat(centroid_A,N,1))' * (B-repmat(centroid_B,N,1));
+[U,S,V] = svd(H);
+R = V*U';
+if det(R)<0  % detect reflection special case
+    V(:,1) = V(:,1) * (-1);
+    R = V*U';
+end
+disp('-- building linear system for translation');
+% find translation
+% t = -R*centroid_A' + centroid_B';
+% T = R;
+% T2 = zeros(3,3);
+% T2(3,3) = 1;
+% T2([3 6]) = -t(:)';
+%
+U = [X1 Y1];% + repmat(t(:)', length(X1),1);
+V = [X2 Y2] *R;
+warning off; x = ones(length(X1),2)\(V-U);warning on;
+V = V - repmat(x(1,:), length(X1),1);
+T2 = zeros(3,3);
+T2(3,3) = 1;
+T2([3 6]) = x(1,:);
 %% inspect result:
 
 % % %
 % figure;
 % A = [X1 Y1];
 % B = [X2 Y2];
-% 
+%
 % plot(A(:,1), A(:,2), '*b');
 % hold on;
 
 
-[Btx, Bty] = tformfwd(tform, B(:,1), B(:,2));
+% [Btx, Bty] = tformfwd(tform, B(:,1), B(:,2));
 %plot(Btx, Bty, '*r');
 
-% 
-% 
+%
+%
 % figure;
 % [x1, y1, tids1, L1, cm1] = get_tile_centers(rcfixed, zu1(1), 0);
 % show_map(L1);drawnow; % first overlap section of fixed
 % hold on;
 % plot(x1, y1, '*b');
-% 
-% 
+%
+%
 % figure;
 % [x2, y2, tids2, L2, cm2] = get_tile_centers(rcmoving, zu2(1), 0);
 % show_map(L2);drawnow; % first overlap section of fixed
 % hold on;
 % plot(x2, y2, '*b');
-
-
-
 %%
-
 % figure;
 %  A = [X1 Y1];
 %  B = [X2 Y2];
-% 
+%
 % plot(A(:,1), A(:,2), '*b');
 % hold on;
 %  [tform] = cp2tform(B, A, 'nonreflective similarity');
 % Btr = [B ones(size(B,1),1)]*tform.tdata.T(1:3,1:3) ;% + repmat(tform.tdata.T([3 6]), size(B,1),1);
 % plot(Btr(:,1), Btr(:,2), '*r');
 % [Btx Btr(:,1)]
-
-
-
 %% read collections --- (L11) L12 L21 L22
 
 tic
 disp('Reading tile collections ...');
 
 if collection_start
-disp('-- Non-overlap region of fixed collection.');
-[~, tiles11] = get_slab_tiles(rcfixed, rcfixed.nfirst, overlap(1)-1);
+    disp('-- Non-overlap region of fixed collection.');
+    [~, tiles11] = get_slab_tiles(rcfixed, rcfixed.nfirst, overlap(1)-1);
 end
 
 
@@ -185,30 +165,72 @@ tiles22t = tiles22;
 
 % H = tiles21(1).H;
 % W = tiles21(1).W;
-% 
+%
 % % assemble full trnsformation matrix rotation and translation
-% Tr = zeros(3,3);Tr(3,3) = 1;
-% Tr(1:2,1:2) = R;
-% delta = [W H];
-% T3 = T2;
-% T3([3 6]) = T3([3 6]) + delta;
-% T = -T3  + Tr;
-% T(3,3) = 1;
+Tr = zeros(3,3);Tr(3,3) = 1;
+Tr(1:2,1:2) = R;
+delta = [0 0];
+T3 = T2;
+T3([3 6]) = T3([3 6]) + delta;
+T = -T3  + Tr;
+T(3,3) = 1;
 
-% apply transformations
+
+% apply transformations to overlap region
+
+% zvals = [tiles21t(:).z];
+% for zix = 1:numel(zu1)
+%     indx = find(zvals==zu1(zix));
+%     tt = reshape(Tvec(zix,:),3,3);
+%     for tix = 1:numel(indx)
+%         
+%         tiles21t(indx(tix)).tform.T = tiles21t(indx(tix)).tform.T *tt;
+%     end
+% end
+
+
+% apply transformations to overlap region
 for tix = 1:numel(tiles21)
     tiles21t(tix).tform.T = tiles21(tix).tform.T *T;
 
 end
 
-for tix = 1:numel(tiles22)
-    tiles22t(tix).tform.T = tiles22(tix).tform.T *T;
-
+% apply to non-ovelap moving region
+for tix = 1:numel(tiles22t)
+    tiles22t(tix).tform.T = tiles22t(tix).tform.T *T;
 end
+
 L21t = Msection(tiles21t);
 L22t = Msection(tiles22t);
 disp('Done!');
 toc
+%% rescale global
+% if collection_start,
+%     jtiles = [tiles11(:)' tiles21t(:)' tiles22t(:)'];
+%     [zu] = [1:rcmoving.nlast];
+% else
+%     jtiles = [tiles21(:)' tiles22t(:)'];
+%     [zu] = get_section_ids(rcmoving, overlap(1), rcmoving.nlast);
+% end
+% 
+% [mA, mAfit] = calculate_mean_tile_areas_by_section_and_fit(jtiles, zu);
+% 
+% % apply rescaling to tiles
+% zval = [jtiles(:).z];
+% for zix = 1:numel(zu)
+%     indx = find(zvals==zu(zix));
+%     tt = [1/mAfit(zix) 0 0; 0 1/mAfit(zix) 0; 0 0 1];
+%     if zu(zix)<=overlap(2)
+%         for tix = 1:numel(indx)
+%             tiles21t(indx(tix)).tform.T = tiles21t(indx(tix)).tform.T *tt;
+%         end
+%     else
+%         for tix = 1:numel(indx)
+%             tiles22t(indx(tix)).tform.T = tiles22t(indx(tix)).tform.T *tt;
+%         end
+%     end
+% end
+
 
 %% inspect
 % % apply transformations
@@ -217,14 +239,12 @@ toc
 %     tiles21t(tix).tform.T = tiles21(tix).tform.T *T;
 % end
 % figure;
-% 
+%
 % show_map(L2);drawnow; % first overlap section of fixed
 % hold on;
 % plot(x2, y2, '*b');
-
-
 %% interpolate: tiles in L21t need to be modified to comply with interpolation
-
+%
 tic
 disp('Interpolating tile transformations within overlap region...');
 % % determine intersecting tiles for each section and interpolate
@@ -255,11 +275,12 @@ tiles21t(del_ix) = [];
 
 disp('Done!');
 toc
+
 %%
 disp('Assembling slab composed of transformed (and interpolated) sections ...');
 tic
 if collection_start,
-         
+    
     disp('-- collection start: assembling full set');
     L = Msection([tiles11(:)' tiles21t(:)' tiles22t(:)']);
     %L = Msection([L11.tiles; L21t.tiles; L22t.tiles]);
@@ -270,6 +291,12 @@ end
 toc
 disp('Done!');
 
+
+%% inspect rescaling
+
+%[mA, mAfit] = calculate_mean_tile_areas_by_section_and_fit(L.tiles, zu);
+
+
 %% inspection
 % % close all;
 % %%% compare result overlap(1) with original overlap(1) (in rcfixed)
@@ -278,19 +305,13 @@ disp('Done!');
 % show_map(zmL21t(1)); % first overlap section of moving
 % %hold on;
 % %plot(Btx, Bty, '*r');
-% 
+%
 % hold on;
 % L12t = Msection(tiles12);
 % ll12t = split_z(L12t);
 % show_map(ll12t(1));drawnow; % first overlap section of fixed
 % hold on;
 % %plot(A(:,1), A(:,2), '*b');
-
-
-
-
-
-
 %% export to collection
 %%% ingest into renderer database as rough collection
 tic
@@ -298,15 +319,15 @@ disp('Ingesting into renderer database using append.');
 %resp = ingest_section_into_LOADING_collection(L,rcout, rcsource, pwd);
 % disp('-- Translate to positive space');
 if collection_start
-    % collection start means we need to place the tiles somewhere 
+    % collection start means we need to place the tiles somewhere
     % in the middle of the final volume. But we don't know where that is.
     % we guess
-delta = [230000 145000];
-disp('translation');
-disp(delta);
+    delta = [230000 145000];
+    disp('translation');
+    disp(delta);
     
     L = translate_to_origin(L, -delta);
-
+    
 end
 
 disp('-- Splitting into sections to prepare for distributed ingestion');
@@ -317,12 +338,48 @@ translate_to_positive_space = 0;
 complete = 0;
 parfor ix = 1:numel(zmL)
     %disp(ix);
-    ingest_section_into_renderer_database(zmL(ix), ...
+    resp = ingest_section_into_renderer_database(zmL(ix), ...
         rcout, rcsource, pwd, translate_to_positive_space, complete);
 end
 resp = set_renderer_stack_state_complete(rcout);
 disp('Done!');
 toc
+
+
+%% sosi
+% average the error
+% tiles = L.tiles;
+% deformation = zeros(numel(tiles),1);
+% A = zeros(numel(tiles),1);
+% S = zeros(numel(tiles),1);
+% parfor ix = 1:numel(tiles)
+%     deformation(ix) = abs(1- det(tiles(ix).tform.T(1:2, 1:2)));
+%
+% %%%%%%%%
+%         x = tiles(ix).tform.T(3,1);
+%         y = tiles(ix).tform.T(3,2);
+%     Px = [x; x + tiles(ix).W; x + tiles(ix).W; x];
+%     Py = [y; y; y + tiles(ix).H; y+tiles(ix).H];
+%
+%     %%% transform the points
+%     P = [Px(:) Py(:) [1 1 1 1]']*tiles(ix).tform.T;
+%
+%     % check polygon area
+%     A(ix) = polyarea(P(:,1), P(:,2));
+%     % add polygonperimeter
+%     s = 0;
+%     s = s + sqrt((P(1,1)-P(2,1)).^2 + (P(1,2)-P(2,2)).^2);
+%     s = s + sqrt((P(2,1)-P(3,1)).^2 + (P(2,2)-P(3,2)).^2);
+%     s = s + sqrt((P(3,1)-P(4,1)).^2 + (P(3,2)-P(4,2)).^2);
+%     s = s + sqrt((P(1,1)-P(4,1)).^2 + (P(1,2)-P(4,2)).^2);
+%     S(ix) = s;
+% %%%%%%%%%%%%%
+% end
+% bin = 2000;
+% figure;hist(deformation, bin);title('Deformation');
+% figure;hist(A, bin);title('Area');
+% figure;hist(S, bin);title('Perimeter');
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

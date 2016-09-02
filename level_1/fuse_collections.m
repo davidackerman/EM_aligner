@@ -397,9 +397,15 @@ cam = [alltiles(:).cam];
 path = {alltiles(:).path};
 temca_conf = [alltiles(:).temca_conf];
 state = [alltiles(:).state];
-fns = {};
+
+append_to_stack_jobs = {};
+job_names = {};
+job_wkdirs = {};
+job_name = ['appendTo' rcout.stack];
+grid_account = 'tem';
 parfor nix = 1:numel(chnks)
-    indx = chnks{nix};
+    indx = chnks{nix}; % indx is an array of indices into alltiles.
+                       % Those tiles (i.e. alltiles(indx)) will be exported
     fn = [pwd '/X_A_' num2str(randi(100000000)) '_' num2str(nix) '.txt'];
     fid = fopen(fn,'w');
     for tix = 1:numel(indx)
@@ -423,39 +429,27 @@ parfor nix = 1:numel(chnks)
         end
     end
     fclose(fid);
-    fns{nix} = fn;
+    [cmd] = get_append_renderer_cmd(rcout, rcsource, fn, 'v1');
+    rm_fn_cmd = ['rm -f ' fn];
+    local_cmd = [cmd ';' rm_fn_cmd];
+    job_names{nix} = sprintf('%s_%d', job_name, nix);
+    try 
+        system(['mkdir -p ' pwd '/fuse-logs']);
+    catch err_md
+        kk_disp_err(err_md);
+    end
+    submit_cmd = sprintf('qsub -N %s -A %s -cwd -e :fuse-logs -o :fuse-logs -pe batch 1 -b y "%s" ',...
+                 job_names{nix}, grid_account, local_cmd);
+    append_to_stack_jobs{nix} = submit_cmd;
+    job_wkdirs{nix} = pwd;
 end
 
 %% Submit append renderer stack jobs
 disp('Submit append jobs')
-append_to_stack_jobs = {};
-job_name = ['appendTo' rcout.stack];
-grid_account = 'tem';
-for fix = 1:numel(fns)
-    [cmd] = get_append_renderer_cmd(rcout, rcsource, fns{fix}, 'v1');
-    local_cmd = [cmd ';' 'rm -f ' fns{fix} ';'];
-    submit_cmd = sprintf('qsub -N %s_%d -A %s -cwd -pe batch 1 "%s" ',...
-                 job_name, fix, grid_account, local_cmd);
-    append_to_stack_jobs{fix} = submit_cmd;
-    system(exec_and_cleanup);
-end
-
-manage_jobs('cgoina', jbname, job_str, 5, []);
+manage_jobs('cgoina', job_names, append_to_stack_jobs, job_wkdirs, 5, 300);
 
 toc
 
 %% Complete the stack
+disp('Complete stack')
 resp = set_renderer_stack_state_complete(rcout);
-
-
-
-
-
-
-
-
-
-
-
-
-

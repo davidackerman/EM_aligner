@@ -4,7 +4,7 @@ if nargin<3, plot_flag = 0;end
 tids = {};
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
     rc.baseURL, rc.owner, rc.project, rc.stack,z );
-wo = weboptions('Timeout', 60)j = webread(urlChar, wo);
+wo = weboptions('Timeout', 60);j = webread(urlChar, wo);
 jt1 = tile;
 sectionID = j(1).layout.sectionId;
 x1 = zeros(numel(j),1);

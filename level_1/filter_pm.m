@@ -1,7 +1,12 @@
-function pm = filter_pm(pm)
+function pm = filter_pm(pm, opts)
 warning off;
 
-
+if nargin<2
+    opts.NumRandomSamplingsMethod = 'Desired confidence';
+    opts.MaximumRandomSamples = 3000;
+    opts.DesiredConfidence = 99.5;
+    opts.PixelDistanceThreshold = 0.01;
+end
 
 
 warning off
@@ -18,10 +23,10 @@ warning off
 geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
 geoTransformEst.Method = 'Random Sample Consensus (RANSAC)'; %'Least Median of Squares';%
 geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';
-geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
-geoTransformEst.MaximumRandomSamples = 3000;
-geoTransformEst.DesiredConfidence = 99.5;
-geoTransformEst.PixelDistanceThreshold = 0.01;
+geoTransformEst.NumRandomSamplingsMethod = opts.NumRandomSamplingsMethod;% 'Desired confidence';
+geoTransformEst.MaximumRandomSamples = opts.MaximumRandomSamples;%3000;
+geoTransformEst.DesiredConfidence = opts.DesiredConfidence; %99.5;
+geoTransformEst.PixelDistanceThreshold = opts.PixelDistanceThreshold; %0.01;
 warning on;
 
 M= pm.M;

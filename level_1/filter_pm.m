@@ -4,7 +4,7 @@ warning off;
 
 
 
-
+warning off
 % % %% filter point matches using RANSAC
 % geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
 % geoTransformEst.Method = 'Random Sample Consensus (RANSAC)'; %'Least Median of Squares';%
@@ -20,40 +20,36 @@ geoTransformEst.Method = 'Random Sample Consensus (RANSAC)'; %'Least Median of S
 geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';
 geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
 geoTransformEst.MaximumRandomSamples = 3000;
-geoTransformEst.DesiredConfidence = 99.99;
+geoTransformEst.DesiredConfidence = 99.5;
 geoTransformEst.PixelDistanceThreshold = 0.01;
+warning on;
 
-
-
-
-
-
-M = pm.M;
+M= pm.M;
 W = pm.W;
 adj = pm.adj;
 np  = pm.np;
-del_ix = [];
-for pmix = 1:size(pm.M,1)
-
-    
-    m1 = M{pmix,1};
-    m2 = M{pmix,2};
-    [tform_matrix, inlierIdx] = step(geoTransformEst, m2, m1);
+del_ix = zeros(size(pm.M,1),1);
+parfor pmix = 1:size(pm.M,1)
+    m = M(pmix,:);
+    m1 = m{1};
+    m2 = m{2};
+    [tform_matrix, inlierIdx] = step(geoTransformEst, m{2}, m{1});
     m1 = m1(inlierIdx,:);
     m2 = m2(inlierIdx,:);
-    M{pmix,1} = m1;
-    M{pmix,2} = m2;
+    M(pmix,:) = {m1,m2};
     w = W{pmix};
 %     if sum(inlierIdx)<numel(inlierIdx),
 %         disp(['Eliminated: ' num2str(sum(~(inlierIdx))) ' points.']);
 %     end
     if sum(inlierIdx)==0
-        del_ix = [del_ix;pmix];
+        %del_ix = [del_ix;pmix];
+        del_ix(pmix) = pmix;
     end
     W{pmix} = w(inlierIdx);
     np(pmix) = length(W{pmix});
 end
 warning on;
+del_ix(del_ix==0) = [];
 M(del_ix,:) = [];
 W(del_ix) = [];
 adj(del_ix,:) = [];

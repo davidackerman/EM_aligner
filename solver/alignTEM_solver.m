@@ -160,7 +160,7 @@ if options.constraint_only
 else
     %% %%%%%%%%%%%%%%%%%%%%%%%%%% CONSTRUCT A AND b %%%%%%%%%%%%%%%%%%%%%%%%%
     if isempty(options.A)
-        [A,b, W] = alignTEM_objective_system_gen(L,P, lidfix, tfix, options, sf);
+        disp('constructing matrix A');[A,b, W] = alignTEM_objective_system_gen(L,P, lidfix, tfix, options, sf);disp('... done!');
     end
     
     %% construct final matrices

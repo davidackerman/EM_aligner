@@ -1,4 +1,5 @@
-function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = solve_affine_explicit_region(obj, opts)
+function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
+    solve_affine_explicit_region(obj, opts)
 % Returns the matrix solution for a contiguous regionusing an affine transform
 %
 %% default options are set here 
@@ -63,6 +64,8 @@ if nargin>1,
      if isfield(opts, 'tfix'), lsq_options.tfix = opts.tfix; end
      if isfield(opts, 'distributed'), lsq_options.distributed = ...
              opts.distributed; end
+     if isfield(opts, 'ncpus'), lsq_options.ncpus = ...
+             opts.ncpus; end
 
 end
 %% solve

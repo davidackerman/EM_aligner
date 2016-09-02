@@ -36,12 +36,16 @@ S = zeros(n*tdim,1);
 Ib = [];
 Sb = [];
 pos = 0;
+r_sum_vec = zeros(size(M,1),1);
+parfor pair_number = 1:size(M,1)
+    r_sum_vec(pair_number) = sum(2*np_vec(1:pair_number-1))+1;
+end
 % generate blocks and paste into A
 for pair_number = 1:size(M,1)           % loop over the pairs
     w_pm = W(pair_number);
     np = np_vec(pair_number);%size([M{pair_number,1}.Location],1);
     %%% determine rvec,  cvec1, cvec2 and s
-    r = sum(2*np_vec(1:pair_number-1))+1;
+    r = r_sum_vec(pair_number);%r = sum(2*np_vec(1:pair_number-1))+1;
     rvec = r:r+np*2-1;
     r1 = rvec(1:np);
     r2 = rvec(np+1:end);

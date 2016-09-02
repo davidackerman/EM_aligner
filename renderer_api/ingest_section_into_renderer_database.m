@@ -1,4 +1,5 @@
-function resp_append = ingest_section_into_renderer_database(mL,rc_target, rc_base, dir_work, translate_to_positive_space, complete)
+function resp_append = ingest_section_into_renderer_database(mL,rc_target,...
+    rc_base, dir_work, translate_to_positive_space, complete)
 % This is a high-level function that:
 % Ingests the data into an existing collection, creates one if the collection doesn't already exist
 % sets the state to LOADING  if it is in COMPLETE state and

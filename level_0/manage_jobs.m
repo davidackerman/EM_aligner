@@ -1,4 +1,4 @@
-function manage_jobs(user, jbnames,jbstr, jbdir, t, maxcs)
+function manage_jobs(user, jbnames, jbstr, jbdir, t, maxcs)
 % submit and babysit jobs --- does not use job arrays
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 jcount = numel(jbstr);

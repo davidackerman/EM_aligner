@@ -397,9 +397,10 @@ cam = [alltiles(:).cam];
 path = {alltiles(:).path};
 temca_conf = [alltiles(:).temca_conf];
 state = [alltiles(:).state];
+fns = {};
 parfor nix = 1:numel(chnks)
     indx = chnks{nix};
-    fn = [pwd '/X_A_' num2str(randi(100000000)) '.txt'];
+    fn = [pwd '/X_A_' num2str(randi(100000000)) '_' num2str(nix) '.txt'];
     fid = fopen(fn,'w');
     for tix = 1:numel(indx)
         ind = (indx(tix));
@@ -422,15 +423,28 @@ parfor nix = 1:numel(chnks)
         end
     end
     fclose(fid);
-    resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1');
-    %% cleanup
-    try
-        delete(fn);
-    catch err_delete,
-        kk_disp_err(err_delete);
-    end
+    fns{nix} = fn;
 end
+
+%% Submit append renderer stack jobs
+disp('Submit append jobs')
+append_to_stack_jobs = {};
+job_name = ['appendTo' rcout.stack];
+grid_account = 'tem';
+for fix = 1:numel(fns)
+    [cmd] = get_append_renderer_cmd(rcout, rcsource, fns{fix}, 'v1');
+    local_cmd = [cmd ';' 'rm -f ' fns{fix} ';'];
+    submit_cmd = sprintf('qsub -N %s_%d -A %s -cwd -pe batch 1 "%s" ',...
+                 job_name, fix, grid_account, local_cmd);
+    append_to_stack_jobs{fix} = submit_cmd;
+    system(exec_and_cleanup);
+end
+
+manage_jobs('cgoina', jbname, job_str, 5, []);
+
 toc
+
+%% Complete the stack
 resp = set_renderer_stack_state_complete(rcout);
 
 

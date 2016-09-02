@@ -1,8 +1,15 @@
-function manage_jobs(user, jbnames, jbstr, jbdir, t, maxcs)
+function manage_jobs(user, jbnames,jbstr, jbdir, t, maxcs)
 % submit and babysit jobs --- does not use job arrays
+% user: eg. khairyk
+% jbnames: cell array of strings with job names
+% jbdir: working directory (make sure to have permissions), if one cell
+%        then gets used for all submissions
+% t    : time in seconds to wait before qstating
+% maxcs: maximum number of jobs to submit in one chunck, set maxcs=[] to
+%         ignore.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 jcount = numel(jbstr);
-if isempty(maxcs) || numel(jbstr) < maxcs
+if isempty(maxcs)
     %%% submit the jobs
     
     for jbix = 1:jcount
@@ -43,6 +50,7 @@ if isempty(maxcs) || numel(jbstr) < maxcs
             
         end
     end
+    %jbwait(user, jbnames, t);         % wait for jobs to finish
     jbwait(user, jbid, t);         % wait for jobs to finish
     
 else % we need to divide the jobs into chuncks
@@ -100,7 +108,7 @@ for ix = 1:jcount
 end
 
 while nactive
-    %disp(['Waiting for ' num2str(nactive) ' of ' num2str(jcount) ' jobs to finish']);
+    disp(['Waiting for ' num2str(nactive) ' of ' num2str(jcount) ' jobs to finish']);
     str = sprintf('qstat -u %s', user);
     [a, s] = eval('system(str)');
     nactive = 0;
@@ -109,7 +117,8 @@ while nactive
         if ~isempty(k), nactive = nactive + 1;end
     end
     er = findstr(s,'Eqw');
-    if ~isempty(er), disp('one or more jobs not executing --- error: Eqw');end
+    if ~isempty(er), warning('one or more jobs not executing --- error: Eqw');end
     pause(t);
 end
-%disp('----- Finished');
+disp('----- Finished');
+

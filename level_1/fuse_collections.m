@@ -402,7 +402,16 @@ append_to_stack_jobs = {};
 job_names = {};
 job_wkdirs = {};
 job_name = ['appendTo' rcout.stack];
-grid_account = 'tem';
+if isfield(rcout, 'account')
+    grid_account = rcout.account;
+else
+    grid_account = 'tem';
+end
+if isfield(rcout, 'user')
+    grid_user = rcout.user;
+else
+    grid_user = '';
+end
 parfor nix = 1:numel(chnks)
     indx = chnks{nix}; % indx is an array of indices into alltiles.
                        % Those tiles (i.e. alltiles(indx)) will be exported
@@ -446,7 +455,7 @@ end
 
 %% Submit append renderer stack jobs
 disp('Submit append jobs')
-manage_jobs('cgoina', job_names, append_to_stack_jobs, job_wkdirs, 5, 300);
+manage_jobs(grid_user, job_names, append_to_stack_jobs, job_wkdirs, 5, 300);
 
 toc
 

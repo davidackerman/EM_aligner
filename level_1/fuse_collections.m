@@ -447,7 +447,7 @@ parfor nix = 1:numel(chnks)
     catch err_md
         kk_disp_err(err_md);
     end
-    submit_cmd = sprintf('qsub -N %s -A %s -cwd -e :fuse-logs -o :fuse-logs -pe batch 1 -b y "%s" ',...
+    submit_cmd = sprintf('qsub -N %s -A %s -cwd -e :fuse-logs -o :fuse-logs -pe batch 1 -l h_rt=3599 -b y "%s" ',...
                  job_names{nix}, grid_account, local_cmd);
     append_to_stack_jobs{nix} = submit_cmd;
     job_wkdirs{nix} = pwd;

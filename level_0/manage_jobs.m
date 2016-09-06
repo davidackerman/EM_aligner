@@ -20,7 +20,7 @@ if isempty(maxcs) || numel(jbstr) < maxcs
                     cd(jbdir{jbix});
                 end
                 %disp(['Test only -- not submitting anything: ' str]);
-                [a, ret_str] = evalc('system(str)'); %
+                [a, ret_str] = evalc('system(str)');
                 c = strsplit(a);
                 jbid{jbix} = c{3};
             end
@@ -88,28 +88,29 @@ else % we need to divide the jobs into chuncks
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function jbwait(user, jbname, t)
-jcount = numel(jbname);
+function jbwait(user, jbids, t)
+jcount = numel(jbids);
 %%% wait for jobs to finish
-nactive = 0;
-str = sprintf('qstat -u %s', user);
-[a, s] = eval('system(str)');
-for ix = 1:jcount
-    k = findstr(s,jbname{ix});
-    if ~isempty(k), nactive = nactive + 1;end
-end
+nactive = jcount;
 
 while nactive
-    %disp(['Waiting for ' num2str(nactive) ' of ' num2str(jcount) ' jobs to finish']);
-    str = sprintf('qstat -u %s', user);
+    if ~isempty(user)
+        str = sprintf('qstat -u %s', user);
+    else
+        str = sprintf('qstat');
+    end
     [a, s] = eval('system(str)');
     nactive = 0;
     for ix = 1:jcount
-        k = findstr(s,jbname{ix});
+        k = strfind(s, jbids{ix});
         if ~isempty(k), nactive = nactive + 1;end
     end
-    er = findstr(s,'Eqw');
-    if ~isempty(er), disp('one or more jobs not executing --- error: Eqw');end
+    if nactive == 0
+        break;
+    end
+    er = strfind(s, 'Eqw');
+    if ~isempty(er)
+        disp('one or more jobs not executing --- error: Eqw');
+    end
     pause(t);
 end
-%disp('----- Finished');

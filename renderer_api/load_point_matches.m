@@ -137,7 +137,7 @@ PM.W = {};
 PM.np = [];
 n1 = [];
 parfor ix = 1:numel(ns)
-    %disp(ix);
+%     disp(ix);
     count = 1;
     n1(ix) = 0;
     for six = 1:ns(ix)

@@ -85,6 +85,7 @@ else
         %x1 = K\Lm; % sosi
         %[x2,flag,relres,iter,resvec] = gmres(K,Lm,options.restart,options.tol, options.maxit, L2, U2, x1);
         [x2,flag,relres,iter,resvec] = gmres(K,Lm,options.restart,options.tol, options.maxit,L2, U2, d);
+        disp('gmres flag:');
         disp(flag);
         % flag = 0
         % gmres converged to the desired tolerance tol within maxit outer iterations.

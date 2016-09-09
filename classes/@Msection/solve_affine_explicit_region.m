@@ -38,11 +38,11 @@ function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
  lsq_options.dw              = [];
  lsq_options.restart         = 10;
  lsq_options.tol             = 1e-10;
- lsq_options.maxit           = 10000;
+ lsq_options.maxit           = 15000;
 % needed only for trivial constraint
 deg                                 = 180;
  lsq_options.Rtfix           =  [cosd(deg) -sind(deg) 0; sind(deg) cosd(deg) 0; 0 0 1];
- lsq_options.verbose         = 0;
+ lsq_options.verbose         = 1;
  lsq_options.debug           = 0;
  lsq_options.LARGE           = 1e2;
  lsq_options.nmax            = inf;

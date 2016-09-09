@@ -4,7 +4,8 @@ clc;%clear all;
 
 Slab_definition;
 kk_clock;
-
+rcfixed_rough_o = rcfixed_o;
+rcfixed_rough_o.stack = 'FUSED_ROUGH_01';
 %%
 for ix = 2:78
 
@@ -15,12 +16,12 @@ for ix = 2:78
         %  use the first collection as fixed
         rcfixed                = rough_collection{1};%fine_collection{1};
     else
-        rcfixed                = rcfixed_o;
+        rcfixed                = rcfixed_rough_o;%rcfixed_o;
     end
     % configure collection
     rcmoving                = fine_collection{ix};
     % configure output collection
-    rcout                  = rcfixed_o;
+    rcout                  = rcfixed_rough_o;
     overlap = overlapvec(ix-1,:);
     
     
@@ -46,5 +47,5 @@ kk_clock;
 
 %%
 [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec] =...
-    gen_section_based_tile_deformation_statistics(rcout, 1, 1000);
+    gen_section_based_tile_deformation_statistics(rcout, 1, 7062);
 % delete_renderer_stack(rcout);

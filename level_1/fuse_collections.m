@@ -370,7 +370,7 @@ end
 alltiles = L.tiles;
 chnks = {};
 count = 1;
-nc = 300;
+nc = 100;
 ntiles = numel(alltiles);
 nix = 1;
 while count<ntiles
@@ -400,8 +400,8 @@ state = [alltiles(:).state];
 parfor nix = 1:numel(chnks)
     indx = chnks{nix}; % indx is an array of indices into alltiles.
                        % Those tiles (i.e. alltiles(indx)) will be exported
-    fn(nix) = {[pwd '/X_A_' num2str(randi(100000000)) '_' num2str(nix) '.txt']};
-    fid = fopen(fn{nix},'w');
+    fn = [pwd '/X_A_' num2str(randi(100000000)) '_' num2str(nix) '.txt'];
+    fid = fopen(fn,'w');
     for tix = 1:numel(indx)
         ind = (indx(tix));
         if state(ind)>=1          % only export those that are turned on
@@ -424,17 +424,18 @@ parfor nix = 1:numel(chnks)
     end
     fclose(fid);
     %%% generate java command to append renderer collection
-end
-toc
-%% qsub ingest MET files
-resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1');
+    %% qsub ingest MET files
+    resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1');
     %% cleanup
     try
         delete(fn);
     catch err_delete,
         kk_disp_err(err_delete);
     end
-    
+end
+toc
+
+
 
 resp = set_renderer_stack_state_complete(rcout);
 

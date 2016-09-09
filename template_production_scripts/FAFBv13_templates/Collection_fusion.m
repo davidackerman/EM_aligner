@@ -1,18 +1,19 @@
-% test collection fusion function
+%  collection fusion of rough alignment
 
 clc;%clear all;
 
 Slab_definition;
 kk_clock;
-%%
-for ix = 16:nslabs
-    
 
+%%
+for ix = 2:78
+
+    
     if ix<2
         error('ix must be larger than or equal to 2');
     elseif ix==2
         %  use the first collection as fixed
-        rcfixed                = fine_collection{1};
+        rcfixed                = rough_collection{1};%fine_collection{1};
     else
         rcfixed                = rcfixed_o;
     end
@@ -25,21 +26,25 @@ for ix = 16:nslabs
     
     %%%% just to check
     disp('-----------------------');
-    disp('Fixed:');disp(rcfixed);
-    disp('Moving:');disp(rcmoving);
-    disp('Out:');disp(rcout);
-    disp('Overlap:');disp(overlap);
+    disp(['Processing slab: ' num2str(ix)]);
     disp('-----------------------');
-
-    
+%     disp('Fixed:');disp(rcfixed);
+%     disp('Moving:');disp(rcmoving);
+%     disp('Out:');disp(rcout);
+%     disp('Overlap:');disp(overlap);
+%     disp('-----------------------');
     %%
-    if ix ==2, 
+    if ix ==2,
         collection_start = 1;
     else
         collection_start = 0;
     end
-    resp = fuse_collections(rcsource, rcfixed, rcmoving, overlap, rcout, collection_start);
+    [resp]= fuse_collections(rcsource, rcfixed, rcmoving, overlap, rcout, collection_start);
     
 end
 kk_clock;
+
+%%
+[mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec] =...
+    gen_section_based_tile_deformation_statistics(rcout, 1, 1000);
 % delete_renderer_stack(rcout);

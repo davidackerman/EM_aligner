@@ -1,9 +1,9 @@
 function [zu, sID, sectionId, z, ns, zuf] = get_section_ids(rc, nfirst, nlast)
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
     rc.baseURL, rc.owner, rc.project, rc.stack);
-options = weboptions('Timeout', 30);
+options = weboptions('Timeout', 120);
 try
-js = webread(urlChar, options);
+    js = webread(urlChar, options);
 catch err_webread
     disp('get_section_ids: failed to read... retrying');
     js = webread(urlChar, options);

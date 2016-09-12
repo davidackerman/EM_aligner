@@ -68,12 +68,13 @@ if nargin<8, max_points = inf;end
 [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
 %% get a list of all tiles for those sections
 options = weboptions;
-options.Timeout = 20;
+options.Timeout = 60;
 clear t;
 tilecount = [];
 parfor ix = 1:numel(zu)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack, zu(ix));
+    disp(['Read ' urlChar])
     j = webread(urlChar, options);
     jt = tile;
     tilecount(ix) = numel(j);

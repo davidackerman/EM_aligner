@@ -402,13 +402,13 @@ append_to_stack_jobs = {};
 job_names = {};
 job_wkdirs = {};
 job_name = ['appendTo' rcout.stack];
-if isfield(rcout, 'account')
-    grid_account = rcout.account;
+if isfield(rcout, 'grid_account')
+    grid_account = rcout.grid_account;
 else
-    grid_account = 'tem';
+    grid_account = '';
 end
-if isfield(rcout, 'user')
-    grid_user = rcout.user;
+if isfield(rcout, 'grid_user')
+    grid_user = rcout.grid_user;
 else
     grid_user = '';
 end
@@ -438,24 +438,39 @@ parfor nix = 1:numel(chnks)
         end
     end
     fclose(fid);
-    [cmd] = get_append_renderer_cmd(rcout, rcsource, fn, 'v1');
-    rm_fn_cmd = ['rm -f ' fn];
-    local_cmd = [cmd ';' rm_fn_cmd];
-    job_names{nix} = sprintf('%s_%d', job_name, nix);
-    try 
-        system(['mkdir -p ' pwd '/fuse-logs']);
-    catch err_md
-        kk_disp_err(err_md);
+    if isempty(grid_account)
+        % upload TEM files in here
+        resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1');
+        disp(resp_append)
+        try
+            delete(fn);
+        catch err_delete,
+            kk_disp_err(err_delete);
+        end
+    else
+        % qsub TEM file upload
+        [cmd] = get_append_renderer_cmd(rcout, rcsource, fn, 'v1');
+        rm_fn_cmd = ['rm -f ' fn];
+        local_cmd = [cmd ';' rm_fn_cmd];
+        job_names{nix} = sprintf('%s_%d', job_name, nix);
+        job_log_dir = sprintf('fuse-logs/%s', rcmoving.stack);
+        try 
+            system(['mkdir -p ' pwd '/' job_log_dir]);
+        catch err_md
+            kk_disp_err(err_md);
+        end
+        submit_cmd = sprintf('qsub -N %s -A %s -cwd -e :%s -o :%s -pe batch 1 -l h_rt=3599 -b y "%s" ',...
+                     job_names{nix}, grid_account, job_log_dir, job_log_dir, local_cmd);
+        append_to_stack_jobs{nix} = submit_cmd;
+        job_wkdirs{nix} = pwd;
     end
-    submit_cmd = sprintf('qsub -N %s -A %s -cwd -e :fuse-logs -o :fuse-logs -pe batch 1 -l h_rt=3599 -b y "%s" ',...
-                 job_names{nix}, grid_account, local_cmd);
-    append_to_stack_jobs{nix} = submit_cmd;
-    job_wkdirs{nix} = pwd;
 end
 
 %% Submit append renderer stack jobs
-disp('Submit append jobs')
-manage_jobs(grid_user, job_names, append_to_stack_jobs, job_wkdirs, 5, 300);
+if ~isempty(append_to_stack_jobs)
+    disp('Submit append jobs')
+    manage_jobs(grid_user, job_names, append_to_stack_jobs, job_wkdirs, 5, 300);
+end
 
 toc
 

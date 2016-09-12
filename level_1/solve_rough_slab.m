@@ -91,24 +91,22 @@ end
 %% organize directories/files and store intermediate data
 source_layer_images = [dir_spark_work '/layer_images'];
 if run_now
-kk_mkdir(target_layer_images);
-movefile(source_layer_images, target_layer_images);
-movefile(pmfn, target_matches);
-movefile(fn_ids, target_ids);
+    kk_mkdir(target_layer_images);
+    movefile(source_layer_images, target_layer_images);
+    movefile(pmfn, target_matches);
+    movefile(fn_ids, target_ids);
 end
+
 [zu, sID, sectionId, z, ns, zuf] = get_section_ids(rcsource, nfirst, nlast);
 zuf(find(intersect(zu, missing_images))) = [];
 
-for imix = 1:numel(zuf)%str2double(ms.first):str2double(ms.last)
+for imix = 1:numel(zuf)
     fn_im = sprintf('%s/layer_images/%.1f.png', target_solver_path,zuf(imix));
     L2.tiles(imix).path = fn_im;
     t(imix).path = fn_im;
-%     counter = counter + 1;
 end
 
 if needs_correction==0
-    
-
     %% [3] rough alignment solve for montage-scapes
     disp('Solving');
     % solve
@@ -137,12 +135,11 @@ if needs_correction==0
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     [mLR, errR, mLS] = get_rigid_approximation(L2, 'backslash', rigid_opts);  % generate rigid approximation to use as regularizer
-%    mL3 = mLR;
-     affine_opts.lambda = 1e-3;
-     [mL3, errA] = solve_affine_explicit_region(mLR, affine_opts); % obtain an affine solution
-    
-    
+%   mL3 = mLR;
+    affine_opts.lambda = 1e-3;
+    [mL3, errA] = solve_affine_explicit_region(mLR, affine_opts); % obtain an affine solution
     mL3s = split_z(mL3);
+ 
     %% [4] apply rough alignment to montaged sections (L_montage) and generate "rough_aligned" collection  %% %%%%%% sosi
     disp('Apply rough alignment to full set of montaged sections:');
     indx = find(zu-floor(zu)>0);

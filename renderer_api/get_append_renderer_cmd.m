@@ -15,15 +15,19 @@ function [strcmd] = get_append_renderer_cmd(rc,rc_base,fn, MET_format)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     check_input(rc, rc_base, fn, MET_format);
 
-    str1_source     = sprintf('--baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST ', rc.baseURL, rc.owner, rc_base.project);  
+    str1_source     = sprintf('--baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST ', rc.baseURL, rc_base.owner, rc_base.project);  
     target_project  = rc.project;
     source_stack    = rc_base.stack;
     target_stack    = rc.stack;
+    target_owner    = rc.owner;
     mem             = '1G ';
     java_class      = sprintf('org.janelia.render.client.ImportMETClient ');
     script          = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh ');
     strcmd          = [script mem java_class str1_source ...
-                      '--targetProject ' target_project ' --stack ' source_stack ' --targetStack ' target_stack ...
+                      ' --targetOwner ' target_owner ...
+                      ' --targetProject ' target_project ...
+                      ' --targetStack ' target_stack ...
+                      ' --stack ' source_stack ...
                       ' --metFile ' fn ' --formatVersion ' MET_format];
 end
 

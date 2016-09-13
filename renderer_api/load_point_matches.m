@@ -94,8 +94,6 @@ for ix = 1:numel(zu)
     tIds(cnt:cnt+tilecount(ix)-1) = {t(ix).jt.renderer_id};
     tiles(cnt:cnt+tilecount(ix)-1) = t(ix).jt;
     cnt = cnt + tilecount(ix);
-    %     tIds = [tIds {t(ix).jt.renderer_id}];
-    %     tiles = [tiles t(ix).jt];
 end
 
 % loop over tiles to set tile id
@@ -127,7 +125,7 @@ clear count_vec ;
 clear id_vec ;
 parfor ix = 1:numel(tIds)
     count_vec(ix)= {ix};
-    id_vec(ix) = tIds(ix);%tIds{ix};
+    id_vec(ix) = tIds(ix);
 end
 map_id = containers.Map(id_vec, count_vec);
 
@@ -161,13 +159,13 @@ parfor ix = 1:numel(ns)
                         PM(ix).M{count,1}   = [jj(jix).matches.p(1:2,indx)]';
                         PM(ix).M{count,2}   = [jj(jix).matches.q(1:2,indx)]';
                         PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
-                        PM(ix).W{count,1}     = jj(jix).matches.w(indx)';         % relative weights of point matches within this group
+                        PM(ix).W{count,1}   = jj(jix).matches.w(indx)';         % relative weights of point matches within this group
                         PM(ix).np(count)    = max_points;
                     else
                         PM(ix).M{count,1}   = [jj(jix).matches.p]';
                         PM(ix).M{count,2}   = [jj(jix).matches.q]';
                         PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
-                        PM(ix).W{count,1}     = jj(jix).matches.w';         % relative weights of point matches within this group
+                        PM(ix).W{count,1}   = jj(jix).matches.w';         % relative weights of point matches within this group
                         PM(ix).np(count)    = size(jj(jix).matches.p',1);
                     end
                     

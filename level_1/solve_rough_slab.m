@@ -64,7 +64,6 @@ function [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str, 
 
 %% define target directores and file names for storage
 %dir_rough_intermediate_store = '/nobackup/flyTEM/khairy/FAFB00v13/montage_scape_pms';
-diary on;
 target_solver_path = [dir_rough_intermediate_store '/solver_' num2str(nfirst) '_' num2str(nlast) ];
 target_ids = [target_solver_path '/ids.txt'];
 target_matches = [target_solver_path '/matches.txt'];
@@ -118,10 +117,11 @@ if needs_correction==0
         [zu, sID, sectionId, z, ns] = get_section_ids(rc, min(zu), max(zu));
         scale_fac = ones(numel(zu),1);
         fac = 1/0.935;
+        wo = weboptions('Timeout', 60);
         for zix = 1:numel(zu)        %% loop over sections and identify scaling of first tile
             urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
                 rc.baseURL, rc.owner, rc.project, rc.stack,zu(zix) );
-            j = webread(urlChar);
+            j = webread(urlChar, wo);
             sl = j(1).transforms.specList;   % spec list
             if numel(sl)==4, scale_fac(zix) = fac;end   % four transformations means autoloader
             %         disp([zix zu(zix) numel(sl)]);
@@ -144,8 +144,6 @@ if needs_correction==0
     disp('Apply rough alignment to full set of montaged sections:');
     indx = find(zu-floor(zu)>0);
     zu(indx) = [];
-    diary off;
-    diary on;
     % load montages
     disp('-- Loading montages (typical time for large FAFB sections and 32 workers --> 150 seconds)');
     tic
@@ -180,9 +178,8 @@ if needs_correction==0
     end
     
     for lix = 1:numel(L_montage)
-
-         b1 = L_montage(lix).box;
-         dx = b1(1);dy = b1(3);
+        b1 = L_montage(lix).box;
+        dx = b1(1);dy = b1(3);
         tmx1 = [1 0 0; 0 1 0; -dx -dy 1];  % translation matrix for section box
         
         tiles = L_montage(lix).tiles;
@@ -195,8 +192,6 @@ if needs_correction==0
         L_montage(lix).tiles = tiles;
         L_montage(lix).X = x1;
         L_montage(lix).Y = y1;
-        
-
     end
     opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
     L_montage = concatenate_tiles(L_montage);
@@ -204,136 +199,19 @@ if needs_correction==0
     kk_clock;
     % save 
     try
-        disp('Saving rough aligned slab binary to disk....');
-    fn = sprintf('%s//rough_aligned_slab_%d_%d.mat', dir_store_rough_slab, nfirst, nlast);
-    save(fn, 'L_montage', 'rctarget_rough', 'rcsource');
-    disp('Done!');
+        fn = sprintf('%s/rough_aligned_slab_%d_%d.mat', dir_store_rough_slab, nfirst, nlast);
+        disp(['Saving rough aligned slab binary to ' fn ' ...']);
+        save(fn, 'L_montage', 'rctarget_rough', 'rcsource');
+        disp('Done!');
     catch err_save
         kk_disp_err(err_save);
     end
     %%% ingest into renderer database as rough collection
-        disp('-- Ingest into renderer database using overwrite. typical time: 15 minutes for large FAFB slab and 32 workers');
-        diary off;
-    diary on;
+    disp('-- Ingest into renderer database using overwrite. typical time: 15 minutes for large FAFB slab and 32 workers');
     kk_clock;
     tic
     ingest_section_into_renderer_database_overwrite(L_montage,rctarget_rough, rcsource, pwd);
     toc
     kk_clock;
     disp('Done!');
-    diary off;
-    
-    
-    
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% [2'] correct if needed
-    % if needs_correction   %%%%%%%%%% manually correct
-    %     disp('Please interrup <ctrl-c> and proceed to manually set point correspondences');
-    %     disp('generate images and then use cpselect(im1,im2)');
-    %     disp('When done, set run-now to zeros and re-run generate_montage_scapes_SIFT_point_matches');
-    %     pause;
-    %
-    %     [~, ai] = sort(zrange(:,2),'ascend');
-    %     disp('Available connected tiles:');
-    %     disp(zrange(ai,:));
-    %
-    %     % define point-match pairs that need to be connected
-    %     c = [1 2; 18 19;26 27];
-    %
-    %     p = 3;
-    %     im1 = imread(t(c(p,1)).path);
-    %     im2 = imread(t(c(p,2)).path);
-    %     cpselect(im1,im2);
-    %
-    %     im1p = movingPoints4;
-    %     im2p = fixedPoints4;
-    %     %%% try SURF first
-    % %         p1  = detectSURFFeatures(im1, 'NumOctaves', 10,...
-    % %                                    'NumScaleLevels', 5,...
-    % %                                    'MetricThreshold', 1000);
-    % %
-    % %     [f1, vp1]  = extractFeatures(im1,  p1);
-    % %     [f2, vp2]  = extractFeatures(im2,  p1);
-    % %     [m1, m2, ~]  = im_pair_match_features(f1, vp1, f2, vp2);
-    % %     showMatchedFeatures(im1,im2,im1p,im2p, 'montage', 'PlotOptions', {'ro', 'g+', 'w-'});h2 = findobj('Type', 'line');for lix = 1:numel(h2), set(h2(lix), 'LineWidth',2);end
-    % %
-    %
-    %     %%% use cpselect for each image pair manually and append point-match file with new point-matches
-    %         fid = fopen(pmfn, 'a+');
-    %
-    %      str = '';
-    %     for pix = 1:size(im1p,1)
-    %     str = [str sprintf('%.0f\t%.12f\t%.12f\t%.0f\t%.12f\t%.12f\n', ...
-    %         t(c(p,1)).id, im1p(pix,1),im1p(pix,2), t(c(p,2)).id, im2p(pix,1),im2p(pix,2))];
-    %     end
-    %
-    %     fprintf(fid, '%s', str);
-    %     fclose(fid);
-    %
-    %
-    %
-    %     % manually run all corrections then re-run point-match generation
-    %     run_now = 0;
-    %     [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str,...
-    %         fn_ids] = generate_montage_scapes_SIFT_point_matches(ms, run_now);
-    %
-    %
-    % end
-    % %
-    % disp('Filtering point-matches using RANSAC');
-    %
-    % % %% filter point matches using RANSAC
-    % geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
-    % geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';
-    % geoTransformEst.Transform = 'Nonreflective similarity';%'Affine';%
-    % geoTransformEst.NumRandomSamplingsMethod = 'Desired confidence';
-    % geoTransformEst.MaximumRandomSamples = 1500;
-    % geoTransformEst.DesiredConfidence = 99.99;
-    % for pmix = 1:size(L2.pm.M,1)
-    %     m1 = L2.pm.M{pmix,1};
-    %     m2 = L2.pm.M{pmix,2};
-    %     % Invoke the step() method on the geoTransformEst object to compute the
-    %     % transformation from the |distorted| to the |original| image. You
-    %     % may see varying results of the transformation matrix computation because
-    %     % of the random sampling employed by RANSAC.
-    %     [tform_matrix, inlierIdx] = step(geoTransformEst, m2, m1);
-    %     m1 = m1(inlierIdx,:);
-    %     m2 = m2(inlierIdx,:);
-    %     L2.pm.M{pmix,1} = m1;
-    %     L2.pm.M{pmix,2} = m2;
-    %     w = L2.pm.W{pmix};
-    %     L2.pm.W{pmix} = w(inlierIdx);
-    % end
-    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    
-    
-    % % check point match quality
-    % for lix = 1%:size(L2.pm.adj,1)
-    %     ix1 = L2.pm.adj(lix,1);
-    %     ix2 = L2.pm.adj(lix,2);
-    %     t1 = L2.tiles(ix1);
-    %     t2 = L2.tiles(ix2);
-    %     M = L2.pm.M(lix,:);
-    %     show_feature_point_correspondence(t1,t2,M);title([num2str(ix1) '   ' num2str(ix2)]);
-    %     drawnow;
-    % end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

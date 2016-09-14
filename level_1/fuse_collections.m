@@ -362,11 +362,7 @@ if stack_complete(rcout)
     resp = set_renderer_stack_state_loading(rcout);
 end
 
-
-
 % export tiles to renderer;
-
-
 alltiles = L.tiles;
 chnks = {};
 count = 1;
@@ -452,7 +448,8 @@ parfor nix = 1:numel(chnks)
         [cmd] = get_append_renderer_cmd(rcout, rcsource, fn, 'v1');
         rm_fn_cmd = ['rm -f ' fn];
         local_cmd = [cmd ';' rm_fn_cmd];
-        job_names{nix} = sprintf('%s_%d', job_name, nix);
+        current_job_name = sprintf('%s_%d', job_name, nix); 
+        job_names{nix} = current_job_name;
         job_log_dir = sprintf('fuse-logs/%s', rcmoving.stack);
         try 
             system(['mkdir -p ' pwd '/' job_log_dir]);
@@ -460,7 +457,7 @@ parfor nix = 1:numel(chnks)
             kk_disp_err(err_md);
         end
         submit_cmd = sprintf('qsub -N %s -A %s -cwd -e :%s -o :%s -pe batch 1 -l h_rt=3599 -b y "%s" ',...
-                     job_names{nix}, grid_account, job_log_dir, job_log_dir, local_cmd);
+                     current_job_name, grid_account, job_log_dir, job_log_dir, local_cmd);
         append_to_stack_jobs{nix} = submit_cmd;
         job_wkdirs{nix} = pwd;
     end

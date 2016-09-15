@@ -152,7 +152,9 @@ parfor ix = 1:numel(ns)
             pause(1);
             jj = webread(urlChar,options); % try again
         end
-        jj = jj{:};
+        if iscell(jj)
+            jj = jj{:};
+        end
         n1(ix) = n1(ix) + numel(jj);
         for jix = 1:numel(jj)
             if size(jj(jix).matches.p',1)>=min_points

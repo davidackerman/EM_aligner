@@ -31,7 +31,7 @@ cmd = sprintf('/groups/flyTEM/flyTEM/render/bin/render.sh --memory 7g --out %s -
 [a, resp_str] = system(cmd);
 file_ready = 0;
 count = 1;
-while ~(file_ready) && count<200
+while ~(file_ready) && count<2000
     pause(0.1);
     file_ready = [exist(fn,'file')==2];
     count = count + 1;

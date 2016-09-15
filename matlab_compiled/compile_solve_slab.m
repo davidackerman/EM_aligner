@@ -20,6 +20,11 @@ for ix = 1:numel(fn)
 astr = [astr sprintf(' -a /groups/flyTEM/home/khairyk/EM_aligner/solver/%s',fn(ix).name)];
 end
 
+fn = dir('/groups/flyTEM/home/khairyk/EM_aligner/external/jsonlab/*.m');
+for ix = 1:numel(fn)
+astr = [astr sprintf(' -a /groups/flyTEM/home/khairyk/EM_aligner/external/jsonlab/%s',fn(ix).name)];
+end
+
 
 str = sprintf('mcc -m -R -nodesktop -v solve_slab_SL.m %s;', astr);
 eval(str);

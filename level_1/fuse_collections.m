@@ -366,7 +366,7 @@ end
 alltiles = L.tiles;
 chnks = {};
 count = 1;
-nc = 300;
+nc = 100;
 ntiles = numel(alltiles);
 nix = 1;
 while count<ntiles
@@ -462,6 +462,7 @@ parfor nix = 1:numel(chnks)
         job_wkdirs{nix} = pwd;
     end
 end
+toc
 
 %% Submit append renderer stack jobs
 if ~isempty(append_to_stack_jobs)

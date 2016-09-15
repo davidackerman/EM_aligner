@@ -32,11 +32,8 @@ function [x2, R] = solve_AxB(K,Lm,options,d)
 % Author: Khaled Khairy: Copyright 2016. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if strcmp(options.solver, 'pastix')
-    if ~isfield(options, 'ncpus'), options.ncpus = 5;end
-    disp(['Using Pastix with: ' num2str(options.ncpus) ' cpus.']);
-    disp(['Matrix A dimensions: ' num2str(size(K,1)) ' x ' num2str(size(K,2))]);
-    disp(['Matrix A non-zeros : ' num2str(nnz(K))]);
-    [x2, R] = solve_pastix(K,Lm,options.ncpus);
+
+    [x2, R] = solve_pastix(K,Lm,options);
     
 else
     if ~isfield(options, 'distributed'), options.distributed = 0;end
@@ -85,6 +82,7 @@ else
         %x1 = K\Lm; % sosi
         %[x2,flag,relres,iter,resvec] = gmres(K,Lm,options.restart,options.tol, options.maxit, L2, U2, x1);
         [x2,flag,relres,iter,resvec] = gmres(K,Lm,options.restart,options.tol, options.maxit,L2, U2, d);
+        disp('gmres flag:');
         disp(flag);
         % flag = 0
         % gmres converged to the desired tolerance tol within maxit outer iterations.

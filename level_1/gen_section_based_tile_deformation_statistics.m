@@ -28,7 +28,7 @@ tidsvec = cell(numel(zu1),1);
 % to generate histogram counts we need to define bin edges
 edges = [0.4:.02:1.7];
 counts = zeros(numel(zu1), numel(edges));   
-webopts = weboptions('Timeout', 10);
+webopts = weboptions('Timeout', 60);
 parfor zix = 1:numel(zu1)
     %disp(zu1(zix));
     Ar = [];    % surface area of tiles

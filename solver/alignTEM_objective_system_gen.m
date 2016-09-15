@@ -18,6 +18,8 @@ b_i = cell(numel(L),1);
 w_i = cell(numel(L),1);
 tf_i = cell(numel(L),1);
 pdegree = options.pdegree;
+disp('Generating matrix A blocks ...');
+tic
 for ix = 1:numel(L)
     ntiles = numel(L(ix).tiles);
     [A_i{ix}, b_i{ix},w_i{ix}, tf_i{ix}] = alignTEM_objective_montage(...
@@ -26,6 +28,8 @@ for ix = 1:numel(L)
         tfix, ...
         pdegree, sf, ntiles);
 end
+toc;
+disp('Done');
 
 % construct sub-matrices for cross-layer
 A_ij = cell(numel(P), 2);
@@ -47,6 +51,8 @@ nP = numel(P);
 n = 0;
 m = 0;
 % preallocate memory for I J S, we need to know their size
+disp('Preallocating memory for final sparse matrix vectors');
+tic
 sz = 0;
 for ix = 1:numel(A_i), % for the montages
     n = n + size(A_i{ix},1);
@@ -81,6 +87,7 @@ I = zeros(sz,1);
 J = zeros(sz,1);
 S = zeros(sz,1);
 pos = 0;
+toc;
 
 for ix = 1:numel(A_i),
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -462,7 +462,6 @@ parfor nix = 1:numel(chnks)
         job_wkdirs{nix} = pwd;
     end
 end
-toc
 
 %% Submit append renderer stack jobs
 if ~isempty(append_to_stack_jobs)

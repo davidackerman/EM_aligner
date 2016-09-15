@@ -1,4 +1,4 @@
-function [I, Io] = get_xz_image_renderer(rc, x, y, width, dy, scale, zstart, zfinish, res)
+function [I, Io] = get_xz_image_renderer(rc, x, y, dx, height, scale, zstart, zfinish, res)
 %% Generate an xz-slice through an existing Renderer collection
 % specify x and y coordinates, extent of box and range of z
 % Input:
@@ -18,9 +18,9 @@ xres = res(1);
 yres = res(2);
 zres = res(3);
 
-Wbox = [x y width dy];
+Wbox = [x y dx height];
 zrange = zstart:zfinish;
-I = zeros(floor(width * scale), floor(dy * scale), numel(zrange));
+I = zeros(floor(dx * scale), floor(height * scale), numel(zrange));
 %parfor_progress(numel(zrange));
 parfor ix = 1:numel(zrange)
     %disp(ix);
@@ -31,9 +31,9 @@ end
 %parfor_progress(0);
 Io = I;
 I = mat2gray(I);
-I = sum(I,2)/dy;
+I = sum(I,1)/dx;
 I = squeeze(I);
-I = imresize(I,[width numel(zrange)*(zres/xres)]);
+I = imresize(I,[height numel(zrange)*(zres/xres)]);
 warning('off', 'Images:initSize:adjustingMag');I = imadjust(I');
 %imshow(mat2gray(I));
 

@@ -8,9 +8,10 @@ verbose = 0;
 err = 0;
 check_input(rc);
 if ~isfield(rc, 'versionNotes'), rc.versionNotes = 'none';end
-str1 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rc.baseURL, rc.owner, rc.project);
+str1 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', ...
+    rc.baseURL, rc.owner, rc.project);
 str3 = sprintf('TARGET_STACK="%s";', rc.stack);
-str_versionNotes = sprintf('--versionNotes ""%s"" ', rc.versionNotes); 
+str_versionNotes = sprintf('--versionNotes "%s" ', rc.versionNotes); 
 str8 = sprintf('/groups/flyTEM/flyTEM/render/bin/manage-stack.sh ${PROJECT_PARAMS} --action CREATE --stack ${TARGET_STACK} %s;',...
     str_versionNotes);
 strcmd = [str1 str3 str8];

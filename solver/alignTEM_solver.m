@@ -1,6 +1,6 @@
 function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid] = ...
         alignTEM_solver(L, P, options)
-%% works as is, but needs  refactoring bacause: 
+%% works as is, but needs  refactoring because: 
 % [1] we don't use P anymore and 
 % [2] all tiles are expected to be in L (which is not an array)
 % [3] we should not even need L, but 
@@ -160,7 +160,12 @@ if options.constraint_only
 else
     %% %%%%%%%%%%%%%%%%%%%%%%%%%% CONSTRUCT A AND b %%%%%%%%%%%%%%%%%%%%%%%%%
     if isempty(options.A)
-        disp('constructing matrix A');[A,b, W] = alignTEM_objective_system_gen(L,P, lidfix, tfix, options, sf);disp('... done!');
+        disp('constructing matrix A');
+        kk_clock;
+        [A,b, W] = alignTEM_objective_system_gen(L,P, lidfix, tfix, options, sf);
+        kk_clock;
+        disp('... done!');
+        
     end
     
     %% construct final matrices

@@ -74,7 +74,9 @@ tilecount = [];
 parfor ix = 1:numel(zu)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack, zu(ix));
-    disp(['Read ' urlChar])
+    if rc.verbose
+        disp(['Read ' urlChar])
+    end
     j = webread(urlChar, options);
     jt = tile;
     tilecount(ix) = numel(j);
@@ -150,6 +152,7 @@ parfor ix = 1:numel(ns)
             pause(1);
             jj = webread(urlChar,options); % try again
         end
+        jj = jj{:};
         n1(ix) = n1(ix) + numel(jj);
         for jix = 1:numel(jj)
             if size(jj(jix).matches.p',1)>=min_points

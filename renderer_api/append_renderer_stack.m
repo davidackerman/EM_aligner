@@ -16,17 +16,18 @@ function resp = append_renderer_stack(rc,rc_base,fn, MET_format)
 verbose = 0;
 check_input(rc, rc_base, fn, MET_format);
 
-str1_source     = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST";', rc.baseURL, rc.owner, rc_base.project);  
+str1_source     = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST";', rc.baseURL, rc_base.owner, rc_base.project);
 target_project  = sprintf('TARGET_PROJECT="%s";', rc.project);
 str2            = sprintf('SOURCE_STACK="%s";', rc_base.stack);
 str3            = sprintf('TARGET_STACK="%s";', rc.stack);
+str4            = sprintf('TARGET_OWNER="%s";', rc.owner);
 str6            = sprintf('MET_FORMAT="%s";', MET_format);
 
 str9            = sprintf('MEMORY="1G";');
 str10           = sprintf('JAVA_CLASS="org.janelia.render.client.ImportMETClient";');
 str11           = sprintf('MET_FILE="%s";', fn);
-str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh ${MEMORY} ${JAVA_CLASS} ${PROJECT_PARAMS} --targetProject ${TARGET_PROJECT} --stack ${SOURCE_STACK} --targetStack ${TARGET_STACK} --metFile ${MET_FILE} --formatVersion ${MET_FORMAT};');
-strcmd          = [str9 str10 str1_source target_project str2 str3 str11 str6    str12];
+str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh ${MEMORY} ${JAVA_CLASS} ${PROJECT_PARAMS} --targetProject ${TARGET_PROJECT} --stack ${SOURCE_STACK} --targetStack ${TARGET_STACK} --targetOwner ${TARGET_OWNER} --metFile ${MET_FILE} --formatVersion ${MET_FORMAT};');
+strcmd          = [str9 str10 str1_source target_project str2 str3 str4 str11 str6 str12];
 
 
 try

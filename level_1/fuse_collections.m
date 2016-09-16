@@ -362,11 +362,7 @@ if stack_complete(rcout)
     resp = set_renderer_stack_state_loading(rcout);
 end
 
-
-
 % export tiles to renderer;
-
-
 alltiles = L.tiles;
 chnks = {};
 count = 1;
@@ -397,6 +393,21 @@ cam = [alltiles(:).cam];
 path = {alltiles(:).path};
 temca_conf = [alltiles(:).temca_conf];
 state = [alltiles(:).state];
+
+append_to_stack_jobs = {};
+job_names = {};
+job_wkdirs = {};
+job_name = ['appendTo' rcout.stack];
+if isfield(rcout, 'grid_account')
+    grid_account = rcout.grid_account;
+else
+    grid_account = '';
+end
+if isfield(rcout, 'grid_user')
+    grid_user = rcout.grid_user;
+else
+    grid_user = '';
+end
 parfor nix = 1:numel(chnks)
     indx = chnks{nix}; % indx is an array of indices into alltiles.
                        % Those tiles (i.e. alltiles(indx)) will be exported
@@ -423,59 +434,43 @@ parfor nix = 1:numel(chnks)
         end
     end
     fclose(fid);
-    %%% generate java command to append renderer collection
-    %% qsub ingest MET files
-    resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1');
-    %% cleanup
-    try
-        delete(fn);
-    catch err_delete,
-        kk_disp_err(err_delete);
+    if isempty(grid_account)
+        % upload TEM files in here
+        resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1');
+        disp(resp_append)
+        try
+            delete(fn);
+        catch err_delete,
+            kk_disp_err(err_delete);
+        end
+    else
+        % qsub TEM file upload
+        [cmd] = get_append_renderer_cmd(rcout, rcsource, fn, 'v1');
+        rm_fn_cmd = ['rm -f ' fn];
+        local_cmd = [cmd ';' rm_fn_cmd];
+        current_job_name = sprintf('%s_%d', job_name, nix); 
+        job_names{nix} = current_job_name;
+        job_log_dir = sprintf('fuse-logs/%s', rcmoving.stack);
+        try 
+            system(['mkdir -p ' pwd '/' job_log_dir]);
+        catch err_md
+            kk_disp_err(err_md);
+        end
+        submit_cmd = sprintf('qsub -N %s -A %s -cwd -e :%s -o :%s -pe batch 1 -l h_rt=3599 -b y "%s" ',...
+                     current_job_name, grid_account, job_log_dir, job_log_dir, local_cmd);
+        append_to_stack_jobs{nix} = submit_cmd;
+        job_wkdirs{nix} = pwd;
     end
 end
+
+%% Submit append renderer stack jobs
+if ~isempty(append_to_stack_jobs)
+    disp('Submit append jobs')
+    manage_jobs(grid_user, job_names, append_to_stack_jobs, job_wkdirs, 5, 300);
+end
+
 toc
 
-
-
+%% Complete the stack
+disp('Complete stack')
 resp = set_renderer_stack_state_complete(rcout);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -34,10 +34,16 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, ...
 %
 % Author: Khaled Khairy. Janelia Research Campus 2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin<5, nbr = 4;end  % number of neighbors to check
-if nargin<6, min_points = 0;end
-if nargin<7, xs_weight = 1;end
-if nargin<8, max_points = inf;end
+if nargin < 5, nbr = 4; end  % number of neighbors to check
+if nargin < 6, min_points = 0; end
+if nargin < 7, xs_weight = 1; end
+if nargin < 8, max_points = inf; end
+
+verbose = 0;
+if isfield(pm, 'verbose')
+    verbose = pm.verbose;
+end
+
 % %% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
 % urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
 %     rc.baseURL, rc.owner, rc.project, rc.stack);
@@ -138,13 +144,14 @@ PM.W = {};
 PM.np = [];
 n1 = [];
 parfor ix = 1:numel(ns)
-%     disp(ix);
     count = 1;
     n1(ix) = 0;
     for six = 1:ns(ix)
-        %disp([six count]);
         urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
             pm.server, pm.owner, pm.match_collection, sID{ix}{six});
+        if verbose > 0
+            disp(urlChar);
+        end
         try
             jj = webread(urlChar, options);
         catch err_fetch_pm
@@ -157,9 +164,18 @@ parfor ix = 1:numel(ns)
         end
         n1(ix) = n1(ix) + numel(jj);
         for jix = 1:numel(jj)
-            if size(jj(jix).matches.p',1)>=min_points
+            if verbose > 1
+                logInfo = struct();
+                logInfo.info = 'Number of point matches before filtering for min and max points';
+                logInfo.pId = jj(jix).pId;
+                logInfo.qId = jj(jix).qId;
+                logInfo.nMatches = numel(jj(jix).matches.w);
+                disp(logInfo);
+            end
+            pmCountIndex = count;
+            if size(jj(jix).matches.p',1) >= min_points
                 if isKey(map_id, jj(jix).pId) && isKey(map_id, jj(jix).qId)
-                    if numel(jj(jix).matches.p(1,:))>max_points
+                    if numel(jj(jix).matches.p(1,:)) > max_points
                         indx = randi(numel(jj(jix).matches.p(1,:))-1, max_points,1);
                         PM(ix).M{count,1}   = [jj(jix).matches.p(1:2,indx)]';
                         PM(ix).M{count,2}   = [jj(jix).matches.q(1:2,indx)]';
@@ -173,8 +189,21 @@ parfor ix = 1:numel(ns)
                         PM(ix).W{count,1}   = jj(jix).matches.w';         % relative weights of point matches within this group
                         PM(ix).np(count)    = size(jj(jix).matches.p',1);
                     end
-                    
                     count = count + 1;
+                end
+            end
+            if verbose > 1
+                logInfo = struct();
+                logInfo.info = 'Number of point matches after filtering for min and max points';
+                logInfo.pId = jj(jix).pId;
+                logInfo.qId = jj(jix).qId;
+                logInfo.nMatches = PM(ix).np(pmCountIndex);
+                disp(logInfo);
+                if verbose > 3
+                    disp(table(...
+                        PM(ix).M{pmCountIndex,1}(:,1), PM(ix).M{pmCountIndex,1}(:,2), ...
+                        PM(ix).M{pmCountIndex,2}(:,1), PM(ix).M{pmCountIndex,2}(:,2), ...
+                         'VariableNames', {'Px', 'Py', 'Qx', 'Qy'}));
                 end
             end
         end
@@ -183,13 +212,16 @@ end
 
 
 %% obtain cross-section point-matches
-%disp('Obtaining cross-layer point_matches');
 xPM = {};
 n   = {};
+if nbr > 0 && verbose > 0
+    disp('Obtaining cross-layer point_matches');
+end
 parfor pmix = 1:nbr
     [xPM{pmix}, n{pmix}] = get_cross_section_pm(pmix+1, ...
         pm, sID, map_id, min_points, xs_weight, max_points);%% get point matches to immediate neighbor
 end
+
 %disp('Generating final point match struct');
 %% generate final M, adj, W and np
 M   = [];
@@ -197,13 +229,14 @@ adj = [];
 W   = [];
 np = [];
 for ix = 1:numel(zu)   % loop over sections
-    %disp(ix);
+    if verbose > 0
+        disp(zu(ix));
+    end
     M = [M;PM(ix).M];
     adj = [adj;PM(ix).adj];
     W   = [W;PM(ix).W];
     np   = [np;PM(ix).np(:)];
     for nix = 1:nbr   % loop over neighboring sections
-        %disp([ix nix]);
         if  ~(numel(xPM{nix})==1 && isempty(xPM{nix}.M))
             if numel(xPM{nix})>=ix
                 if ~isempty(xPM{nix}(ix).M)
@@ -215,6 +248,17 @@ for ix = 1:numel(zu)   % loop over sections
             end
         end
     end
+    if verbose > 0
+        disp(['Section ' num2str(zu(ix)) ' -> ' num2str(sum(np)) ' point matches']);
+    end
+    if verbose > 2
+        logInfo = struct();
+        logInfo.section = zu(ix);
+        tileMatchCounts = cellfun(@numel, M, 'UniformOutput', false);
+        logInfo.tileMatchCounts = table([adj(:, 1), adj(:, 2), [tileMatchCounts{:,1}]']);
+        disp(logInfo);
+        disp(logInfo.tileMatchCounts)
+    end
 end
 
 %% place point match information into Msection object L
@@ -222,6 +266,7 @@ L.pm.M = M;
 L.pm.adj = adj;
 L.pm.W = W;
 L.pm.np = np;
+L.pm.verbose = verbose;
 % %% tiles that are not connected to any other tiles must be eliminated
 % adjids = {L.tiles(adj(:)).renderer_id};
 %% %%%%%%%%%%%%%%%%%%%%%%%%% diagnostics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -243,6 +288,7 @@ if any(sum(pm_mx)==0), disp('Warning: defective pm connectivity matrix');end
 if ~(size(bb,1)==size(L.pm.adj,1))
     error('Rows in L.pm.adj should be unique');
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%
 function [xPM, np_vec] = get_cross_section_pm(n, pm, sID, map_id, min_points, xs_weight, max_points)
 % assumes sectionId contains sections sorted by z
@@ -273,20 +319,13 @@ if numel(sID)>=n
                 for jix = 1:numel(j)
                     if size(j(jix).matches.p',1)>=min_points
                         if isKey(map_id, j(jix).pId) && isKey(map_id, j(jix).qId)
-                            
-                            % %                             % sosi
-                            % %                             if str2double(sID{ix}{six1})==10
-                            % %                                 disp([map_id(j(jix).pId)<map_id(j(jix).qId) ...
-                            % %                                      n (ix-(n-1)) ix map_id(j(jix).pId) map_id(j(jix).qId)]);
-                            % %                             end
-                            
                             % obtain map ids
                             midp = map_id(j(jix).pId);
                             midq = map_id(j(jix).qId);
                             
                             if numel(j(jix).matches.p(1,:))>max_points
                                 indx = randi(numel(j(jix).matches.p(1,:))-1, max_points,1);
-                                if midp<midq
+                                if midp < midq
                                     xPM(ix-(n-1)).M{count,1}   = j(jix).matches.p(1:2,indx)';
                                     xPM(ix-(n-1)).M{count,2}   = j(jix).matches.q(1:2,indx)';
                                     xPM(ix-(n-1)).adj(count,:) = [midp midq];
@@ -297,9 +336,8 @@ if numel(sID)>=n
                                 end
                                 xPM(ix-(n-1)).W{count,1}   = fac * j(jix).matches.w(indx)';         % relative weights of point matches within this group
                                 xPM(ix-(n-1)).np(count)  = max_points;    %  we are recording the number of point matches between those two tiles
-                                
                             else
-                                if midp<midq
+                                if midp < midq
                                     xPM(ix-(n-1)).M{count,1}   = j(jix).matches.p';
                                     xPM(ix-(n-1)).M{count,2}   = j(jix).matches.q';
                                     xPM(ix-(n-1)).adj(count,:) = [midp midq];
@@ -310,8 +348,6 @@ if numel(sID)>=n
                                 end
                                 xPM(ix-(n-1)).W{count,1}   = fac * j(jix).matches.w';         % relative weights of point matches within this group
                                 xPM(ix-(n-1)).np(count)  = size(j(jix).matches.p',1);    %  we are recording the number of point matches between those two tiles
-                                
-                                
                             end
                             
                             count = count + 1;
@@ -320,51 +356,8 @@ if numel(sID)>=n
                         end
                     end
                 end
-                %pause(0.2);
             end
         end
         sec_ix = sec_ix + 1;
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

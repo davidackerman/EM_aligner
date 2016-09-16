@@ -63,6 +63,7 @@ function [] = Register_montage(nfirst, nlast, opts_fn)
     pm.server = eval_field(pm_opts, 'server', 'http://10.40.3.162:8080/render-ws/v1', true);
     pm.owner = eval_field(pm_opts, 'owner', 'flyTEM', true);
     pm.match_collection = eval_field(pm_opts, 'match_collection', 'v12_dmesh', true);
+    pm.verbose = eval_field(pm_opts, 'verbose', 0);
 
     % pm filter options
     pm_filter_opts.NumRandomSamplingsMethod = eval_field(pm_filter_opts, 'NumRandomSamplingsMethod', 'Desired confidence', true);
@@ -89,7 +90,7 @@ function [] = Register_montage(nfirst, nlast, opts_fn)
     opts.peg_weight = eval_field(solver_opts, 'peg_weight', 1e-4);
     opts.peg_npoints = eval_field(solver_opts, 'peg_npoints', 5);
 
-    if verbose
+    if verbose > 0
         disp('Source collection:');
         disp(rcsource);
         disp('Target collection:');
@@ -120,6 +121,19 @@ function [] = Register_montage(nfirst, nlast, opts_fn)
                 load_point_matches(lix, lix, rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight, opts.max_points);
             if opts.filter_pm
                 L.pm = filter_pm(L.pm, pm_filter_opts);
+                if L.pm.verbose > 2
+                    logInfo = struct();
+                    logInfo.info = ['Section ' num2str(lix) ' point matches after filtering'];
+                    logInfo.nPointMatches = table([L.pm.adj(:, 1), L.pm.adj(:, 2) L.pm.np]);
+                    disp(logInfo);
+                    disp(logInfo.nPointMatches)
+                    if L.pm.verbose > 3
+                        for tpix = 1:size(L.pm.adj, 1)
+                            disp(['Tile pair ' num2str(L.pm.adj(1,1)) ',' num2str(L.pm.adj(1,2))]);
+                            disp(table(L.pm.M{tpix, 1}, L.pm.M{tpix, 2}, 'VariableNames', {'P', 'Q'}));
+                        end
+                    end
+                end
             end
             if opts.use_peg
                 L = add_translation_peggs(L, opts.peg_npoints, opts.peg_weight);

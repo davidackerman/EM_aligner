@@ -113,12 +113,13 @@ function [] = Register_montage(nfirst, nlast, opts_fn)
     kk_clock;
     failed_list = zeros(numel(nfirst:nlast),1);
 
-    parfor lix = nfirst:nlast
-        disp(['Solving section: ' num2str(lix) ' from [' num2str(nfirst) ' , ' num2str(nlast) ']']);
+    [zu, sID, sectionId, z, ns] = get_section_ids(rcsource, nfirst, nlast);
+    parfor lix = 1:numel(zu)
+        disp(['Solving section: ' num2str(lix) ' of ' num2str(numel(zu)) ' with z of ' zu(lix)]);
         try
             %%
             [L, tIds, PM, pm_mx, sectionId_load, z_load]  = ...
-                load_point_matches(lix, lix, rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight, opts.max_points);
+                load_point_matches(zu(lix), zu(lix), rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight, opts.max_points);
             if opts.filter_pm
                 L.pm = filter_pm(L.pm, pm_filter_opts);
                 if L.pm.verbose > 2

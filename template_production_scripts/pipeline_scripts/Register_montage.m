@@ -115,11 +115,11 @@ function [] = Register_montage(nfirst, nlast, opts_fn)
 
     [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
     parfor lix = 1:numel(zu)
-        disp(['Solving section: ' num2str(lix) ' of ' num2str(numel(zu)) ' with z of ' zu(lix);
+        disp(['Solving section: ' num2str(lix) ' of ' num2str(numel(zu)) ' with z of ' num2str(zu(lix));
         try
             %%
             [L, tIds, PM, pm_mx, sectionId_load, z_load]  = ...
-                load_point_matches(zu(lix), zu(lix), rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
+                load_point_matches(zu(lix), zu(lix), rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight);
             if opts.filter_pm
                 L.pm = filter_pm(L.pm, pm_filter_opts);
                 if L.pm.verbose > 2

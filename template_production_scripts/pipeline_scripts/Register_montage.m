@@ -119,7 +119,7 @@ function [] = Register_montage(nfirst, nlast, opts_fn)
         try
             %%
             [L, tIds, PM, pm_mx, sectionId_load, z_load]  = ...
-                load_point_matches(zu(lix), zu(lix), rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight);
+                load_point_matches(zu(lix), zu(lix), rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight, opts.max_points);
             if opts.filter_pm
                 L.pm = filter_pm(L.pm, pm_filter_opts);
                 if L.pm.verbose > 2

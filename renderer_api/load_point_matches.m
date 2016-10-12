@@ -34,23 +34,16 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, ...
 %
 % Author: Khaled Khairy. Janelia Research Campus 2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-<<<<<<< HEAD
-if nargin<5, nbr = 4;end  % number of neighbors to check
-if nargin<6, min_points = 3;end
-if nargin<7, xs_weight = 1;end
-if nargin<8, max_points = inf;end
-=======
+
 if nargin < 5, nbr = 4; end  % number of neighbors to check
 if nargin < 6, min_points = 0; end
 if nargin < 7, xs_weight = 1; end
 if nargin < 8, max_points = inf; end
-
 verbose = 0;
 if isfield(pm, 'verbose')
     verbose = pm.verbose;
 end
 
->>>>>>> 72f7b3c792f6088027003a75063d98234b31bb17
 % %% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
 % urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
 %     rc.baseURL, rc.owner, rc.project, rc.stack);
@@ -159,6 +152,7 @@ parfor ix = 1:numel(ns)
     for six = 1:ns(ix)
         urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
             pm.server, pm.owner, pm.match_collection, sID{ix}{six});
+        disp(sID{ix}{six});
         if verbose > 0
             disp(urlChar);
         end
@@ -218,12 +212,12 @@ parfor ix = 1:numel(ns)
             end
         end
     end
-    %%%%% get point matches across those individual section ids
+    %%%% get point matches across those individual section ids
     for isix = 1:ns(ix)
-        for jsix = isix:ns(ix)
+        for jsix = isix+1:ns(ix)
             urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
                 pm.server, pm.owner, pm.match_collection, sID{ix}{isix}, sID{ix}{jsix});
-            %disp(['Cross: ' num2str(ix) ' ' num2str(six1) ' ' num2str(six2) ' ' sID{ix-(n-1)}{six2} ' ' sID{ix}{six1}]);
+            disp([sID{ix}{isix} ' ---- ' sID{ix}{jsix}]);
             j = webread(urlChar, options);
             try
                 jj = webread(urlChar, options);

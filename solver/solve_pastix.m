@@ -2,9 +2,12 @@ function [x2, R] = solve_pastix(A, b,options)
 %%% use pastix to solve this system
 kk_clock;
 tic;
-if ~isfield(options, 'pastix'), ncpus = 5;
+if ~isfield(options, 'pastix'), 
+    ncpus = 5;
+    parms_fn = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
 else
     ncpus = options.pastix.ncpus;
+    parms_fn = options.pastix.parms_fn;
 end
 
 
@@ -49,7 +52,7 @@ else
     str_pastix_run = [PASTIX_HOME '/run_align_tiles.sh'];
     pastix_script = [str_pastix_solver '/align_tiles_mod_KK2.sh'];
     str_env = sprintf('export PASTIX_HOME=%s;export PASTIX_DATA=%s;',str_pastix_solver, PASTIX_DATA);
-    kk_mkdir(PASTIX_DATA);
+    %kk_mkdir(PASTIX_DATA);
     %% save A and b to disk
     save(full_path_lin_system_fn, 'A', 'b');
 end
@@ -59,8 +62,8 @@ end
 
 %% system command to solve
 % str = sprintf('%s %d %s %s', pastix_script, ncpus, lin_system_fn, str_pastix_run);
-str = sprintf('%s %d %s %s %s', pastix_script, ncpus, lin_system_fn,...
-                                PASTIX_HOME, PASTIX_DATA);
+str = sprintf('%s %d %s %s %s %s', pastix_script, ncpus, lin_system_fn,...
+                                PASTIX_HOME, PASTIX_DATA, parms_fn);
 
 disp(str);
 disp('--- pastix run:');
@@ -70,6 +73,8 @@ disp( ['Input matrix system file:    ' lin_system_fn]);
 disp( ['Pastix run script:           ' str_pastix_run]);
 disp(['Pastix work directory (data): ' PASTIX_DATA]);
 disp(['Pastix home directory (home): ' PASTIX_HOME]);
+disp(['Pastix paramters file: ' parms_fn]);
+type(parms_fn);
 
 [a, resp_str] = system(str);disp(resp_str);
 [a, resp_str] = system('qstat');disp(resp_str);
@@ -106,12 +111,20 @@ for fix = 2:numel(fn)
 end
 [~, ia] = sort(fn_count);
 fn_count = fn_count(ia);
+disp(['Found: ' num2str(fn_count) ' fragment files. Expected: ' num2str(ncpus)]);
 % now reassemble everything
 x2 = [];
 for fix = 1:numel(fn_count)
     fn = sprintf('%s/x_%s.mat', PASTIX_DATA, num2str(fn_count(fix)));
     disp(fn);
+    try
     c = load(fn);
+    catch err_load_fragment
+        kk_disp_err(err_load_fragment);
+        pause(2);
+        disp('Retrying ------');
+        c = load(fn);
+    end
     x2 = [x2;c.x(:)];
 end
 disp('Done.');

@@ -1,112 +1,15 @@
-function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
-    solve_affine_explicit_region(obj, opts)
-% Returns the matrix solution for a contiguous regionusing an affine transform
-%
-
-%% default options are set here
-% lsq_options.verbose         = 1;
-lsq_options.solver          = 'backslash';%'cgs';%'tfqmr';%'gmres';%'pcg';%'bicgstab';%''symmlq';%minres';%'lsqlin';% ;%'lsqr';%'bicgstab' bicg tfqmr backslash
-lsq_options.constraint      ='explicit';%'none';% 'similarity';% 'trivial';%
-lsq_options.pdegree         = 1;
-lsq_options.constraint_only = 0;
-lsq_options.lidfix          = 0;
-lsq_options.tfix            = 0;
-lsq_options.constrain_edges = 1;
-
-lsq_options.translation_fac = 1e0;
-lsq_options.lambda          = 1e1;
-lsq_options.edge_lambda     = 1e5;
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-lsq_options.verbose         = 1;
-lsq_options.dw              = [1 1 1 1 1 1];
-
-% needed if iterative methods are used
-lsq_options.ilu_droptol     = 1e-7;
-lsq_options.use_ilu         = 0;
-lsq_options.ilu_type        = 'ilutp';%'crout'; %'nofill';%%;
-lsq_options.ilu_udiag       = 1;
-lsq_options.L2              = [];
-lsq_options.U2              = [];
-lsq_options.A               = [];
-lsq_options.b               = [];
-lsq_options.B               = [];
-lsq_options.d               = [];
-lsq_options.tB              = [];
-lsq_options.td              = [];
-lsq_options.W               = [];
-lsq_options.dw              = [];
-lsq_options.restart         = 10;
-lsq_options.tol             = 1e-10;
-lsq_options.maxit           = 15000;
-% needed only for trivial constraint
-deg                                 = 180;
-lsq_options.Rtfix           =  [cosd(deg) -sind(deg) 0; sind(deg) cosd(deg) 0; 0 0 1];
-lsq_options.verbose         = 1;
-lsq_options.debug           = 0;
-lsq_options.LARGE           = 1e2;
-lsq_options.nmax            = inf;
-lsq_options.use_Tfac        = 0;
-lsq_options.use_spmd        = 0;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-lsq_options.matrix_only     = 0;  % if set 1, then solver is not invoked.
-%% override options provided in opts
-% calc_A = 1;
-% split = 0;
-if nargin>1,
-    
-    if isfield(opts, 'translation_fac'), lsq_options.translation_fac = ...
-            opts.translation_fac;end
-    if isfield(opts, 'solver'), lsq_options.solver = opts.solver;end
-    if isfield(opts, 'pastix'), lsq_options.pastix = opts.pastix;end
-    if isfield(opts, 'lambda'), lsq_options.lambda = opts.lambda;end
-    if isfield(opts, 'edge_lambda'), lsq_options.edge_lambda = opts.edge_lambda;end
-    if isfield(opts, 'constrain_edges'), lsq_options.constrain_edges = ...
-            opts.constrain_edges;end
-    if isfield(opts, 'lidfix'), lsq_options.lidfix = opts.lidfix; end
-    if isfield(opts, 'tfix'), lsq_options.tfix = opts.tfix; end
-    if isfield(opts, 'distributed'), lsq_options.distributed = ...
-            opts.distributed; end
-    if isfield(opts, 'pastix')
-        if isfield(opts.pastix, 'ncpus'), 
-            ncpus =  opts.pastix.ncpus;
-        end
-    end
-    if isfield(opts, 'split'), split = opts.split;end
-    if isfield(opts, 'matrix_only'), lsq_options.matrix_only = opts.matrix_only;end
-    if isfield(opts, 'A') && ~isempty(opts.A), 
-        %calc_A = 0;
-        lsq_options.A = opts.A;
-        lsq_options.b = opts.b;
-        lsq_options.W = opts.W;
-    end
-    
-end
-%% solve
-% if calc_A && split
-%     disp('-------Calculating A, b, W by splitting and fast generation of B, d');
-%     %% split up generation of K matrix and Lm (vector)
-%     % % Remember:
-%     % K   = A'*W*A + lambda*(tB')*tB;
-%     % Lm  = A'*W*b + lambda*(tB')*td;
-%     % Can we just produce subsets (by column) of A and use that to calculate K
-%     % and Lm?
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     %%  generate vector d and matrix B
-%     tdim = 6;
-%     ncoeff = numel(obj.tiles) * tdim;
-%     d = zeros(ncoeff,1);
-%     pos = 0;
-%     for tix = 1:numel(obj.tiles)
-%        d(pos+1:pos+tdim) = obj.tiles(tix).tform.T(1:6);
-%        pos = pos + tdim;
-%     end
-%     tBd = ones(ncoeff,1);
-%     B = sparse(1:ncoeff, 1:ncoeff, tBd, ncoeff, ncoeff);
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%
-%     disp('--------------------------------');
+function [I, J, S, w] = gen_A_b_row_range(fn, degree, np_vec, ...
+                     r_sum_vec, rstart, rend)
+% Generate a subset of rows of the matrix A (defined by I J and S) 
+% pm: point-match collection
+% degree: 1= affine
+% ntiles: total number of tiles in full collection
+% np_vec a vector indicating the number of point-matches for every point-match set
+% n: n * tdim = length of vectors I, J and S. n is length of W
+% r_sum_vec = provides the row index position for a specific point-match pair
+%                    see: > r_sum_vec(pair_number) = sum(2*np_vec(1:pair_number-1))+1;
+% % Designed to run in a parfor like so:
+% disp('--------------------------------');
 %     disp('Splitting matrix generation');
 %     tic
 %     npm = size(obj.pm.M,1);    
@@ -122,11 +25,8 @@ end
 %         end
 %         r(ix,:) = [pm_min pm_max];
 %     end
-%     % disp(r);
-% 
-%     % generate A
-%     %%%%%%%%%%%%%%%%%%
-%     disp('determine number of point-pairs for preallocation --- boilerplate');
+%     
+% disp('determine number of point-pairs for preallocation --- boilerplate');
 %     np_vec = zeros(size(obj.pm.M,1),1);
 %     for ix = 1:size(obj.pm.M,1)
 %             np_vec(ix) = size([obj.pm.M{ix,1}],1);
@@ -145,7 +45,7 @@ end
 %     w = {};
 %     parfor ix = 1:size(r,1)
 %         
-%     [I{ix}, J{ix}, S{ix}, w{ix}] = gen_A_b_row_range_local(obj.pm, ...
+%     [I{ix}, J{ix}, S{ix}, w{ix}] = gen_A_b_row_range(obj.pm, ...
 %                                degree, numel(obj.tiles), np_vec,...
 %                                2*sum(np_vec(r(ix,1):r(ix,2))), ...
 %                                r_sum_vec, r(ix,1), r(ix,2));
@@ -160,35 +60,28 @@ end
 %     lsq_options.A = sparse(I1,J1,S1, n,m);
 %     lsq_options.b = sparse(size(lsq_options.A,1), 1);
 %     lsq_options.W = spdiags(w,0,size(lsq_options.A,1),size(lsq_options.A,1));
-%     toc;
-%     disp('-----------------------');
+%     
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+load(fn);
+M = m;
+adj = a;
+W = ww;
+% M = pm.M;
+% adj = pm.adj;
+% if ~isfield(pm,'W')
+%     W = ones(size(adj,1));
+% else
+%     W = pm.W;
 % end
 
-[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
-        alignTEM_solver(obj, [],  lsq_options);
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% generate matrix A for a column range
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [I, J, S, w] = gen_A_b_row_range_local(pm,degree, ntiles, np_vec, n, ...
-                     r_sum_vec, rstart, rend)
-
-M = pm.M;
-adj = pm.adj;
-if ~isfield(pm,'W')
-    W = ones(size(adj,1));
-else
-    W = pm.W;
-end
+n = 2*sum(np_vec(rstart:rend));
 tdim = (degree + 1) * (degree + 2)/2; % number of coefficients for a particular polynomial
 tdim = tdim * 2;        % because we have two dimensions, u and v.
 %% calculate A
-m = tdim * ntiles;         % max(adj(:)) gives the number of tiles
+%m = tdim * ntiles;         % max(adj(:)) gives the number of tiles
 w = zeros(n,1);
 I = zeros(n*tdim,1);
 J= zeros(n*tdim,1);
@@ -197,7 +90,7 @@ pos = 0;
 
 % generate blocks and paste into A
 for pair_number = rstart:rend%1:size(M,1)           % loop over the pairs
-    w_pm = W(pair_number);
+     w_pm = W(pair_number-rstart+1);
     np = np_vec(pair_number);%size([M{pair_number,1}.Location],1);
     %%% determine rvec,  cvec1, cvec2 and s
     r = r_sum_vec(pair_number);%r = sum(2*np_vec(1:pair_number-1))+1;
@@ -207,7 +100,7 @@ for pair_number = rstart:rend%1:size(M,1)           % loop over the pairs
     r1 = rvec(1:np);
     r2 = rvec(np+1:end);
     
-    c = (adj(pair_number,1)-1) * tdim +1;
+     c = (adj(pair_number-rstart+1,1)-1) * tdim +1;
     cvec1 = c:c+tdim-1;
     if tdim>=2              % degree == 0 , i.e. only translation
         c11 = ones(np,1)*cvec1(1);
@@ -239,7 +132,7 @@ for pair_number = rstart:rend%1:size(M,1)           % loop over the pairs
     end
     
     
-    c = (adj(pair_number,2)-1) * tdim +1;
+    c = (adj(pair_number-rstart+1,2)-1) * tdim +1;
     cvec2 = c:c+tdim-1;
     if tdim>=2              % affine, degree==0 so tdim at least 2
         c21 = ones(np,1)*cvec2(1);
@@ -270,8 +163,10 @@ for pair_number = rstart:rend%1:size(M,1)           % loop over the pairs
         c220 = ones(np,1)*cvec2(20);
     end
 
-    vec1 = [M{pair_number,1}];
-    vec2 = [M{pair_number,2}];
+   
+    vec1 = [M{pair_number-rstart+1,1}];
+    vec2 = [M{pair_number-rstart+1,2}];
+    
     %%% store indices and values in I J and S
     % Block 1
     pvec = pos+1:pos+tdim*np;
@@ -343,59 +238,3 @@ for pair_number = rstart:rend%1:size(M,1)           % loop over the pairs
     end
     pos = pos + tdim*np;
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

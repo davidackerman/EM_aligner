@@ -15,7 +15,8 @@
 		"small_region_lambda": 10,
 		"small_region": 5,
 		"calc_confidence": 1,
-		"translation_fac": 1
+		"translation_fac": 1,
+        "dthresh_factor":1.2
 	},
 	"source_collection": {
 		"stack": "v12_acquire_merged",
@@ -26,14 +27,19 @@
 		"verbose": 1
 	},
 	"target_collection": {
-		"stack": "Test_llm_02_prll",
+		"stack": "Test_llm_04_prll",
 		"owner": "flyTEM",
 		"project": "test",
 		"service_host": "10.37.5.60:8080",
 		"baseURL": "http://10.37.5.60:8080/render-ws/v1",
 		"verbose": 1
 	},
-	"section_number": 15,
+	"target_point_match_collection": {
+		"server": "http://10.40.3.162:8080/render-ws/v1",
+		"owner": "flyTEM",
+		"match_collection": "v12_SURF"
+	},
+	"section_number": 1192,
     "scratch": "/scratch/khairyk",
     "renderer_client": "/groups/flyTEM/flyTEM/render/bin/render.sh",
 	"verbose": 1

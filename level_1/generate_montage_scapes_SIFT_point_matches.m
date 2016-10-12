@@ -61,11 +61,13 @@ while exist(fn_matches,'file')~=2
     f = dir([dir_spark_work '/solver_*']);
     dir_solver = [dir_spark_work '/' f.name];
     fn_matches = [dir_solver '/matches.txt'];
-    if ~isempty(f), disp(['Waiting for file: ' dir_solver '/matches.txt']);
+    if ~isempty(f)
+        disp(['Waiting for file: ' dir_solver '/matches.txt']);
+        pause(30);
     else
         disp(['Waiting for file: ' dir_solver '*/matches.txt']);
+        pause(240);
     end
-    pause(240);
 end
 fn_ids     = [dir_solver '/ids.txt'];
 else
@@ -211,13 +213,6 @@ for ix = 1:size(IDS{1},1)
     t(ix).path = IDS{2}{ix};
 end
 
-
-
-
-
-
-
-
 %%
 %Lin = update_adjacency(Lin);
 pm = Lin.pm;
@@ -229,9 +224,6 @@ function check_input(ms)
 if exist(ms.script, 'file')~=2,
     error('Invalid script path');
 end
-
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% script parameter meanings
@@ -264,24 +256,3 @@ end
 % % % % %
 % % % % % unset SKIP_ALIGNED_IMAGE_GENERATION
 % % % % % SKIP_ALIGNED_IMAGE_GENERATION=${14} #"y"    # to generate aligned montage images, comment this line out (warning: this is slow)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

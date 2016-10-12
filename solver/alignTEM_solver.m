@@ -61,6 +61,8 @@ lambda = options.lambda;
 else
     lambda = 1;
 end
+if ~isfield(options, 'matrix_only')options.matrix_only = 0;end
+
 %nmax = options.nmax;
 tdim = (options.pdegree + 1) * (options.pdegree + 2)/2; % number of coefficients for a particular polynomial
 tdim = tdim * 2;        % because we have two dimensions, u and v.
@@ -115,7 +117,11 @@ sf = [1 1];
 if isempty(options.B)
     if strcmp(options.constraint, 'explicit')
         if options.verbose,disp('---------------- Constraint system based on explicit constraints (maybe previous solver solution) -------');end
+        if isempty(options.d)
         [B,d, tB, td] = alignTEM_explicit_constrained_system_gen(L,options, tdim, ncoeff, sf);
+        else
+            disp('reusing input stvec information');
+        end
         %warning('Explicit constraints do not allow fixing tiles');
         %lidfix = 0;
         %tfix = 0;
@@ -160,11 +166,18 @@ if options.constraint_only
 else
     %% %%%%%%%%%%%%%%%%%%%%%%%%%% CONSTRUCT A AND b %%%%%%%%%%%%%%%%%%%%%%%%%
     if isempty(options.A)
-        disp('constructing matrix A');
+        disp('--------------------------------');
+        disp('constructing matrix A ..........');
         kk_clock;
         [A,b, W] = alignTEM_objective_system_gen(L,P, lidfix, tfix, options, sf);
         kk_clock;
         disp('... done!');
+        disp('--------------------------------');
+    else
+        disp('reusing input matrix A');
+        A = options.A;
+        b = options.b;
+        W = options.W;
         
     end
     
@@ -210,6 +223,7 @@ else
 
     end
     %% %%%%%%%%%%%%%%%%%%%%%%%%%% solve  %%%%%%%%%%%%%%%%%%%%%%%%%
+    % generate K and Lm, the SPD system that actually gets solved
     if strcmp(options.solver,'backslash--noreg')
         if options.verbose,disp('------------ Performing backslash -- no reg');end
         K = A;
@@ -239,8 +253,13 @@ else
     %clear A W B b
     
     
-    %% Solve
+    % % Solve
+    if options.matrix_only==0
     [x2, R] = solve_AxB(K,Lm, options, d);
+    else
+        disp('option.matrix_only is non-zero, not solving. Returning starting vector as solution');
+        x2 = d;
+    end
     if strcmp(options.constraint, 'explicit')
        err = norm(A*x2-b);%/norm(A*d-b);
     end

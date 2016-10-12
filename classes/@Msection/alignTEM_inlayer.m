@@ -34,6 +34,8 @@ opts.use_peg = 1;
 opts.peg_weight = 1e-4;
 opts.peg_npoints = 5;
 
+disp('Options struct:');
+disp(opts);
 
 if opts.use_peg
     if isdeployed
@@ -130,18 +132,18 @@ if nargout>1
     counter = 1;
     M = L2.pm.M;
     adj = L2.pm.adj;
-    sectionID = L2.sectionID;
+    %sectionID = L2.sectionID;
     for mix = 1:size(M,1)
         indx1 = adj(mix,1);
         indx2 = adj(mix,2);
         tid1 = [L2.tiles(indx1).renderer_id];
         tid2 = [L2.tiles(indx2).renderer_id];
         
-        MP{counter}.pz = sectionID;
+        MP{counter}.pz = L2.tiles(indx1).sectionId;
         MP{counter}.pId= tid1;
         MP{counter}.p  = M{mix,1};
         
-        MP{counter}.qz = sectionID;
+        MP{counter}.qz = L2.tiles(indx2).sectionId;
         MP{counter}.qId= tid2;
         MP{counter}.q  = M{mix,2};
         counter = counter + 1;

@@ -34,10 +34,23 @@ function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, ...
 %
 % Author: Khaled Khairy. Janelia Research Campus 2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+<<<<<<< HEAD
 if nargin<5, nbr = 4;end  % number of neighbors to check
 if nargin<6, min_points = 3;end
 if nargin<7, xs_weight = 1;end
 if nargin<8, max_points = inf;end
+=======
+if nargin < 5, nbr = 4; end  % number of neighbors to check
+if nargin < 6, min_points = 0; end
+if nargin < 7, xs_weight = 1; end
+if nargin < 8, max_points = inf; end
+
+verbose = 0;
+if isfield(pm, 'verbose')
+    verbose = pm.verbose;
+end
+
+>>>>>>> 72f7b3c792f6088027003a75063d98234b31bb17
 % %% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
 % urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/sectionData', ...
 %     rc.baseURL, rc.owner, rc.project, rc.stack);
@@ -68,12 +81,15 @@ if nargin<8, max_points = inf;end
 [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
 %% get a list of all tiles for those sections
 options = weboptions;
-options.Timeout = 40;
+options.Timeout = 60;
 clear t;
 tilecount = [];
 parfor ix = 1:1:numel(zu)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack, zu(ix));
+    if rc.verbose
+        disp(['Read ' urlChar])
+    end
     j = webread(urlChar, options);
     jt = tile;
     tilecount(ix) = numel(j);
@@ -93,8 +109,6 @@ for ix = 1:numel(zu)
     tIds(cnt:cnt+tilecount(ix)-1) = {t(ix).jt.renderer_id};
     tiles(cnt:cnt+tilecount(ix)-1) = t(ix).jt;
     cnt = cnt + tilecount(ix);
-    %     tIds = [tIds {t(ix).jt.renderer_id}];
-    %     tiles = [tiles t(ix).jt];
 end
 
 % loop over tiles to set tile id
@@ -129,7 +143,7 @@ clear t;
 
 parfor ix = 1:numel(tIds)
     count_vec(ix)= {ix};
-    id_vec(ix) = tIds(ix);%tIds{ix};
+    id_vec(ix) = tIds(ix);
 end
 map_id = containers.Map(id_vec, count_vec);
 
@@ -139,15 +153,15 @@ PM.adj = [];
 PM.W = {};
 PM.np = [];
 n1 = [];
-parfor ix = 1:numel(ns)  % loop over number of sections
-    %     disp(ix);
+parfor ix = 1:numel(ns)
     count = 1;
     n1(ix) = 0;
-    for six = 1:ns(ix)  % loop over reacquires (if any) and get point matches for individual section ids
-        %disp([six count]);
+    for six = 1:ns(ix)
         urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
             pm.server, pm.owner, pm.match_collection, sID{ix}{six});
-        %disp(['Montage: ' num2str(ix) ' ' num2str(six) ' ' sID{ix}]);
+        if verbose > 0
+            disp(urlChar);
+        end
         try
             jj = webread(urlChar, options);
         catch err_fetch_pm
@@ -155,26 +169,51 @@ parfor ix = 1:numel(ns)  % loop over number of sections
             pause(1);
             jj = webread(urlChar,options); % try again
         end
+        if iscell(jj)
+            jj = jj{:};
+        end
         n1(ix) = n1(ix) + numel(jj);
         for jix = 1:numel(jj)
-            if size(jj(jix).matches.p',1)>=min_points
+            if verbose > 1
+                logInfo = struct();
+                logInfo.info = 'Number of point matches before filtering for min and max points';
+                logInfo.pId = jj(jix).pId;
+                logInfo.qId = jj(jix).qId;
+                logInfo.nMatches = numel(jj(jix).matches.w);
+                disp(logInfo);
+            end
+            pmCountIndex = count;
+            if size(jj(jix).matches.p',1) >= min_points
                 if isKey(map_id, jj(jix).pId) && isKey(map_id, jj(jix).qId)
-                    if numel(jj(jix).matches.p(1,:))>max_points
+                    if numel(jj(jix).matches.p(1,:)) > max_points
                         indx = randi(numel(jj(jix).matches.p(1,:))-1, max_points,1);
                         PM(ix).M{count,1}   = [jj(jix).matches.p(1:2,indx)]';
                         PM(ix).M{count,2}   = [jj(jix).matches.q(1:2,indx)]';
                         PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
-                        PM(ix).W{count,1}     = jj(jix).matches.w(indx)';         % relative weights of point matches within this group
+                        PM(ix).W{count,1}   = jj(jix).matches.w(indx)';         % relative weights of point matches within this group
                         PM(ix).np(count)    = max_points;
                     else
                         PM(ix).M{count,1}   = [jj(jix).matches.p]';
                         PM(ix).M{count,2}   = [jj(jix).matches.q]';
                         PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
-                        PM(ix).W{count,1}     = jj(jix).matches.w';         % relative weights of point matches within this group
+                        PM(ix).W{count,1}   = jj(jix).matches.w';         % relative weights of point matches within this group
                         PM(ix).np(count)    = size(jj(jix).matches.p',1);
                     end
-                    
                     count = count + 1;
+                end
+            end
+            if verbose > 1
+                logInfo = struct();
+                logInfo.info = 'Number of point matches after filtering for min and max points';
+                logInfo.pId = jj(jix).pId;
+                logInfo.qId = jj(jix).qId;
+                logInfo.nMatches = PM(ix).np(pmCountIndex);
+                disp(logInfo);
+                if verbose > 3
+                    disp(table(...
+                        PM(ix).M{pmCountIndex,1}(:,1), PM(ix).M{pmCountIndex,1}(:,2), ...
+                        PM(ix).M{pmCountIndex,2}(:,1), PM(ix).M{pmCountIndex,2}(:,2), ...
+                         'VariableNames', {'Px', 'Py', 'Qx', 'Qy'}));
                 end
             end
         end
@@ -225,14 +264,17 @@ end
 
 
 %% obtain cross-section point-matches
-%disp('Obtaining cross-layer point_matches');
 xPM = {};
 n   = {};
+if nbr > 0 && verbose > 0
+    disp('Obtaining cross-layer point_matches');
+end
 parfor pmix = 1:nbr
     %disp('------- call to next neighbor tier ------------');
     [xPM{pmix}, n{pmix}] = get_cross_section_pm(pmix+1, ...
         pm, sID, map_id, min_points, xs_weight, max_points);%% get point matches to immediate neighbor
 end
+
 %disp('Generating final point match struct');
 %% generate final M, adj, W and np
 M   = [];
@@ -240,7 +282,9 @@ adj = [];
 W   = [];
 np = [];
 for ix = 1:numel(zu)   % loop over sections
-    %disp(ix);
+    if verbose > 0
+        disp(zu(ix));
+    end
     M = [M;PM(ix).M];
     adj = [adj;PM(ix).adj];
     W   = [W;PM(ix).W];
@@ -258,6 +302,17 @@ for ix = 1:numel(zu)   % loop over sections
             end
         end
     end
+    if verbose > 0
+        disp(['Section ' num2str(zu(ix)) ' -> ' num2str(sum(np)) ' point matches']);
+    end
+    if verbose > 2
+        logInfo = struct();
+        logInfo.section = zu(ix);
+        tileMatchCounts = cellfun(@numel, M, 'UniformOutput', false);
+        logInfo.tileMatchCounts = table([adj(:, 1), adj(:, 2), [tileMatchCounts{:,1}]']);
+        disp(logInfo);
+        disp(logInfo.tileMatchCounts)
+    end
 end
 
 %% place point match information into Msection object L
@@ -265,6 +320,7 @@ L.pm.M = M;
 L.pm.adj = adj;
 L.pm.W = W;
 L.pm.np = np;
+L.pm.verbose = verbose;
 % %% tiles that are not connected to any other tiles must be eliminated
 % adjids = {L.tiles(adj(:)).renderer_id};
 %% %%%%%%%%%%%%%%%%%%%%%%%%% diagnostics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -286,45 +342,4 @@ if any(sum(pm_mx)==0), disp('Warning: defective pm connectivity matrix');end
 if ~(size(bb,1)==size(L.pm.adj,1))
     error('Rows in L.pm.adj should be unique');
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

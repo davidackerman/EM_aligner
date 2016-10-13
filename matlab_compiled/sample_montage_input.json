@@ -39,7 +39,7 @@
 		"owner": "flyTEM",
 		"match_collection": "v12_SURF"
 	},
-	"section_number": 1192,
+	"section_number": 100,
     "scratch": "/scratch/khairyk",
     "renderer_client": "/groups/flyTEM/flyTEM/render/bin/render.sh",
 	"verbose": 1

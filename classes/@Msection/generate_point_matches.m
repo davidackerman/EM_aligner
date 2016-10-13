@@ -56,7 +56,7 @@ delpix = zeros(numel(r),1, 'uint32');
 %count = 1;
 disp('Calculating point matches using parfor .... ');
 tic
-%parfor_progress(numel(r));
+parfor_progress(numel(r));
 parfor pix = 1: numel(r)
     %    disp(['Point matching: ' num2str(pix) ' of ' num2str(numel(r))]);
     %     try
@@ -94,9 +94,9 @@ parfor pix = 1: numel(r)
     %         kk_disp_err(err_pmatching);
     %         delpix(pix) = 1;
     %     end
-    %    parfor_progress;
+        parfor_progress;
 end
-%parfor_progress(0);
+parfor_progress(0);
 toc
 disp('Done!');
 if isdeployed
@@ -117,44 +117,6 @@ obj.pm.adj = adj;
 obj.pm.W = W;
 obj.pm.np = np;
 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % %% generates lists of matching points M for each pair of adjacent tiles and returns the pairs 2-vector adj
-% % %%%% needs to be distributed
-% % verbose = 1;
-% % %%% Note: Deprecated ----> use generate_features_point_matches instead
-% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % %% %% get SURF features for each image
-% % method = 'SURF';
-% % f = {};
-% % vp = {};
-% % disp('Getting features....');
-% % for tix = 1:numel(obj.tiles)
-% %     disp(tix);
-% %     [f{tix}, vp{tix}] = get_features(obj.tiles(tix).get_image(),method);% % extract matching point pairs using Matlab's SURF
-% % end
-% % disp('Done!');
-% %
-% % %% obtain matching point pairs for each set of overlaping tiles
-% %
-% % [r, c] = ind2sub(size(obj.A), find(obj.A(:)));
-% % pcount = 0;
-% % M = {};
-% % adj = [];
-% % disp('Generating point matches...');
-% % for ix = 1:numel(r)
-% %     if verbose, disp([num2str(ix) ' of ' num2str(numel(r))]);end
-% %
-% %     [m1, m2]= im_pair_match_features(f{r(ix)}, vp{r(ix)}, f{c(ix)}, vp{c(ix)});
-% %
-% %         pcount = pcount + 1;
-% %         M{pcount, 1} = m1;
-% %         M{pcount, 2} = m2;
-% %         adj = [adj; r(ix) c(ix)];
-% %
-% % end
-% % disp('Done!');
 
 
 

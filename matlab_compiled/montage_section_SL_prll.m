@@ -53,11 +53,10 @@ end
 
 [mL, js]          = register(L);                    % perform the actual registration
 if sl.verbose
-    disp('Section montage finished --- Ingesting into target collection');
+    disp('Section montage finished');
 end
 if sl.verbose,
 toc
-kk_clock();
 end
 
 %% ingest point-matches into point-match database
@@ -83,6 +82,9 @@ end
 if ~(stack_exists(sl.target_collection))
     disp('Target stack does not exist: creating and then ingesting');
     create_renderer_stack(sl.target_collection);
+end
+if sl.verbose
+    disp('Ingesting results into collection');
 end
 ingest_section_into_LOADING_collection(mL, sl.target_collection,...
                                        sl.source_collection, pwd, 1); % ingest

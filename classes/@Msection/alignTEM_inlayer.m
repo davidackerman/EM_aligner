@@ -1,8 +1,25 @@
-function [obj, js, err, L2] = alignTEM_inlayer(obj)
+function [obj, js, err, L2] = alignTEM_inlayer(obj, opts)
 %% Solves the montage problem for a given section
 %%% [1] generate features for tiles
 %%% [2] estimates point matches
 %%% [3] solves using rigid transform as regularizer
+
+if nargin<2
+    disp('Using defaults options for registration/solution:');
+opts.scale  = 0.5;  %scale at which SURF features are calculated
+opts.degree = 1;
+opts.solver = 'backslash';
+opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
+opts.distributed = 1;
+opts.base_collection = [];
+opts.conn_comp = 1;
+opts.use_peg = 1;
+opts.peg_weight = 1e-4;
+opts.peg_npoints = 5;
+opts.lambda = 10^(-1);
+opts.edge_lambda = 10^(-1);
+disp(opts);
+end
 
 
 %% make sure the object is up-to-date
@@ -15,7 +32,7 @@ if isdeployed
     disp('Calculating image features and point-matches....');
     tic
 end
-[L2] = generate_point_matches(obj, min_pm, 'true'); % also makes sure features are calculated
+[L2] = generate_point_matches(obj, min_pm, 'true', opts.scale); % also makes sure features are calculated
 if isdeployed
     disp('Finished calculating image features and point-matches!');
     toc
@@ -24,15 +41,7 @@ end
 
 %disp(L2.pm.M);
 
-opts.degree = 1;
-opts.solver = 'backslash';
-opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
-opts.distributed = 1;
-opts.base_collection = [];
-opts.conn_comp = 1;
-opts.use_peg = 1;
-opts.peg_weight = 1e-4;
-opts.peg_npoints = 5;
+
 
 disp('Options struct:');
 disp(opts);

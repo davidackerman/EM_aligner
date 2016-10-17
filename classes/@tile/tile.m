@@ -37,6 +37,7 @@ classdef tile
         SURF_NumOctaves = 2;
         SURF_NumScaleLevels = 8;
         SURF_MetricThreshold = 1500;
+        SURF_MaxFeatures = 5000;
         dir_temp_render = '/scratch/khairyk';% there is no elegant way to do this. [a resp] = system('whoami'); dir_temp_render = ['/scratch/' resp];
         renderer_client = '/groups/flyTEM/flyTEM/render/bin/render.sh';
         fetch_local = 0;
@@ -171,9 +172,9 @@ classdef tile
             % filter must be a string, either "true" or "false"
 %             url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?scale=%s&filter=%s',...
 %                 obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, num2str(scale), filter);
-
-            url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?scale=%.1f&filter=%s',...
-                obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, scale, filter);
+            exclude_mask = 'true';
+            url = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s/render-parameters?scale=%.1f&filter=%s&excludeMask=%s&normalizeForMatching=true',...
+                obj.server, obj.owner, obj.project, obj.stack, obj.renderer_id, scale, filter, exclude_mask);
 
             fn = [obj.dir_temp_render '/tile_image_' num2str(randi(1000)) '_' obj.renderer_id '.jpg'];
             % we will try four times

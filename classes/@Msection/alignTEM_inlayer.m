@@ -1,8 +1,25 @@
-function [obj, js, err, L2] = alignTEM_inlayer(obj)
+function [obj, js, err, L2] = alignTEM_inlayer(obj, opts)
 %% Solves the montage problem for a given section
 %%% [1] generate features for tiles
 %%% [2] estimates point matches
 %%% [3] solves using rigid transform as regularizer
+
+if nargin<2
+    disp('Using defaults options for registration/solution:');
+opts.scale  = 0.5;  %scale at which SURF features are calculated
+opts.degree = 1;
+opts.solver = 'backslash';
+opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
+opts.distributed = 1;
+opts.base_collection = [];
+opts.conn_comp = 1;
+opts.use_peg = 1;
+opts.peg_weight = 1e-4;
+opts.peg_npoints = 5;
+opts.lambda = 10^(-1);
+opts.edge_lambda = 10^(-1);
+disp(opts);
+end
 
 
 %% make sure the object is up-to-date
@@ -15,7 +32,7 @@ if isdeployed
     disp('Calculating image features and point-matches....');
     tic
 end
-[L2] = generate_point_matches(obj, min_pm, 'true'); % also makes sure features are calculated
+[L2] = generate_point_matches(obj, min_pm, 'true', opts.scale); % also makes sure features are calculated
 if isdeployed
     disp('Finished calculating image features and point-matches!');
     toc
@@ -24,16 +41,10 @@ end
 
 %disp(L2.pm.M);
 
-opts.degree = 1;
-opts.solver = 'backslash';
-opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
-opts.distributed = 1;
-opts.base_collection = [];
-opts.conn_comp = 1;
-opts.use_peg = 1;
-opts.peg_weight = 1e-4;
-opts.peg_npoints = 5;
 
+
+disp('Options struct:');
+disp(opts);
 
 if opts.use_peg
     if isdeployed
@@ -130,18 +141,18 @@ if nargout>1
     counter = 1;
     M = L2.pm.M;
     adj = L2.pm.adj;
-    sectionID = L2.sectionID;
+    %sectionID = L2.sectionID;
     for mix = 1:size(M,1)
         indx1 = adj(mix,1);
         indx2 = adj(mix,2);
         tid1 = [L2.tiles(indx1).renderer_id];
         tid2 = [L2.tiles(indx2).renderer_id];
         
-        MP{counter}.pz = sectionID;
+        MP{counter}.pz = L2.tiles(indx1).sectionId;
         MP{counter}.pId= tid1;
         MP{counter}.p  = M{mix,1};
         
-        MP{counter}.qz = sectionID;
+        MP{counter}.qz = L2.tiles(indx2).sectionId;
         MP{counter}.qId= tid2;
         MP{counter}.q  = M{mix,2};
         counter = counter + 1;

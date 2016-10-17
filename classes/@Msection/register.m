@@ -1,4 +1,4 @@
-function [obj, js] = register(obj)
+function [obj, js] = register(obj, opts)
 % In-layer montage! Pairwise registrations of all adjacent tiles, and
 % update of optimal transformations  based on layer-wide optimization
 %
@@ -37,7 +37,7 @@ js = [];  % initialize output to return empty if not set by regisration method
 
 %% perform registration
 if strcmp(obj.method, 'alignTEM')         % use the deformable alignment with matrix solver
-    [obj, js] = alignTEM_inlayer(obj);
+    [obj, js] = alignTEM_inlayer(obj, opts);
 else
     disp('Method not recognized');
 end

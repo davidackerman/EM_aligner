@@ -37,6 +37,7 @@ classdef tile
         SURF_NumOctaves = 2;
         SURF_NumScaleLevels = 8;
         SURF_MetricThreshold = 1500;
+        SURF_MaxFeatures = 5000;
         dir_temp_render = '/scratch/khairyk';% there is no elegant way to do this. [a resp] = system('whoami'); dir_temp_render = ['/scratch/' resp];
         renderer_client = '/groups/flyTEM/flyTEM/render/bin/render.sh';
         fetch_local = 0;

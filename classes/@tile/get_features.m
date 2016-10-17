@@ -1,10 +1,11 @@
-function obj = get_features(obj, filter)
+function obj = get_features(obj, filter, scale)
 
 if nargin<2, filter='none';end
+if nargin<3, scale = 1.0;end
 % im1 = get_warped_image(obj, filter);
 
 %disp(['Tile fetches local = ' num2str(obj.fetch_local)]);
-im1 = get_image(obj, filter);
+im1 = get_image(obj, filter, scale);
 
 if strcmp(obj.featuresMethod,'MSER')
     regionsObj = detectMSERFeatures(im1, 'RegionAreaRange', [500 40000], 'MaxAreaVariation', 0.15);

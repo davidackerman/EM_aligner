@@ -2,7 +2,7 @@ function manage_jobs(user, jbnames, jbstr, jbdir, t, maxcs)
 % submit and babysit jobs --- does not use job arrays
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 jcount = numel(jbstr);
-if isempty(maxcs) || numel(jbstr) < maxcs
+if isempty(maxcs) || numel(jbstr) < maxcs+1
     %%% submit the jobs
     
     for jbix = 1:jcount
@@ -29,6 +29,7 @@ if isempty(maxcs) || numel(jbstr) < maxcs
             cd(jbdir);
             %disp(['Test only -- not submitting anything: ' str]);
             [a, ret_str] = evalc('system(str)'); %
+            %disp(a);
             c = strsplit(a);
             
             
@@ -65,8 +66,8 @@ else % we need to divide the jobs into chuncks
             if ~(vec(lix,cix)==-1)
                 jbn{lix} = jbnames{vec(lix, cix)};
                 jbs{lix} = jbstr{vec(lix, cix)};
-                if numel(jbdir)==1
-                    jbd{lix} = jbdir{1};
+                if ischar(jbdir)
+                    jbd{lix} = jbdir;
                 else
                     jbd{lix} = jbdir{vec(lix,cix)};
                 end

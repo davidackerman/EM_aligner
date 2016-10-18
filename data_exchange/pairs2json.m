@@ -1,5 +1,5 @@
 function js0 = pairs2json(MP, fn)
-%%%% Generate the json code for the point-matches database
+%%%% Generate json for the point-matches database
 %%%% MP is a cell array of structs. Each MP{i} is a struct with fields:
 %%%% pz (int/double), pID(string), qz(int/double), qID(string), p(nx1 array
 %%%% of doubles), q(nx1 array of doubles), w(nx1 array of doubles), where n
@@ -63,7 +63,11 @@ if nargin==1
         end
         str2 = [str2 ']],'];
         
+        if ~isfield(MP{mix}, 'w')
         w = ones(size(MP{mix}.q,1),1);
+        else
+            w = MP{mix}.w;
+        end
         str3 = sprintf('\n\t\t\t"w": [');
         for qix = 1:size(MP{mix}.q,1)
             %             str3 = [str3 num2str(w(qix))];

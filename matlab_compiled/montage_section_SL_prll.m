@@ -5,7 +5,7 @@ function montage_section_SL_prll(fn)
 
 % read json input
 sl = loadjson(fileread(fn));
-
+sl.solver_options.filter = sl.image_filter;
 if sl.verbose,
     disp('Section montage process started');
     kk_clock();
@@ -17,9 +17,10 @@ if sl.verbose,
     disp(['Montage section:' num2str(sl.section_number)]);
     disp('-------  Using target point-match collection:');disp(sl.target_point_match_collection);
 end
-
+cd(sl.scratch);
 
 %%%%%%% start parallel pool
+if isdeployed
  delete(gcp('nocreate'));
  if sl.verbose, disp('Starting parallel pool');end
 % 
@@ -30,7 +31,7 @@ end
        poolobj = gcp('nocreate');
  if sl.verbose, disp(['Parallel pool created. Pool size: ' num2str(poolobj.NumWorkers)]);end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
- 
+end
  
  
 if sl.verbose, disp('----- constructing section object');end
@@ -83,30 +84,47 @@ end
 
 %% ingest into Renderer database (optional);
 %delete_renderer_stack(sl.target_collection); 
+try
 if ~(stack_exists(sl.target_collection))
     disp('Target stack does not exist: creating and then ingesting');
     create_renderer_stack(sl.target_collection);
+    pause(0.5);
+    assert(logical(stack_exists(sl.target_collection)));
 end
 if sl.verbose
     disp('Ingesting results into collection');
 end
-ingest_section_into_LOADING_collection(mL, sl.target_collection,...
+disp('==== Setting renderer stack state to loading =====');
+resp = set_renderer_stack_state_loading(sl.target_collection);
+disp(resp);
+disp('==== ingesting into loading collection ====');
+resp_ingest_loading = ingest_section_into_LOADING_collection(mL, sl.target_collection,...
                                        sl.source_collection, pwd, 1); % ingest
+disp(resp_ingest_loading);
+
+disp('==== setting renderer stack state to complete ====');
 resp = set_renderer_stack_state_complete(sl.target_collection);  % set to state COMPLETE
+disp(resp);
 
 if sl.verbose
     %disp(resp);
     disp('Finished montage and ingestion');
     kk_clock();
 end
-
-
-
+catch err_ingesting
+    kk_disp_err(err_ingesting);
+    disp('Error in ingestion: dumping registration result in variable mL to:');
+    fndump = [sl.scratch '/montage_core_dump_' num2str(sl.section_number) '.mat'];
+    disp(fndump);
+    disp('------------');
+    save(fndump, 'mL', 'sl')
+end
 
 %%
+if isdeployed
 if sl.verbose, disp('Deleting parallel pool');end
 delete(poolobj);
-
+end
 
 
 

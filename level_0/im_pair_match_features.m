@@ -8,8 +8,8 @@ tform_matrix = [];
 index_pairs = matchFeatures(f1, f2, 'MatchThreshold', 10,'Method', 'NearestNeighborRatio');        % no assumption about transformation is made here
 
 if size(index_pairs,1)<3
-    m1 = SURFPoints();
-    m2 = SURFPoints();
+    m1 = [];%SURFPoints();
+    m2 = [];%SURFPoints();
     tform_matrix = [];
 else
 m1  = vp1(index_pairs(:,1));

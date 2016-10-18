@@ -1,0 +1,26 @@
+{
+    "SURF_options": {
+		"SURF_NumOctaves": 2,
+		"SURF_NumScaleLevels": 4,
+        "SURF_MetricThreshold": 1500,
+        "SURF_MaxFeatures": 100,
+        "SURF_Scale": 0.3
+	},
+	"source_collection": {
+		"stack": "v12_acquire_merged",
+		"owner": "flyTEM",
+		"project": "FAFB00",
+		"service_host": "10.37.5.60:8080",
+		"baseURL": "http://10.37.5.60:8080/render-ws/v1",
+		"verbose": 1
+	},
+	"target_point_match_collection": {
+		"server": "http://10.40.3.162:8080/render-ws/v1",
+		"owner": "flyTEM",
+		"match_collection": "v12_SURF"
+	},
+    "min_points": 3,
+    "scratch": "/scratch/khairyk",
+    "renderer_client": "/groups/flyTEM/flyTEM/render/bin/render.sh",
+	"verbose": 1
+}

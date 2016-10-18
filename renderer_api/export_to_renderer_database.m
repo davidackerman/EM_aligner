@@ -27,7 +27,7 @@ resp_append = append_renderer_stack(rc_target, rc, fn, v);
 %% cleanup
 %disp(' .... cleanup..');
 try
-    delete(fn);
+    %%delete(fn);
 catch err_delete,
     kk_disp_err(err_delete);
 end

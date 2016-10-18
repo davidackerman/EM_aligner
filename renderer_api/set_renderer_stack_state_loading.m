@@ -1,4 +1,4 @@
-function resp = set_renderer_stack_state_loading(rc)
+function [resp, strcmd] = set_renderer_stack_state_loading(rc)
 % Changes the state of a Renderer collection to loading
 % Dependency: Eric T.'s manage-stack.sh
 % rc is a Renderer collection struct
@@ -8,10 +8,9 @@ function resp = set_renderer_stack_state_loading(rc)
 verbose = 0;
 check_input(rc);
 
-str1 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rc.baseURL, rc.owner, rc.project); 
-str3 = sprintf('TARGET_STACK="%s";', rc.stack);
-str13 = sprintf('/groups/flyTEM/flyTEM/render/bin/manage-stack.sh ${PROJECT_PARAMS} --action SET_STATE --stackState LOADING --stack ${TARGET_STACK}');
-strcmd = [str1 str3 str13];
+str13 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";TARGET_STACK="%s";/groups/flyTEM/flyTEM/render/bin/manage-stack.sh ${PROJECT_PARAMS} --action SET_STATE --stackState LOADING --stack ${TARGET_STACK}', ...
+                rc.baseURL, rc.owner, rc.project, rc.stack);
+strcmd = [str13];
 
 
 try

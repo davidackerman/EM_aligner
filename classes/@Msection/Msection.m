@@ -58,7 +58,7 @@ classdef Msection
         X, Y, box;                      % housekeeping arrays
         pm;                             % point-matches struct
         n_points_pair_same = 10;        % number of points to generate for each image pair in a forward transformation (used by get_point_pairs);
-        dthresh_factor = 0.9;           % factor for adjacency calculation. Adjacent tiles have a center that is diagonal*dthresh_fac removed from the center of the tile
+        dthresh_factor = 1.2;           % factor for adjacency calculation. Adjacent tiles have a center that is diagonal*dthresh_fac removed from the center of the tile
         edge_tiles = [];                % logical vector of length numel(obj.tiles) to indicate edge tiles = 1 or non-edge = 0;
     end
     

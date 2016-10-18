@@ -61,18 +61,22 @@ classdef tile
                 obj.renderer_id = p.tileId;
                 obj.H = p.height;
                 obj.W = p.width;
-                obj.cam = str2double(p.layout.camera);
-                obj.col = p.layout.imageCol;
-                obj.row = p.layout.imageRow;
-                obj.rot = p.layout.rotation;
-                obj.temca_conf = str2double(p.layout.temca);
+                if isfield(p.layout, 'camera'), obj.cam = str2double(p.layout.camera);end
+                if isfield(p.layout, 'imageCol'),obj.col = p.layout.imageCol;end
+                if isfield(p.layout, 'imageRow'),obj.row = p.layout.imageRow;end
+                if isfield(p.layout, 'rotation'),obj.rot = p.layout.rotation;end
+                if isfield(p.layout, 'temca'),obj.temca_conf = str2double(p.layout.temca);end
                 obj.sectionId = p.layout.sectionId;
                 
                 if strcmp(p.mipmapLevels.x0.imageUrl(1:4), 'file')
-                    obj.path = p.mipmapLevels.x0.imageUrl(6:end);
+                    if isfield(p.mipmapLevels.x0, 'imageUrl'),
+                        obj.path = p.mipmapLevels.x0.imageUrl(6:end);
+                    end
                 end
                 if strcmp(p.mipmapLevels.x0.imageUrl(1:4), 'file')
+                    if isfield(p.mipmapLevels.x0, 'maskUrl'),
                     obj.mask = p.mipmapLevels.x0.maskUrl(6:end);
+                    end
                 end
                 % check if we have a list of transformations, in which case
                 % we need
@@ -146,6 +150,17 @@ classdef tile
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             if nargin<2, filter='false';end
             if nargin<3, scale = 1.0;end
+            
+            % below will set filter to true if any other filter (for post-filtering)
+            % is selected. Will set all filters to false if filter == 'false'
+            if nargin>=2 && ~strcmp(filter, 'false')
+                post_filter = filter;
+                filter = 'true';
+            else
+                post_filter = 'false';
+                filter = 'false';
+            end
+            
             if obj.fetch_local==1
                 im = imread(obj.path);
             elseif obj.fetch_local==0
@@ -154,14 +169,16 @@ classdef tile
               im = get_image_renderer(obj, 1.0, filter);
             end
             if nargin==2 && ~isempty(im)
-                if strcmp(filter, 'bkgrd1')
+                if strcmp(post_filter, 'bkgrd1')
                     im = background_filter(im,1);
-                elseif strcmp(filter, 'bkgrd2')
+                elseif strcmp(post_filter, 'bkgrd2')
                     im = background_filter(im,2);
-                elseif strcmp(filter, 'bkgrd3')
+                elseif strcmp(post_filter, 'bkgrd3')
                     im = background_filter(im,3);
-                elseif strcmp(filter, 'histeq')
+                elseif strcmp(post_filter, 'histeq')
                     im = histeq(im);
+                elseif strcmp(post_filter, 'imadjust')
+                    im = imadjust(im);
                 end
             end
             %mask = get_mask(obj);
@@ -182,7 +199,7 @@ classdef tile
             [a, resp_str] = system(cmd);
             file_ready = 0;
             count = 1;
-            while ~(file_ready) && count<200
+            while ~(file_ready) && count<400
                 pause(0.01);
                 file_ready = [exist(fn,'file')==2];
                 count = count + 1;
@@ -194,10 +211,20 @@ classdef tile
                 kk_disp_err(err_reading_image);
                 disp('Retrying');
                 pause(1.0);
+                try
                 im = imread(fn, 'jpg');
+                catch err_reading_image2
+                    disp('Giving up');
+                    im = [];
+                end
             end
-            im = rgb2gray(im);
-            delete(fn);
+            if size(im,3)==3
+                im = rgb2gray(im);
+            end
+            try
+                delete(fn);
+            catch
+            end
         end
         %% use Renderer service to fetch the image
         function im = get_image_renderer(obj, scale, filter)

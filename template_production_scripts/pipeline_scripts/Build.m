@@ -25,7 +25,7 @@ generate_diagnostic_stats = [...
 	'-I .' ...
     ];
 
-Register_montage = [
+r_montage = [
 	'mcc ' ...
 	'-v ' ...
 	'-m Register_montage ' ...
@@ -83,7 +83,7 @@ Collection_fusion = [
 %% Run the compiler
 eval(generate_slab_definitions);
 eval(generate_diagnostic_stats);
-eval(Register_montage);
+eval(r_montage);
 eval(Register_rough);
 eval(Register_fine);
 eval(Collection_fusion);

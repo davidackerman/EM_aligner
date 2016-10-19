@@ -52,7 +52,6 @@ parfor pmix = 1:size(pm.M, 1)
     W{pmix} = w(inlierIdx);
     np(pmix) = length(W{pmix});
 end
-warning on;
 del_ix(del_ix==0) = [];
 M(del_ix,:) = [];
 W(del_ix) = [];

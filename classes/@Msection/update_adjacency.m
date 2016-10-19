@@ -8,14 +8,15 @@ function obj = update_adjacency(obj)
 % Author: Khaled Khairy Janelia Research Campus -- 2015
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-LARGE = 20000;
+LARGE = 30000;
 if numel(obj.tiles)<LARGE
 obj.update_tile_info_switch = -1; % just use the first tile's W and H for all
 %obj = update_tile_info(obj);
 H = obj.tiles(1).H;
 W = obj.tiles(1).W;
-obj = update_XY(obj);
-a = [obj.X(:) obj.Y(:)];
+obj = update_XY(obj); x1 = obj.X(:); y1 = obj.Y(:);
+%[x1, y1] = get_tile_centers_tile_array(obj.tiles);
+a = [x1(:) y1(:)];%[obj.X(:) obj.Y(:)];
 
 d = pdist2(a,a);        % depends on statistic toolbox  -------- Sosi: not good for large numbers of tiles
 

@@ -23,7 +23,7 @@ end
 
 
 %% make sure the object is up-to-date
-obj  = update_XY(obj);
+%obj  = update_XY(obj);
 obj  = update_adjacency(obj);
 %% generate point matches
 min_pm = 10;
@@ -32,7 +32,7 @@ if isdeployed
     disp('Calculating image features and point-matches....');
     tic
 end
-[L2] = generate_point_matches(obj, min_pm, 'true', opts.scale); % also makes sure features are calculated
+[L2] = generate_point_matches(obj, min_pm, opts.filter, opts.scale); % also makes sure features are calculated
 if isdeployed
     disp('Finished calculating image features and point-matches!');
     toc

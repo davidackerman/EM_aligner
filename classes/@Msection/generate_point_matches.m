@@ -56,10 +56,11 @@ delpix = zeros(numel(r),1, 'uint32');
 %count = 1;
 disp('Calculating point matches using parfor .... ');
 tic
-parfor_progress(numel(r));
-parfor pix = 1: numel(r)
+%parfor_progress(numel(r));
+for pix = 1: numel(r)
     %    disp(['Point matching: ' num2str(pix) ' of ' num2str(numel(r))]);
     try
+     %disp(['Calculating point-match set: ' num2str(pix) ' of ' num2str(numel(r))]);
     f1 = mL2_tiles(r(pix)).features;
     f2 = mL2_tiles(c(pix)).features;
     vp1 = mL2_tiles(r(pix)).validPoints;
@@ -78,15 +79,12 @@ parfor pix = 1: numel(r)
         %kk_disp_err(err_pmatching);
         delpix(pix) = 1;
     end
-        parfor_progress;
+    %parfor_progress
 end
-parfor_progress(0);
-
-
+%parfor_progress(0);
 
 toc
 disp('Done!');
-
 
 
 % if isdeployed

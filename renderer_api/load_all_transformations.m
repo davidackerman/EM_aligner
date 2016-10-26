@@ -18,7 +18,8 @@ end
 str = ['head -3 ' fn_layout];[a, c] = system(str);disp(c);
 str = ['tail -3 ' fn_layout];[a, c] = system(str);disp(c);
 fid = fopen(fn_layout, 'r');
-C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%n%s%n%n%n%s', 'delimiter', '\t');
+% C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%n%s%n%n%n%s', 'delimiter', '\t');
+C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%s%s%n%s%s%s', 'delimiter', '\t');
 fclose(fid);
 delete(fn_layout);
 z_val = C{1};

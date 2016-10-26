@@ -69,10 +69,10 @@ disp('Done!');
 
 if isempty(M), error('No matches found');end;
 delpix = logical(delpix);
-if sl.verbose
+
 disp(['Total number of tested pairs: ' num2str(size(tile_pair_list,1))]);
 disp(['Total number of point-match sets: ' num2str(size(tile_pair_list,1)-sum(delpix))]);
-end
+
 M(delpix,:) = [];
 adj(delpix,:) = [];
 W(delpix) = [];
@@ -101,10 +101,9 @@ end
 js = pairs2json(MP); % generate json blob to be ingested into point-match database
 
 %% ingest
-pm = sl.target_point_match_collection;
-if sl.verbose
+
     disp('Ingesting point matches');
-end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% ingest js into point matches database
     %%% this needs to be done using webwrite --- sosi ---  until then <sigh> we will use curl

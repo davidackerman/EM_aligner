@@ -82,12 +82,11 @@ if isdeployed
 end
 
 if opts.degree==1
-[mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
-    invalid] = solve_affine_explicit_region(Lr, opts);
+[mL, err1, Res1, A] = solve_affine_explicit_region(Lr, opts);
 else
     disp('----------------- Solving using polynomial degree:');
     disp(opts.degree);
-    [mL, err1, Res1] =...
+    [mL, err1, Res1, A] =...
                 solve_polynomial_explicit_region(Lr,opts.degree, opts);
 end        
             

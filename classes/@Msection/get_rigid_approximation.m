@@ -67,7 +67,7 @@ end
 if lsq_options.apply_scaling
 mtiles = mL.tiles;
 disp('Applying re-scaling');
-parfor ix = 1:numel(mL.tiles)
+for ix = 1:numel(mL.tiles)
     
     %disp([ix mL.tiles(ix).tform.T(1) mL.tiles(ix).tform.T(5)]);
     %imshow(get_warped_image(mL.tiles(ix)));

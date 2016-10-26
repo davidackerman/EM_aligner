@@ -182,7 +182,7 @@ PM.M = M;
 PM.adj = adj;
 PM.W = W;
 PM.np = np;
-PM = filter_pm(PM, opts.pmopts);
+%PM = filter_pm(PM, opts.pmopts);
 
 M = PM.M;
 adj = PM.adj;

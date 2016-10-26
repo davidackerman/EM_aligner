@@ -6,7 +6,7 @@ if nargin<3, scale = 1.0;end
 
 %disp(['Tile fetches local = ' num2str(obj.fetch_local)]);
 im1 = get_image(obj, filter, scale);
-
+if ~isempty(im1)
 if strcmp(obj.featuresMethod,'MSER')
     regionsObj = detectMSERFeatures(im1, 'RegionAreaRange', [500 40000], 'MaxAreaVariation', 0.15);
     [f1, vp1] = extractFeatures(im1, regionsObj);
@@ -48,3 +48,6 @@ end
 
 obj.features = f1;
 obj.validPoints = vp1;
+else
+    warning('Empty image: skipping');
+end

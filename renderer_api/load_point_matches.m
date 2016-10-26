@@ -146,7 +146,8 @@ PM.adj = [];
 PM.W = {};
 PM.np = [];
 n1 = [];
-parfor ix = 1:numel(ns)
+for ix = 1:numel(ns)
+    disp(ix);
     count = 1;
     n1(ix) = 0;
     for six = 1:ns(ix)

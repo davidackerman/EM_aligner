@@ -9,22 +9,25 @@ if nargin<2, filter = 'true';end
 if nargin<3, force  = 0;end
 if nargin<4, scale = 1.0;end
 disp('Calculating image features using parfor...');
-mL2_tiles = obj.tiles;
-parfor_progress(numel(mL2_tiles));
-parfor ix = 1:numel(mL2_tiles)
+tiles = tile;
+tiles = obj.tiles;
+%parfor_progress(numel(mL2_tiles));
+ntiles = numel(tiles);
+parfor ix = 1:ntiles
+    %disp(['Calculating feature set: ' num2str(ix) ' of ' num2str(ntiles)]);
     %disp(ix);
-    if isempty(mL2_tiles(ix).features) || force
-         t = get_features(mL2_tiles(ix), filter, scale);
+    if isempty(tiles(ix).features) || force
+         t = get_features(tiles(ix), filter, scale);
         % reduce feature set (and point set) if too many
-        if size(t.features,1)>mL2_tiles(ix).SURF_MaxFeatures
-            indx = randi(size(t.features,1), mL2_tiles(ix).SURF_MaxFeatures,1);
+        if size(t.features,1)>tiles(ix).SURF_MaxFeatures
+            indx = randi(size(t.features,1), tiles(ix).SURF_MaxFeatures,1);
             t.features(indx,:)=[];
             t.validPoints(indx) = [];
         end
-        mL2_tiles(ix) = t;
+        tiles(ix) = t;
     end
-    parfor_progress;
+ %   parfor_progress;
 end
-parfor_progress(0);
+%parfor_progress(0);
 disp('Done!');
-obj.tiles = mL2_tiles;
+obj.tiles = tiles;

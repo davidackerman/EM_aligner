@@ -4,7 +4,7 @@ function point_match_gen(sl, tile_pair_list)
 % tile_fn has one variable tile_pairs, an
 % array of tile objects, in which each row is a pair of tiles to be compared
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+pm = sl.target_point_match_collection;
 point_pair_thresh = sl.min_points;
 finescale = sl.SURF_options.SURF_Scale;
 %% calculate point correspondences
@@ -80,23 +80,22 @@ np(delpix) = [];
 
 %% generate cross-layer json point-match data
 
-counter = 1;
+
 for mix = 1:size(M,1)
     indx1 = adj(mix,1);
     indx2 = adj(mix,2);
     tid1 = [tile_pair_list(indx1).renderer_id];
     tid2 = [tile_pair_list(indx2).renderer_id];
     
-    MP{counter}.pz = tile_pair_list(indx1).sectionId;
-    MP{counter}.pId= tid1;
-    MP{counter}.p  = M{mix,1};
+    MP{mix}.pz = tile_pair_list(indx1).sectionId;
+    MP{mix}.pId= tid1;
+    MP{mix}.p  = M{mix,1};
     
-    MP{counter}.qz = tile_pair_list(indx2).sectionId;
-    MP{counter}.qId= tid2;
-    MP{counter}.q  = M{mix,2};
+    MP{mix}.qz = tile_pair_list(indx2).sectionId;
+    MP{mix}.qId= tid2;
+    MP{mix}.q  = M{mix,2};
     
-    MP{counter}.w   = W{mix};
-    counter = counter + 1;
+    MP{mix}.w   = W{mix};
 end
 js = pairs2json(MP); % generate json blob to be ingested into point-match database
 

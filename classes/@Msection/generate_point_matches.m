@@ -57,7 +57,7 @@ delpix = zeros(numel(r),1, 'uint32');
 disp('Calculating point matches using parfor .... ');
 tic
 %parfor_progress(numel(r));
-for pix = 1: numel(r)
+parfor pix = 1: numel(r)
     %    disp(['Point matching: ' num2str(pix) ' of ' num2str(numel(r))]);
     try
      %disp(['Calculating point-match set: ' num2str(pix) ' of ' num2str(numel(r))]);

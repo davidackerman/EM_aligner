@@ -4,12 +4,43 @@ function [resp] = fuse_collections_insert_slab(rcsource, rcfixed, rcmoving, over
 %%%        moving collection
 %%%        section overlap
 
-
+% % % example:
+% % rcsource.stack          = ['v12_acquire_merged'];
+% % rcsource.owner          ='flyTEM';
+% % rcsource.project        = 'FAFB00';
+% % rcsource.service_host   = 'tem-services.int.janelia.org:8080';
+% % rcsource.baseURL        = ['http://' rcsource.service_host '/render-ws/v1'];
+% % rcsource.verbose        = 1;
+% % 
+% % 
+% % 
+% % rcfixed.stack          = ['FULL_FAFB_FUSED_05_ROTATED'];
+% % rcfixed.owner          ='flyTEM';
+% % rcfixed.project        = 'test2';
+% % rcfixed.service_host   = '10.40.3.162:8080';
+% % rcfixed.baseURL        = ['http://' rcfixed.service_host '/render-ws/v1'];
+% % rcfixed.verbose        = 1;
+% % 
+% % 
+% % rcmoving.stack          = ['Revised_slab_1185_1204_fine'];
+% % rcmoving.owner          ='flyTEM';
+% % rcmoving.project        = 'test';
+% % rcmoving.service_host   = '10.40.3.162:8080';
+% % rcmoving.baseURL        = ['http://' rcmoving.service_host '/render-ws/v1'];
+% % rcmoving.verbose        = 1;
+% % 
+% % 
+% % overlap = [1185 1190 1200 1204];
 
 %% read range
 disp('Reading section id ranges...');
 [zu1, sID1, sectionId1, z1, ns1] = get_section_ids(rcfixed, overlap(1), overlap(2));
 [zu2, sID2, sectionId2, z2, ns2] = get_section_ids(rcmoving, overlap(1), overlap(2));
+
+[zu3, sID3, sectionId3, z3, ns3] = get_section_ids(rcfixed, overlap(3), overlap(4));
+[zu4, sID4, sectionId4, z4, ns4] = get_section_ids(rcmoving, overlap(3), overlap(4));
+zu1 = [zu1 zu3];
+zu2 = [zu2 zu4];
 disp('Done!');
 %% find corresponding tile centers
 disp('Building list of corresponding tile centers...');
@@ -137,21 +168,18 @@ T2([3 6]) = x(1,:);
 tic
 disp('Reading tile collections ...');
 
-if collection_start
-    disp('-- Non-overlap region of fixed collection.');
-    [~, tiles11] = get_slab_tiles(rcfixed, rcfixed.nfirst, overlap(1)-1);
-end
-
-
 disp('-- Overlap region of fixed collection.');
-[~, tiles12] = get_slab_tiles(rcfixed, overlap(1), overlap(2));
-
+[~, tiles12_1] = get_slab_tiles(rcfixed, overlap(1), overlap(2));
+[~, tiles12_2] = get_slab_tiles(rcfixed, overlap(3), overlap(4));
+tiles12 = [tiles12_1;tiles12_2];
 
 disp('-- Overlap region of moving collection.');
-[~, tiles21] = get_slab_tiles(rcmoving, overlap(1), overlap(2));
+[~, tiles21_1] = get_slab_tiles(rcmoving, overlap(1), overlap(2));
+[~, tiles21_2] = get_slab_tiles(rcmoving, overlap(3), overlap(4));
+tiles21 = [tiles21_1;tiles21_2];
 
 disp('-- Non-overlap region of moving collection.');
-[~, tiles22] = get_slab_tiles(rcmoving, overlap(2)+1, rcmoving.nlast);
+[~, tiles22] = get_slab_tiles(rcmoving, overlap(2)+1, overlap(3)-1);
 
 disp('Done!');
 toc
@@ -249,7 +277,7 @@ tic
 disp('Interpolating tile transformations within overlap region...');
 % % determine intersecting tiles for each section and interpolate
 % [zu1, sID1, sectionId1, z1, ns1] = get_section_ids(rcfixed, overlap(1), overlap(2));
-[zu2, sID2, sectionId2, z2, ns2] = get_section_ids(rcmoving, rcmoving.nfirst, overlap(2));
+[zu2, sID2, sectionId2, z2, ns2] = get_section_ids(rcmoving, overlap(1), overlap(2));
 dlambda = 1/numel(zu2);
 lambda = 0;
 del_ix = [];
@@ -270,9 +298,31 @@ for zix = 1:numel(zu2)
     end
     lambda = lambda + dlambda;
 end
-
 tiles21t(del_ix) = [];
 
+
+
+[zu2, sID2, sectionId2, z2, ns2] = get_section_ids(rcmoving, overlap(3), overlap(4));
+dlambda = 1/numel(zu2);
+lambda = 0;
+del_ix = [];
+for zix = 1:numel(zu2)
+    %disp([zix zu2(zix) lambda]);
+    zcurr = zu2(zix);
+    tindx = find([tiles21t(:).z]==zcurr);
+    for tix = 1:numel(tindx)
+        if isKey(L12.map_renderer_id, tiles21t(tindx(tix)).renderer_id)
+            ind1 = L12.map_renderer_id(tiles21t(tindx(tix)).renderer_id);
+            %if zcurr==26, disp([tiles21t(tindx(tix)).tform.T(:)' - tiles12(ind1).tform.T(:)']);end
+            tiles21t(tindx(tix)).tform.T(1:3,1:2) = tiles12(ind1).tform.T(1:3,1:2).* (lambda) +...
+                tiles21t(tindx(tix)).tform.T(1:3,1:2).* (1-lambda);
+        else
+            del_ix = [del_ix tindx(tix)];
+        end
+    end
+    lambda = lambda + dlambda;
+end
+tiles21t(del_ix) = [];
 disp('Done!');
 toc
 
@@ -318,18 +368,7 @@ tic
 disp('Ingesting into renderer database using append.');
 %resp = ingest_section_into_LOADING_collection(L,rcout, rcsource, pwd);
 % disp('-- Translate to positive space');
-if collection_start
-    % collection start means we need to place the tiles somewhere
-    % in the middle of the final volume. But we don't know where that is.
-    % we guess
-    delta = [230000 145000];
-    disp('translation');
-    disp(delta);
-    
-    L = translate_to_origin(L, -delta);
-    
-    
-end
+
 
 %%
 
@@ -350,7 +389,7 @@ end
 % 
 %     % %%%%%%%%%%%%%%%%%%%%% just distribute MET file generation and ingestion
                              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+rcout = rcfixed;
 
 if ~stack_exists(rcout)
     disp('Target collection not found, creating new collection in state: ''Loading''');
@@ -380,7 +419,7 @@ while count<ntiles
     nix = nix + 1;
 end
 
-
+%%
 disp('Ingesting into renderer');
 tic
 

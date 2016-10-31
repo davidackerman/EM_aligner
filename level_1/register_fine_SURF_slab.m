@@ -121,7 +121,7 @@ mt = Lrough.tiles;
 % chunck it up into pieces
 tp = {};
 tile_pairs = tile;
-chnk = 1000;
+chnk = 320;
 tpcount = 1;
 count = 1;
 for pix = 1: numel(r)
@@ -187,8 +187,8 @@ opts.xs_weight = 15.0;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 
-opts.lambda = 10.^(-2);
-opts.edge_lambda = 10^(-2);
+opts.lambda = 10.^(-1);
+opts.edge_lambda = 10^(-1);
 opts.A = [];
 opts.b = [];
 opts.W = [];

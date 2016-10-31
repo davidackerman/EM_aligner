@@ -31,6 +31,7 @@ function [Lin, needs_correction, fn_matches, zsetd, zrange, t, ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 check_input(ms);
 needs_correction = 0;
+waitTime = 30;
 zsetd = [];
 zrange = [];
 cmd_str = '';
@@ -40,7 +41,7 @@ if nargin<2, run_now = 1;end
 if ~isfield(ms, 'number_of_spark_nodes'), ms.number_of_spark_nodes = num2str(2);end
 %% clean up any previous jobs
 dir_spark_work = [ms.base_output_dir '/' ms.project '/' ms.stack  '/' ms.run_dir];
-if run_now, 
+if run_now,
     kk_mkdir(dir_spark_work);
     %% construct and submit point-match calculation for montage scapes
     cmd_str = [ms.script ' ' ms.service_host ' ' ms.owner ' ' ms.project ' '...
@@ -53,23 +54,23 @@ if run_now,
     disp(resp_str);
 end
 if nargin<3
-%% wait for files to finish generating
-f = dir([dir_spark_work '/solver_*']);
-dir_solver = [dir_spark_work '/' f.name];
-fn_matches = [dir_solver '/matches.txt'];
-while exist(fn_matches,'file')~=2
+    %% wait for files to finish generating
     f = dir([dir_spark_work '/solver_*']);
     dir_solver = [dir_spark_work '/' f.name];
     fn_matches = [dir_solver '/matches.txt'];
-    if ~isempty(f)
-        disp(['Waiting for file: ' dir_solver '/matches.txt']);
-        pause(30);
-    else
-        disp(['Waiting for file: ' dir_solver '*/matches.txt']);
-        pause(240);
+    while exist(fn_matches,'file')~=2
+        f = dir([dir_spark_work '/solver_*']);
+        dir_solver = [dir_spark_work '/' f.name];
+        fn_matches = [dir_solver '/matches.txt'];
+        if ~isempty(f)
+            disp(['Waiting for file: ' dir_solver '/matches.txt']);
+            pause(30);
+        else
+            disp(['Waiting for file: ' dir_solver '*/matches.txt']);
+            pause(waitTime);
+        end
     end
-end
-fn_ids     = [dir_solver '/ids.txt'];
+    fn_ids     = [dir_solver '/ids.txt'];
 else
     fn_ids = precalc_ids;
     fn_matches = precalc_matches;
@@ -125,7 +126,7 @@ parfor tix = 1:numel(IDS{1})
     t.id = IDS{1}(tix);
     t.renderer_id = num2str(IDS{1}(tix));
     if run_now
-    t.path = IDS{2}{tix};
+        t.path = IDS{2}{tix};
     else
         t.path = fn_ims{tix};
     end
@@ -143,79 +144,110 @@ options.minpmblock = 0;
 options.minpmblock_cross = 0;
 
 %% concatenate point_matches
-if isempty(pairs), error('No point-matches found: aborting');end
-[Lin] = pairs_to_pm(L, options, pairs);
-%% add a weights vector to pm struct
-w = [];
-np = [];
-W = cell(size(Lin.pm.adj,1),1);
-for ix = 1:length(W)
-    w = 1/abs(z(Lin.pm.adj(ix,1))-z(Lin.pm.adj(ix,2)))/3;
-    npoints = size(Lin.pm.M{ix,1},1);
-    W{ix} = ones(npoints,1) * w;
-    np(ix) = npoints;
-end
-Lin.pm.W = W;
-Lin.pm.np = np;
-%% reduce point-matches to next nb neighbors
-delix = [];
-counter = 1;
-for pix = 1:size(Lin.pm.M,1)
-    adj = Lin.pm.adj(pix,:);
-    if abs(adj(1)-adj(2))>str2double(ms.similarity_range)
-        delix(counter) = pix;
-        counter = counter + 1;
+if isempty(pairs),
+    warning('No point-matches found');
+    Lin = L;
+    pm = [];
+    needs_correction = -1;
+    ll = split_z(Lin);
+    zp = [ll(:).z] + str2double(ms.first)-1;
+    zz = (str2double(ms.first):str2double(ms.last)) ;
+    setd = setdiff(zz,zp);
+    if ~montage_scape_gen_error,
+        zsetd = z(setd-str2double(ms.first)+1);
+        if ~isempty(setd),
+            disp('Disconnected montage scapes: index');
+            disp([setd(:) zsetd]);
+            %disp(z(setd));
+            warning('Montage scapes must form a fully connected set');
+            needs_correction = 1;
+        end
     end
-end
-Lin.pm.np(delix) = [];
-Lin.pm.W(delix) = [];
-Lin.pm.adj(delix,:) = [];
-Lin.pm.M(delix,:) = [];
-
-%% check that all montage scapes are present in Lin by splitting in z and
-% checking that all z's are present
-ll = split_z(Lin);
-zp = [ll(:).z] + str2double(ms.first)-1;
-zz = (str2double(ms.first):str2double(ms.last)) ;
-setd = setdiff(zz,zp);
-if ~montage_scape_gen_error,
-    zsetd = z(setd-str2double(ms.first)+1);
-    if ~isempty(setd),
-        disp('Disconnected montage scapes: index');
-        disp([setd(:) zsetd]);
-        %disp(z(setd));
-        warning('Montage scapes must form a fully connected set');
-        needs_correction = 1;
+    clear t;
+    t(size(IDS,1)) = tile;
+    for ix = 1:size(IDS{1},1)
+        t(ix).z = ix;
+        t(ix).sectionId = num2str(ix);
+        t(ix).id = IDS{1}(ix);
+        t(ix).renderer_id = num2str(IDS{1}(ix));
+        t(ix).path = IDS{2}{ix};
     end
+    
+else
+    [Lin] = pairs_to_pm(L, options, pairs);
+    %% add a weights vector to pm struct
+    w = [];
+    np = [];
+    W = cell(size(Lin.pm.adj,1),1);
+    for ix = 1:length(W)
+        w = 1/abs(z(Lin.pm.adj(ix,1))-z(Lin.pm.adj(ix,2)))/3;
+        npoints = size(Lin.pm.M{ix,1},1);
+        W{ix} = ones(npoints,1) * w;
+        np(ix) = npoints;
+    end
+    Lin.pm.W = W;
+    Lin.pm.np = np;
+    %% reduce point-matches to next nb neighbors
+    delix = [];
+    counter = 1;
+    for pix = 1:size(Lin.pm.M,1)
+        adj = Lin.pm.adj(pix,:);
+        if abs(adj(1)-adj(2))>str2double(ms.similarity_range)
+            delix(counter) = pix;
+            counter = counter + 1;
+        end
+    end
+    Lin.pm.np(delix) = [];
+    Lin.pm.W(delix) = [];
+    Lin.pm.adj(delix,:) = [];
+    Lin.pm.M(delix,:) = [];
+    
+    %% check that all montage scapes are present in Lin by splitting in z and
+    % checking that all z's are present
+    ll = split_z(Lin);
+    zp = [ll(:).z] + str2double(ms.first)-1;
+    zz = (str2double(ms.first):str2double(ms.last)) ;
+    setd = setdiff(zz,zp);
+    if ~montage_scape_gen_error,
+        zsetd = z(setd-str2double(ms.first)+1);
+        if ~isempty(setd),
+            disp('Disconnected montage scapes: index');
+            disp([setd(:) zsetd]);
+            %disp(z(setd));
+            warning('Montage scapes must form a fully connected set');
+            needs_correction = 1;
+        end
+    end
+    % generate a graph and analyze which pieces are
+    % disconnected (probably better)
+    [L_vec, ntiles] = reduce_to_connected_components(Lin);
+    if numel(L_vec)>1, needs_correction = 1;end
+    for lix = 1:numel(L_vec)
+        zr = [L_vec(lix).tiles(:).z];
+        zrange(lix,:) = ([min(zr) max(zr)]);
+    end
+    [~, ai] = sort(zrange(:,2),'ascend');
+    %
+    disp('Available connected tiles:');
+    disp(zrange(ai,:));
+    
+    %%%%% manually fix connectivity
+    % make a stack of the original images
+    clear t;
+    t(size(IDS,1)) = tile;
+    for ix = 1:size(IDS{1},1)
+        t(ix).z = ix;
+        t(ix).sectionId = num2str(ix);
+        t(ix).id = IDS{1}(ix);
+        t(ix).renderer_id = num2str(IDS{1}(ix));
+        t(ix).path = IDS{2}{ix};
+    end
+    
+    %%
+    %Lin = update_adjacency(Lin);
+    pm = Lin.pm;
 end
-% generate a graph and analyze which pieces are
-% disconnected (probably better)
-[L_vec, ntiles] = reduce_to_connected_components(Lin);
-if numel(L_vec)>1, needs_correction = 1;end
-for lix = 1:numel(L_vec)
-    zr = [L_vec(lix).tiles(:).z];
-    zrange(lix,:) = ([min(zr) max(zr)]);
-end
-[~, ai] = sort(zrange(:,2),'ascend');
-%
-disp('Available connected tiles:');
-disp(zrange(ai,:));
 
-%%%%% manually fix connectivity
-% make a stack of the original images
-clear t;
-t(size(IDS,1)) = tile;
-for ix = 1:size(IDS{1},1)
-    t(ix).z = ix;
-    t(ix).sectionId = num2str(ix);
-    t(ix).id = IDS{1}(ix);
-    t(ix).renderer_id = num2str(IDS{1}(ix));
-    t(ix).path = IDS{2}{ix};
-end
-
-%%
-%Lin = update_adjacency(Lin);
-pm = Lin.pm;
 
 
 

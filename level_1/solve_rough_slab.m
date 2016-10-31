@@ -128,6 +128,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% hack for Allen dataset: build pm struct using SURF
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isfield(ms, 'center_box'), ms.center_box = 1.0;end
 if  ms.center_box<1.0
     
     %configure
@@ -138,10 +139,11 @@ if  ms.center_box<1.0
     %%%%%%%%%%%%%%%
     disp('Applying hack to only allow central point-matches to be used');
     for lix = 1:numel(L2.tiles) % loop over montage scapes
-        L2.tiles(lix).SURF_MetricThreshold = 200;
+        L2.tiles(lix).SURF_MetricThreshold = 500;
         L2.tiles(lix).SURF_NumOctaves = 2;
-        L2.tiles(lix).SURF_NumScaleLevels = 6;
-        L2.tiles(lix).SURF_MaxFeatures = 5000;
+        L2.tiles(lix).SURF_NumScaleLevels = 8;
+        L2.tiles(lix).SURF_MaxFeatures = 1000;
+        L2.tiles(lix).featuresMethod = 'SURF';%'MSER';%'FAST_SURF';%'BRISK';%'HARRIS';
     end
     L2 = calculate_tile_features(L2, 'false', 1, pmscale);
     
@@ -178,7 +180,7 @@ if  ms.center_box<1.0
                 del_indx = [del_indx;pix];   % mark this point-pair for deletion
             end
         end
-        L2.tiles(lix).features(del_indx,:) = [];
+        %L2.tiles(lix).features(del_indx,:) = [];
         L2.tiles(lix).validPoints(del_indx) = [];
     end
     
@@ -303,7 +305,7 @@ if  ms.center_box<1.0
     L2.pm.adj = adj;
     L2.pm.W = W;
     L2.pm.np = np;
-    
+    L2.pm
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -337,14 +339,22 @@ if needs_correction==0
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+    % solve montage scape system
     [mLR, errR, mLS] = get_rigid_approximation(L2, 'backslash', rigid_opts);  % generate rigid approximation to use as regularizer
-    mL3 = mLR;
-%     affine_opts.lambda = 1e-3;
-%     [mL3, errA] = solve_affine_explicit_region(mLR, affine_opts); % obtain an affine solution
+%    mL3 = mLR;
+     solver_opts.lambda = 1e3;
+     solver_opts.edge_lambda = 1e3;
+
+    [mL3, errA] = solve_affine_explicit_region(mLR, solver_opts); % obtain an affine solution
+    
+%     pdegree = 2;
+%     [mL3, errA] ...
+%     = solve_polynomial_explicit_region(mLR, pdegree, solver_opts);
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%
     mL3s = split_z(mL3);
     
-    %% [4] apply rough alignment to montaged sections (L_montage) and generate "rough_aligned" collection  %% %%%%%% sosi
+    % % [4] apply rough alignment to montaged sections (L_montage) and generate "rough_aligned" collection  %% %%%%%% sosi
     disp('Apply rough alignment to full set of montaged sections:');
     indx = find(zu-floor(zu)>0);
     zu(indx) = [];
@@ -378,6 +388,9 @@ if needs_correction==0
     
     mL3T = cell(numel(L_montage),1);
     for lix = 1:numel(L_montage)
+        %%% sosi -- revise and generalize to use polynomials
+        
+        %%% limited to Affine
         mL3T{lix} = mL3s(lix).tiles(1).tform.T;
     end
     

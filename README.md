@@ -1,7 +1,8 @@
 # EM_aligner
 A set of Matlab tools for aligning EM images into a coherent image volume in two and three dimensions. This library works in conjunction with the "Renderer" ecosystem of tools. 
 
-##Status: In production use at Janelia. This is a nascent set of tools that is undergoing large changes and code cleanup. We consider the library suitable for use by our collaborators as well as other research groups. Due to limited staffing, we do not guarantee support for outside groups.
+##Status: 
+In production use at Janelia. This is a nascent set of tools that is undergoing large changes and code cleanup. We consider the library suitable for use by our collaborators as well as other research groups. Due to limited staffing, we do not guarantee support for outside groups.
 
 ##Terminology and definitions:
 -	Tile: an image acquired as part of a larger mosaic. A tile is assumed to be part raw image data and part meta-data.

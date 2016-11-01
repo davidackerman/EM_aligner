@@ -26,11 +26,11 @@ Main steps for stitching small-to-moderate datasets:
 - 	Install Renderer and point-match services and dependencies as indicated above
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)
--	[Run montage] (doc/doc_montage.md) of every section (tiles with same z-coordinate value)
-	-	
--	Run rough alignment of montage collection
--	Run point-match generation across layers (point out locations in the code for custom point-match generation).
--	Run full volume solve
+-	[Montage registration] (doc/doc_montage.md) of every section (tiles with same z-coordinate value)	
+-	Rough alignment of montage collection
+-	Fine alignment
+	-	Run point-match generation across layers (point out locations in the code for custom point-match generation).
+	-	Run full volume solve
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 
 

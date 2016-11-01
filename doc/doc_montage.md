@@ -18,7 +18,7 @@ http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM
 An example json input is provided below.
 
 
-'''json
+```json
 
 {
     "__comments": {
@@ -91,5 +91,7 @@ An example json input is provided below.
 
 }
 
-'''
+```
+
+
 

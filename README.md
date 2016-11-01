@@ -20,7 +20,7 @@ Prerequisites
 	-	Point-match generation (two scripts)
 
 
-Main steps for stitching small-to-moderate datasets:
+[Main steps for stitching small-to-moderate datasets:!](docs/doc_montage.md)
 
 ![Alt text] (https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg "stitching_schematic (small datasets)")
 - 	Install Renderer and point-match services and dependencies as indicated above

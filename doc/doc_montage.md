@@ -4,10 +4,11 @@ You are using Matlab 2015a and above. The EM_aligner directory and subdirectorie
 
 A full montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number" will calculate point-matches using SURF features between tile pairs, persist those point-matches in a point-match database collection "target_point_match_collection", solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
 
-In Matlab:
+at the Matlab prompt:
 
->fn = 'full_path_to_json_configuration_file.json';  % specify the input json file
->montage_section_SL_prll(fn); % perform montage
+[1] fn = 'full_path_to_json_configuration_file.json';  %% specify the input json file
+
+[2] montage_section_SL_prll(fn); %% perform montage
 
 If CATMAID dynamic rendering is set up, you can view your registered montage using a URL similar to this:
 http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM&project=test&dynamicRenderHost=renderer:8080&catmaidHost=renderer-catmaid:8000

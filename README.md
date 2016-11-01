@@ -20,7 +20,7 @@ Prerequisites
 	-	Point-match generation (two scripts)
 
 Main steps for stitching small-to-moderate datasets:
-[[[[https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg]]
+[[https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg|alt=stitching_schematic]]
 - 	Install Renderer and point-match services and dependencies as indicated above
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)
@@ -31,7 +31,7 @@ Main steps for stitching small-to-moderate datasets:
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 
 Steps relevant to large datasets:
-[[https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_large_volume.jpg]]
+[[https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_large_volume.jpg|alt=stitching_schematic]]
 - 	Install Renderer service and its dependencies as indicated above
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)

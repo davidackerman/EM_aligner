@@ -4,7 +4,7 @@ A set of Matlab tools for aligning EM images into a coherent image volume in two
 Status: In production use at Janelia. This is a nascent set of tools that is undergoing large changes. We consider the library suitable for use by our collaborators as well as other research groups. Due to limited staffing, we do not guarantee support for outside groups.
 
 Terminology and definitions:
--	Tile: an image acquired as part of a larger mosaic. A tile is assumed to be part data (on disc) and part meta-data.
+-	Tile: an image acquired as part of a larger mosaic. A tile is assumed to be part raw image data and part meta-data.
 -	Montage: a set of tiles with same z-coordinate value that have been registered.
 -	Section: a set of tiles with same z-coordinate value.
 -	Slab: a contiguous set of sections.

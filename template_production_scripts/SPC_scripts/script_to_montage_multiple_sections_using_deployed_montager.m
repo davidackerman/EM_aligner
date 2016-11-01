@@ -1,11 +1,13 @@
 
-% configure montage
+%% configure montage --- please edit lines below
 clc;
 nfirst= 3279;
 nlast = 3378;
 fnsource = '/mydir/montage_input.json'; % template input json file
 bin_fn = '/mydir/montage_section_SL_prll';   % where is the executable
 montage_collection.stack = ['SURF_' num2str(nfirst) '_' num2str(nlast) '_kk_montage'];
+local_scratch = '/scratch/myscratch';
+
 
 %% preparations
 sl = loadjson(fileread(fnsource));
@@ -15,11 +17,13 @@ kk_mkdir(dir_scratch);
 cd(dir_scratch);
 
 %% generate job commands and submit
-local_scratch = '/scratch/khairyk';
+
 for ix = nfirst:nlast
     disp('------------------------------ montage section:');
     disp(ix);
     disp('-----------------------------------------------');
+
+    %%%% overrides json input
     sl.section_number = ix;
     sl.complete = 0;
     sl.ncpus = 4;
@@ -32,10 +36,12 @@ for ix = nfirst:nlast
     fprintf(fid, jstr);
     fclose(fid);
     
+
+    %%%% uncomment code block to use qsub and distribute over cluster
     % prepare qsub jobs
     jbname = sprintf('m_%d', ix);
     log_fn = sprintf('./log_%d.txt', ix);
-       % prepare Matlab cache for this job
+    % prepare Matlab cache for this job: Without this step, only a limited number of deployed jobs is possible to run concurrently
     cache_str = ['export MCR_CACHE_ROOT=' local_scratch '/mcr_cache_root.' num2str(ix) ';mkdir -p $MCR_CACHE_ROOT'];
     mcr_root = [dir_scratch '/mcr_cache_root.' jbname];
     del_dir_mcr_root = sprintf(';rm -rf %s', mcr_root);
@@ -47,6 +53,10 @@ for ix = nfirst:nlast
     disp(str);
      [a resp] = system(str);
      disp(a);disp(resp);
+
+
+
+    %%%% uncomment code block if non-deployed version should be called
     %montage_section_SL_prll(fn);
     %delete(fn);
 end

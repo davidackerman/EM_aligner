@@ -25,7 +25,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 ##Main steps for stitching small-to-moderate datasets:
 
 ![Alt text] (https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg "stitching_schematic (small datasets)")
-- 	Install Renderer and point-match services and dependencies as indicated above
+- 	[Install Renderer and point-match services] (https://github.com/saalfeldlab/render) and dependencies as indicated above
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)
 -	[Montage registration] (doc/doc_montage.md) of every section (tiles with same z-coordinate value)	

@@ -19,10 +19,11 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 	-	Client-side rendering: This is relevant to all steps requiring generation of point-matches; full section montage and cross-layer point-match generation.
 	-	Rough section alignment: This script
 	-	Point-match generation (two scripts)
+-	Matlab 2015a and above, toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics and (optional) Parallel computing.
 
 
 
-##Main steps for stitching small-to-moderate datasets:
+##Main steps for stitching small-to-moderate size datasets (less than 1M tiles):
 
 ![Alt text] (https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg "stitching_schematic (small datasets)")
 - 	[Install Renderer and point-match services] (https://github.com/saalfeldlab/render) and dependencies as indicated above
@@ -37,7 +38,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 
 
 
-##Steps relevant to large datasets:
+##Steps relevant to large datasets (more than 1M tiles):
 
 ![Alt text] (https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_large_volume.jpg "stitching_schematic (large datasets)")
 - 	Install Renderer service and its dependencies as indicated above

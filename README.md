@@ -32,7 +32,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 -	[Montage registration] (doc/doc_montage.md) of every section (tiles with same z-coordinate value)	
 -	Rough alignment of montage collection
 -	Fine alignment
-	-	Run point-match generation across layers (point out locations in the code for custom point-match generation).
+	-	Run point-match generation across layers
 	-	Run full volume solve
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 

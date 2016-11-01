@@ -77,8 +77,6 @@ optsp3.lambda = 10^(7);
 optsp3.edge_lambda = 10^8;
 
 
-lix = 1;
-
 % solve montages and ingest into collection
 %% delete existing collection if present
 % resp = delete_renderer_stack(rctarget_montage);

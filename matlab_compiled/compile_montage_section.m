@@ -1,50 +1,34 @@
 %% compile (you must customize this script to your system/environment
 
 dir_curr = pwd;
+dir_EM_aligner = '/groups/flyTEM/home/khairyk/EM_aligner';   % your local EM_aligner directory
+cd /groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled    % deploy to this directory
 
-cd /groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled
 
 astr = [];
-fn_use = dir('/groups/flyTEM/home/khairyk/EM_aligner/classes/@Msection*.m');
+fn_use = dir([[dir_EM_aligner '/classes/@Msection*.m']);
 for ix = 1:numel(fn_use)
-astr = [astr sprintf(' -a /groups/flyTEM/home/khairyk/EM_aligner/classes/@Msection/%s',fn_use(ix).name)];
+astr = [astr sprintf(' -a %s/classes/@Msection/%s',dir_EM_aligner, fn_use(ix).name)];
 end
 
 %astr = [];
-fn_use = dir('/groups/flyTEM/home/khairyk/EM_aligner/classes/@tile*.m');
+fn_use = dir([dir_EM_aligner '/classes/@tile*.m']);
 for ix = 1:numel(fn_use)
-astr = [astr sprintf(' -a /groups/flyTEM/home/khairyk/EM_aligner/classes/@tile/%s',fn_use(ix).name)];
+astr = [astr sprintf(' -a %s/classes/@tile/%s',dir_EM_aligner, fn_use(ix).name)];
 end
 
-fn_use = dir('/groups/flyTEM/home/khairyk/EM_aligner/solver/*.m');
+fn_use = dir([dir_EM_aligner '/solver/*.m']);
 for ix = 1:numel(fn_use)
-astr = [astr sprintf(' -a /groups/flyTEM/home/khairyk/EM_aligner/solver/%s',fn_use(ix).name)];
+astr = [astr sprintf(' -a %s/solver/%s',dir_EM_aligner, fn_use(ix).name)];
 end
 
 %astr = [];
-fn_use = dir('/groups/flyTEM/home/khairyk/mwork_nogit/fileexchange/jsonlab/*.m');
+fn_use = dir([dir_EM_aligner '/external/jsonlab/*.m']);
 for ix = 1:numel(fn_use)
-astr = [astr sprintf(' -a /groups/flyTEM/home/khairyk/mwork_nogit/fileexchange/jsonlab/%s',fn_use(ix).name)];
+astr = [astr sprintf(' -a %s/external/jsonlab/%s',dir_EM_aligner, fn_use(ix).name)];
 end
 
 str_compile = sprintf('mcc -m -R -nodesktop -v montage_section_SL_prll.m %s;', astr);
 eval(str_compile);
-
-
-
-% cd /groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled
-%%
-disp('Copy process started ....');
-
-copyfile('/groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled/montage_section_SL_prll', ...
-         '/groups/flyTEM/flyTEM/matlab_compiled/sl7/montage_section_SL_prll');
- 
-copyfile('/groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled/montage_section_SL_prll', ...
-         '/gpfs1/scratch/spc/matlab_work/montage/montage_section_SL_prll');
-     
-copyfile('/groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled/sample_montage_input.json', ...
-         '/groups/flyTEM/flyTEM/matlab_compiled/sl7/sample_montage_input.json');
-
-disp('Done!');
 
 cd(dir_curr);

@@ -1,6 +1,8 @@
-# Montaging a section
+##Prerequisites
 We are assuming that the Renderer and point-match services (and associated database) are set up and accessible for example at http://tem-services.int.janelia.org.
-Also, you are using Matlab 2015a and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics and (optional) Parallel computing. The EM_aligner directory and subdirectories are on your Matlab path.
+Also, you are using Matlab 2015a and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) Matlab compiler and (optional) Parallel computing. The EM_aligner directory and subdirectories are on your Matlab path.
+
+## Montaging of one section using SURF point-matches: non-deployed point-match generation + solve
 
 A full montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number" will calculate point-matches using SURF features between tile pairs, persist those point-matches in a point-match database collection "target_point_match_collection", solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
 
@@ -15,7 +17,7 @@ http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM
 
 
 
-An example json input is provided below.
+An example json input file is provided below.
 
 
 ```json
@@ -92,6 +94,12 @@ An example json input is provided below.
 }
 
 ```
+## Montage using deployed application: deployed point-match generation + solve
+Under directory matlab_compiled, open the file "compile_montage_section" for editing.
+Edit lines 4 and 5 and run the script.
+Now the "compiled" output file can be called from a the shell (or used in a qsub system) by passing it the path to the json input file without need for additional Matlab licenses.
+An example for deploying multiple montage jobs (using a Matlab script) is provided [here] (/template_production_scripts/SPC_scripts/script_to_montage_multiple_sections_using_deployed_montager.m).
+
 
 
 

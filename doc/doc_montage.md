@@ -1,6 +1,6 @@
 # Montaging a section
-We are assuming that the Renderer and point-match services (and associated database) are set up and accessible at http://tem-services.int.janelia.org
-You are using Matlab 2015a and above. The EM_aligner directory and subdirectories are on your Matlab path.
+We are assuming that the Renderer and point-match services (and associated database) are set up and accessible at http://tem-services.int.janelia.org.
+Also, you are using Matlab 2015a and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics and (optional) Parallel computing . The EM_aligner directory and subdirectories are on your Matlab path.
 
 A full montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number" will calculate point-matches using SURF features between tile pairs, persist those point-matches in a point-match database collection "target_point_match_collection", solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
 
@@ -18,7 +18,7 @@ http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM
 An example json input is provided below.
 
 
--------------- json input "
+'''json
 
 {
     "__comments": {
@@ -91,5 +91,5 @@ An example json input is provided below.
 
 }
 
-"----------------
+'''
 

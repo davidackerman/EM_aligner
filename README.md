@@ -20,13 +20,13 @@ Prerequisites
 	-	Point-match generation (two scripts)
 
 
-[Main steps for stitching small-to-moderate datasets:](doc/doc_montage.md)
+Main steps for stitching small-to-moderate datasets:
 
 ![Alt text] (https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg "stitching_schematic (small datasets)")
 - 	Install Renderer and point-match services and dependencies as indicated above
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)
--	Run montage of every section (tiles with same z-coordinate value)
+-	[Run montage] (doc/doc_montage.md) of every section (tiles with same z-coordinate value)
 	-	
 -	Run rough alignment of montage collection
 -	Run point-match generation across layers (point out locations in the code for custom point-match generation).

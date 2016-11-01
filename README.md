@@ -48,9 +48,13 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 - 	Slab definition for rough alignment
 -	Run rough alignment of montage collection
 -	Run point-match generation across layers
--	(Optional) fuse rough slabs
+-	(Optional) fuse rough slabs. 
 -	(Optional) redefine slabs for fine alignment
 -	Run individual slab solve
--	Fuse fine slabs
+-	Fuse fine slabs. Limitation: works for affine only.
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
+
+##Independent tools
+-	Solve montage (no point-match generation), for optimizing solver parameters
+-	Slab beautification: runs the full "small-volume"-pipeline described above on a limited slab with the aim of fixing local issues data issues detected while proofreading the final volume. In that (advanced) mode, the user is encouraged to experiment with different SURF parameters, other feature detectors, point-match filter parameters, or solver parameters. This mode is also used to re-stitch a slab of sections for which meta-information was incorrect or deficient, leading to poor point-matches in that region. At the end, the procedure will insert the re-stitched slab into the larger full collection. Limitation: assumes affine transformations throughout.
 

@@ -55,7 +55,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 
 ##Independent tools
--	Solve montage without point-match generation, for optimizing solver parameters.
--	Solve slab without point-match generation, for optimizing solver parametes.
+-	[Solve montage without point-match generation] (doc/doc_solve_montage.md), for testing and optimizing solver parameters.
+-	Solve slab without point-match generation, for optimizing solver parameters.
 -	Slab beautification: runs the full "small-volume"-pipeline described above on a limited slab with the aim of fixing local issues data issues detected while proofreading the final volume. In that (advanced) mode, the user is encouraged to experiment with different SURF parameters, other feature detectors, point-match filter parameters, or solver parameters. This mode is also used to re-stitch a slab of sections for which meta-information was incorrect or deficient, leading to poor point-matches in that region. At the end, the procedure will insert the re-stitched slab into the larger full collection. Limitation: assumes affine transformations throughout.
 

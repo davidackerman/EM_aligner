@@ -29,7 +29,7 @@
 	"source_point_match_collection": {
 		"server": "http://10.40.3.162:8080/render-ws/v1",
 		"owner": "flyTEM",
-		"match_collection": "v12_dmesh"
+		"match_collection": "eric_test_sift"
 	},
 	"target_collection": {
 		"stack": "EXP_test_montage_solver_1",

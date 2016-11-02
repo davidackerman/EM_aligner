@@ -6,7 +6,7 @@ cd /groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled    % deploy to this di
 
 
 astr = [];
-fn_use = dir([[dir_EM_aligner '/classes/@Msection*.m']);
+fn_use = dir([dir_EM_aligner '/classes/@Msection*.m']);
 for ix = 1:numel(fn_use)
 astr = [astr sprintf(' -a %s/classes/@Msection/%s',dir_EM_aligner, fn_use(ix).name)];
 end

@@ -23,11 +23,19 @@ if sl.solver_options.use_peg
     tic;if sl.verbose, disp('-- Loading point matches');end
     [L, tIds, PM, pm_mx, sectionId_load, z_load]  = ...
         load_point_matches(sl.z_value,sl.z_value, sl.source_collection, ...
-        sl.source_point_match_collection, 0, sl.solver_options.min_points, 0); % 
-    toc    
+        sl.source_point_match_collection, 0, sl.solver_options.min_points, 0, sl.solver_options.max_points); % 
+    toc
     if sl.filter_point_matches,
         tic;if sl.verbose, disp('-- Filtering point matches');end
-        L.pm = filter_pm(L.pm);
+        pmfopts.NumRandomSamplingsMethod = 'Desired confidence';
+        pmfopts.MaximumRandomSamples = 1000;
+        pmfopts.DesiredConfidence = 99.9;
+        pmfopts.PixelDistanceThreshold = 0.1;
+        if sl.verbose, 
+            disp('using point-match filter:');
+            disp(pmfopts);
+        end
+        L.pm = filter_pm(L.pm, pmfopts);
         toc
     end
     

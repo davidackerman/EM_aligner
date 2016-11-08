@@ -5,18 +5,18 @@
 		"outlier_lambda": 10,
 		"solver": "backslash",
 		"min_points": 8,
-        "max_points": 300,
+                "max_points": 300,
 		"stvec_flag": 0,
 		"conn_comp": 1,
 		"distributed": 0,
-		"lambda": 10,
-		"edge_lambda": 10,
+		"lambda": 0.1,
+		"edge_lambda": 0.1,
 		"small_region_lambda": 0.1,
 		"small_region": 5,
 		"calc_confidence": 1,
-		"translation_fac": 1,
+		"translation_fac": 100,
         "use_peg": 1,
-        "peg_weight": 0.001,
+        "peg_weight": 0.0001,
         "peg_npoints": 5
 	},
 	"source_collection": {
@@ -30,10 +30,10 @@
 	"source_point_match_collection": {
 		"server": "http://10.40.3.162:8080/render-ws/v1",
 		"owner": "flyTEM",
-		"match_collection": "eric_test_surf"
+		"match_collection": "kk_test_04_surf"
 	},
 	"target_collection": {
-		"stack": "Revised_slab_525_545_montage_SURF_eric",
+		"stack": "Revised_slab_525_545_montage_SURF_eric_test_01",
 		"owner": "flyTEM",
 		"project": "FAFB00_beautification",
 		"service_host": "10.37.5.60:8080",

@@ -32,10 +32,41 @@ if options.pastix.split
     pastix_script = [str_pastix_solver '/align_tiles_mod_KK2.sh'];
     
     str_env = sprintf('export PASTIX_HOME=%s;export PASTIX_DATA=%s;',str_pastix_solver, PASTIX_DATA);
-    kk_mkdir(PASTIX_DATA);
+    if ~exist(PASTIX_DATA, 'dir'), 
+        mkdir(PASTIX_DATA);
+    end
+    % kk_mkdir(PASTIX_DATA); 
     %% save file
-    save(full_path_lin_system_fn, 'A', 'b');
-    split_mat_file(full_path_lin_system_fn, ncpus);
+    %save(full_path_lin_system_fn, 'A', 'b');
+    
+    %save_empty_Ab(full_path_lin_system_fn, size(A,1), size(b,1));
+    %split_mat_file(full_path_lin_system_fn, ncpus);
+%     split_mat_file(full_path_lin_system_fn, ncpus);
+
+prefixName = full_path_lin_system_fn(1:(length(full_path_lin_system_fn)-4));
+num_col = size(A, 2);
+    tiles_per_worker = round(num_col/6./ncpus);
+    disp(['tiles_per_worker=' num2str(tiles_per_worker)]);
+    delete(gcp);
+    parpool(4);
+    parfor i=1:ncpus
+        disp(i);
+        col_min = 1 + 6*(i-1)*tiles_per_worker;
+        if i < ncpus
+            col_max = col_min   + 6*tiles_per_worker-1;
+        else
+            col_max = size(A, 2);
+        end
+        Aout = A(:, col_min:col_max);
+        bout = b(col_min:col_max);
+        disp(['i=' num2str(i) ' col_min=' num2str(col_min) ' col_max=' num2str(col_max) ...
+            ' size(A)=' num2str(size(A)) ' size(b)=' num2str(size(b))]);
+        output_mat_file = strcat(prefixName,'_', num2str(i), '.mat');
+        save_column_range(output_mat_file, Aout,bout);
+    end
+    
+    
+    
     lin_system_fn = full_path_lin_system_fn;
 %     delete(lin_system_fn);
 %     dir_curr = pwd;
@@ -133,7 +164,15 @@ R = A*x2-b;
 toc
 kk_clock
 
+%%
+function save_empty_Ab(full_path_lin_system_fn, szA, szb)
+A = sparse(szA,szA);
+b = sparse(szb);
+save(full_path_lin_system_fn, 'A', 'b');
 
+%%
+function save_column_range(output_mat_file, A,b)
+save(output_mat_file, 'A', 'b', '-v7.3');
 
 %x2 = assemble_x(PASTIX_DATA);
 % disp('Assembling solution vector...');

@@ -1,4 +1,4 @@
-function [I, Io] = get_xz_image_renderer(rc, x, y, dx, height, scale, zstart, zfinish, res)
+function [I, Io] = get_yz_image_renderer(rc, x, y, dx, height, scale, zstart, zfinish, res)
 %% Generate an xz-slice through an existing Renderer collection
 % specify x and y coordinates, extent of box and range of z
 % Input:
@@ -24,7 +24,7 @@ I = zeros(floor(dx * scale), floor(height * scale), numel(zrange));
 %parfor_progress(numel(zrange));
 parfor ix = 1:numel(zrange)
     %disp(ix);
-   [im, v, url] = get_image_box_renderer(rc, zrange(ix), Wbox, scale, 'kk');
+   [im, v, url, resp_str] = get_image_box_renderer(rc, zrange(ix), Wbox, scale, 'kk');
    I(:,:,ix) = im';
  %  parfor_progress;
 end

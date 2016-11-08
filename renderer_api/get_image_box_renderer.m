@@ -1,4 +1,4 @@
-function [im, v, url] = get_image_box_renderer(rc, z, Wbox, scale, fn_id)
+function [im, v, url, resp_str] = get_image_box_renderer(rc, z, Wbox, scale, fn_id)
 % Returns the image of a specified box in collection rc
 % use Renderer client for complete box
 %   /v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/box/{x},{y},{width},{height},{scale}/jpeg-image

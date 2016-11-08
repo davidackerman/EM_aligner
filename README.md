@@ -30,7 +30,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)
 -	[Montage registration] (doc/doc_montage.md) of every section (tiles with same z-coordinate value)	
--	Rough alignment of montage collection
+-	[Rough alignment] (doc/doc_rough.md) of montage collection
 -	Fine alignment
 	-	Run point-match generation across layers
 	-	Run full volume solve

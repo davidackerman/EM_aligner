@@ -47,7 +47,7 @@ D_i = cell(numel(L),1);
 f_i = cell(numel(L),1);
 w_i = cell(numel(L),1);
 tf_i = cell(numel(L),1);
-parfor ix = 1:numel(L)
+for ix = 1:numel(L)
     [D_i{ix}, f_i{ix}, w_i{ix}, tf_i{ix}] = alignTEM_similarity_montage(...
         L(ix).pm, ...
         ix == lidfix, ... %L(ix).z==lidfix,...    % equals one if this is the layer with the fixed tile

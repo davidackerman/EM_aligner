@@ -19,6 +19,9 @@ http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM
 Rough alignment result should be very close to the expected final quality.
 
 
+## Option 2: (In progress) Rough alignment without external script. 
+Runs excusively in Matlab using SURF point-matches and uses the Renderer API to generate montage-scapes as "boxes", where the box is defined by the box around a section.
+
 
 
 

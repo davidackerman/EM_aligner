@@ -1,4 +1,6 @@
-function [obj, errAb, mL, invalid_similarity, invalid_translation, R] = ...
+function [obj, errAb, mL, invalid_similarity, invalid_translation, R,...
+    A, b, B, d, W, K, Lm, xout, L2, U2, tB, td,...
+    At, bt, Bt, dt, Wt, Kt, Lmt, xoutt, L2t, U2t, tBt, tdt] = ...
     get_rigid_approximation(obj, solver, opts)
 %% calculates an approximation to a rigid transformation using the combination
 % [1] Similarity constained
@@ -31,7 +33,7 @@ lsq_options.verbose         = 0;
 lsq_options.debug           = 0;
 
 lsq_options.ilu_droptol     = 1e-16;
-lsq_options.use_ilu         = 1;
+lsq_options.use_ilu         = 0;
 lsq_options.ilu_type        = 'ilutp';%'crout'; %'nofill';%%;
 lsq_options.ilu_udiag       = 1;
 lsq_options.restart         = 10;
@@ -43,18 +45,19 @@ if nargin>1
    lsq_options.solver       = solver;
 end
 
-if ~isempty(gcp('nocreate'))
-    lsq_options.distributed = 1;
-else
+% if ~isempty(gcp('nocreate'))
+%     lsq_options.distributed = 1;
+% else
     lsq_options.distributed = 0;
     if isfield(opts, 'distributed'), lsq_options.distributed = opts.distributed;end
-end
+% end
+
 if isdeployed
     disp('Rigid solution using configuration:')
     disp(lsq_options);
     disp('-----------------------------------');
 end
-[mL,err, R,A, b, B, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
+[mL,err, R, A, b, B, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
     alignTEM_solver(obj, [], lsq_options);
 
 
@@ -126,7 +129,7 @@ if isdeployed
 end
 
 
-[mL2,errAb,R, At, bt, B, d, W, Kt, Lmt, xout, L2, U2, tB, td, invalid_translation] =...
+[mL2,errAb,R, At, bt, Bt, dt, Wt, Kt, Lmt, xoutt, L2t, U2t, tBt, tdt, invalid_translation] =...
     alignTEM_solver(mL, [], lsq_options);
 
 %%% sosi --- 
@@ -139,7 +142,7 @@ end
 % show_map(mL3);figure;show_map(mL4);
 %%%%
 for tix = 1:numel(mL2.tiles), mL2.tiles(tix).state = 1;end;
-errAb = norm(At*xout-bt);
+errAb = norm(At*xoutt-bt);
 obj.tiles = mL2.tiles;  % only tile transformations are changed (not point-match information)
 
 

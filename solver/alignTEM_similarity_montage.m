@@ -101,10 +101,10 @@ for pair_number = 1:size(M,1)           % loop over the pairs
     %%% the part of f corresponding to the fixed tile
     %%% then we need to place x and y values into f
     if (tfix_flag)   % if this layer has a fixed tile in it
-        if adj(pair_number,1)==tfix,
+        if adj(pair_number,1)==tfix
             %disp('fixing vector f'); disp(['----------- pair_number: ' num2str(pair_number)]);
             f(r:r+np*4-1) =  P;
-        elseif adj(pair_number,2)==tfix,    % then we need to place x and y values into f
+        elseif adj(pair_number,2)==tfix    % then we need to place x and y values into f
             %disp('fixing vector f'); disp(['----------- pair_number: ' num2str(pair_number)]);
             f(r:r+np*4-1) = -Q;
         end

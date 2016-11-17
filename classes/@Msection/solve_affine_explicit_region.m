@@ -1,4 +1,4 @@
-function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
+function [obj,err,R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid, time_Axb, time_gen_A] = ...
     solve_affine_explicit_region(obj, opts)
 % Returns the matrix solution for a contiguous regionusing an affine transform
 %
@@ -164,7 +164,7 @@ end
 %     disp('-----------------------');
 % end
 
-[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid] = ...
+[obj,err, R, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td, invalid, time_Axb, time_gen_A] = ...
         alignTEM_solver(obj, [],  lsq_options);
 
 

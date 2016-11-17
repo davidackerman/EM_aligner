@@ -39,7 +39,7 @@
 		"service_host": "10.37.5.60:8080",
 		"baseURL": "http://10.37.5.60:8080/render-ws/v1",
 		"verbose": 1,
-        "initialize": 0,
+        "initialize": 1,
         "complete": 1
 	},
 	"z_value": 1,

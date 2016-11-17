@@ -1,4 +1,4 @@
-function [x2, R] = solve_AxB(K,Lm,options,d)
+function [x2, R, time_solve] = solve_AxB(K,Lm,options,d)
 % SOLVE
 % Performs the actual solve of the final linear system.
 % Input: K is a sparse square matrix assembled elsewhere nxn.
@@ -31,11 +31,14 @@ function [x2, R] = solve_AxB(K,Lm,options,d)
 %
 % Author: Khaled Khairy: Copyright 2016. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+time_solve = 0;
 if strcmp(options.solver, 'pastix')
 
-    [x2, R] = solve_pastix(K,Lm,options);
+    [x2, R, time_solve] = solve_pastix(K,Lm,options);  % needs external PaStiX installed
     
 else
+    tic_Axb = tic;
+    
     if ~isfield(options, 'distributed'), options.distributed = 0;end
     disp(['Using distributed: ' num2str(options.distributed)]);
     x2 = [];
@@ -159,6 +162,6 @@ else
     end
     
     x2 = real(x2);
-    
+    time_solve = toc(tic_Axb);
 end
 

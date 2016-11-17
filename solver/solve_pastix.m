@@ -1,4 +1,4 @@
-function [x2, R] = solve_pastix(A, b,options)
+function [x2, R, time_total] = solve_pastix(A, b,options)
 %%% use pastix to solve this system
 kk_clock;
 tic;
@@ -32,10 +32,10 @@ if options.pastix.split
     pastix_script = [str_pastix_solver '/align_tiles_mod_KK2.sh'];
     
     str_env = sprintf('export PASTIX_HOME=%s;export PASTIX_DATA=%s;',str_pastix_solver, PASTIX_DATA);
-    if ~exist(PASTIX_DATA, 'dir'), 
+    if ~exist(PASTIX_DATA, 'dir') 
         mkdir(PASTIX_DATA);
     end
-    % kk_mkdir(PASTIX_DATA); 
+    kk_mkdir(PASTIX_DATA); 
     %% save file
     %save(full_path_lin_system_fn, 'A', 'b');
     
@@ -47,8 +47,8 @@ prefixName = full_path_lin_system_fn(1:(length(full_path_lin_system_fn)-4));
 num_col = size(A, 2);
     tiles_per_worker = round(num_col/6./ncpus);
     disp(['tiles_per_worker=' num2str(tiles_per_worker)]);
-    delete(gcp);
-    parpool(4);
+%     delete(gcp);
+%     parpool(4);
     parfor i=1:ncpus
         disp(i);
         col_min = 1 + 6*(i-1)*tiles_per_worker;
@@ -85,7 +85,7 @@ else
     str_env = sprintf('export PASTIX_HOME=%s;export PASTIX_DATA=%s;',str_pastix_solver, PASTIX_DATA);
     %kk_mkdir(PASTIX_DATA);
     %% save A and b to disk
-    save(full_path_lin_system_fn, 'A', 'b');
+    %save(full_path_lin_system_fn, 'A', 'b');
 end
 
 
@@ -125,7 +125,34 @@ while(solving)
     pause(dt);
 end
 disp('Done.');
-pause(10);
+%%%% determine amount of time for solution
+fn_log = [dir_temp_mx '/out.txt'];
+fid1 = fopen(fn_log,'r'); % open csv file for reading
+count = 1;
+time_total = 0;
+while ~feof(fid1)
+    line = fgets(fid1); % read line by line
+    k = strfind(line, 'Time');
+    if isempty(k)
+        k = strfind(line, 'time');
+    end
+    if ~isempty(k)
+        %disp([count k]);
+        c = strsplit(line, ' ');
+        %disp(c);
+        if strcmp(c{end}(1), 's')
+            time_total = time_total + str2double(c{end-1});
+            %disp(str2double(c{end-1}));
+        else
+            time_total = time_total + str2double(c{end-2});
+            %disp(str2double(c{end-2}));
+        end
+   end
+    count = count + 1;
+end
+fclose(fid1);
+%%%%
+pause(1);
 %% read and assemble result into x2
 
 

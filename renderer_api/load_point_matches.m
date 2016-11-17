@@ -1,4 +1,4 @@
-function [L, tIds, PM, pm_mx, sectionId, z] = load_point_matches(nfirst, ...
+function [L, tIds, PM, pm_mx, sectionId, z, time_pm_load] = load_point_matches(nfirst, ...
     nlast, rc, pm, nbr, min_points, xs_weight, max_points)
 % Input: nfirst and nlast are zvalue of sections in rc
 %        rc and pm are structs with specifications for accessing
@@ -139,8 +139,10 @@ parfor ix = 1:numel(tIds)
     id_vec(ix) = tIds(ix);
 end
 map_id = containers.Map(id_vec, count_vec);
-
+%%
+tic_pm = tic;
 %% get point matches for each section (montage)
+
 PM.M = {};
 PM.adj = [];
 PM.W = {};
@@ -269,7 +271,7 @@ parfor pmix = 1:nbr
     [xPM{pmix}, n{pmix}] = get_cross_section_pm(pmix+1, ...
         pm, sID, map_id, min_points, xs_weight, max_points);%% get point matches to immediate neighbor
 end
-
+time_pm_load = toc(tic_pm);
 %disp('Generating final point match struct');
 %% generate final M, adj, W and np
 M   = [];

@@ -1,4 +1,5 @@
-function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid] = ...
+function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid,...
+         toc_Axb, toc_gen_A] = ...
         alignTEM_solver(L, P, options)
 %% works as is, but needs  refactoring because: 
 % [1] we don't use P anymore and 
@@ -40,6 +41,8 @@ function [L,err,R, A, b, B, d, W, K, Lm, xout, iL2, iU2, tB, td, invalid] = ...
 % if numel(P) + 1 ~= numel(L),
 %     error('Please check dimensions of L and P inputs');
 % end
+toc_Axb = 0;
+toc_gen_A = 0;
 A   = [];
 b   = [];
 B   = [];
@@ -169,7 +172,9 @@ else
         disp('--------------------------------');
         disp('constructing matrix A ..........');
         kk_clock;
+        tic_gen_A = tic;
         [A,b, W] = alignTEM_objective_system_gen(L,P, lidfix, tfix, options, sf);
+        toc_gen_A = toc(tic_gen_A);
         kk_clock;
         disp('... done!');
         disp('--------------------------------');
@@ -255,7 +260,9 @@ else
     
     % % Solve
     if options.matrix_only==0
-    [x2, R] = solve_AxB(K,Lm, options, d);
+
+    [x2, R, toc_Axb] = solve_AxB(K,Lm, options, d);
+
     else
         disp('option.matrix_only is non-zero, not solving. Returning starting vector as solution');
         x2 = d;
@@ -270,7 +277,7 @@ x2 = full(x2);
 
 
 if options.verbose,
-    if sum(isnan(x2(:))),
+    if sum(isnan(x2(:)))
         if options.verbose,
             disp(['Possible invalid result. nan detected entries affected --> ' num2str(sum(isnan(x2(:))))]);
             disp(['percent entries in solution vector affected --> ' num2str(sum(isnan(x2(:)))/(numel(x2(:))) * 100)]);
@@ -280,7 +287,7 @@ end
 
 %%
 if options.verbose,disp('Generate the final array of refined transformations');end
-if lidfix && tfix,
+if lidfix && tfix
     T = reshape(x2, tdim, (ncoeff-tdim)/tdim)';% remember, the transformations
 else
     T = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations

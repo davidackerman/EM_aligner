@@ -170,7 +170,7 @@ for cix = 1:numel(L_vec)
             R = [R Res(:)'];
         elseif opts.degree==1
             [lsolved, err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
-                invalid] = solve_affine_explicit_region(ll2r, opts);
+                invalid, time_Axb] = solve_affine_explicit_region(ll2r, opts);
             R = [R Res(:)'];
             lsolved.pm = [];
             L_s_mL(cix) = lsolved;
@@ -178,7 +178,8 @@ for cix = 1:numel(L_vec)
             [ll3] = solve_affine_explicit_region(ll2r, opts);
             clear ll2r;
             tic
-            [lsolved, err(cix), Res] =...
+            [lsolved, err(cix), Res, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
+                invalid, time_Axb] =...
                 solve_polynomial_explicit_region(ll3,opts.degree, opts);
             toc
             R = [R Res(:)'];

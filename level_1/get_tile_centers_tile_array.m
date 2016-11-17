@@ -1,4 +1,4 @@
-function [x1, y1, tids, L1, cm] = get_tile_centers_tile_array(jt1)
+function [x1, y1] = get_tile_centers_tile_array(jt1)
 %%%% fast way to get tile ids, centers and minimal Msection object
 ntiles = numel(jt1);
 x1 = zeros(ntiles,1);

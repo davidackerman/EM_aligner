@@ -25,7 +25,7 @@ catch err_cmd_exec
     error(['Error executing: ' strcmd]);
 end
 
-if strfind(resp, 'caught exception'),
+if strfind(resp, 'caught exception')
     disp(resp);
     error('renderer_stack_state_complete: server-side error reported');
 end

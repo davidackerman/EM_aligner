@@ -1,5 +1,5 @@
 function resp_append = ingest_section_into_renderer_database(mL,rc_target,...
-    rc_base, dir_work, translate_to_positive_space, complete)
+    rc_base, dir_work, translate_to_positive_space, complete, disableValidation)
 % This is a high-level function that:
 % Ingests the data into an existing collection, creates one if the collection doesn't already exist
 % sets the state to LOADING  if it is in COMPLETE state and
@@ -12,7 +12,7 @@ function resp_append = ingest_section_into_renderer_database(mL,rc_target,...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin<6, complete = 1;end
 if nargin<5, translate_to_positive_space = 1;end
-
+if nargin<7, disableValidation = 0;end
 if ~stack_exists(rc_base), error('base collection not found');end
 
 if ~stack_exists(rc_target)
@@ -47,7 +47,7 @@ end
 
 %% append tiles to existing collection
 %disp('Ingesting data (append)');
-resp_append = append_renderer_stack(rc_target, rc_base, fn, v);
+resp_append = append_renderer_stack(rc_target, rc_base, fn, v, disableValidation);
 
 %% cleanup
 try

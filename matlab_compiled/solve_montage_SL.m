@@ -95,3 +95,6 @@ if sl.verbose
     disp('Finished:');
     kk_clock();
 end
+
+%% optional
+str = view_collection_dashboard(sl.target_collection); disp(str);

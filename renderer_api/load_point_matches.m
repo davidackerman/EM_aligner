@@ -149,13 +149,13 @@ PM.W = {};
 PM.np = [];
 n1 = [];
 for ix = 1:numel(ns)
-    disp(ix);
+    %disp(ix);
     count = 1;
     n1(ix) = 0;
     for six = 1:ns(ix)
         urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
             pm.server, pm.owner, pm.match_collection, sID{ix}{six});
-        disp(sID{ix}{six});
+        %disp(sID{ix}{six});
         if verbose > 0
             disp(urlChar);
         end
@@ -220,7 +220,7 @@ for ix = 1:numel(ns)
         for jsix = isix+1:ns(ix)
             urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
                 pm.server, pm.owner, pm.match_collection, sID{ix}{isix}, sID{ix}{jsix});
-            disp([sID{ix}{isix} ' ---- ' sID{ix}{jsix}]);
+            %disp([sID{ix}{isix} ' ---- ' sID{ix}{jsix}]);
             j = webread(urlChar, options);
             try
                 jj = webread(urlChar, options);
@@ -282,10 +282,12 @@ for ix = 1:numel(zu)   % loop over sections
     if verbose > 0
         disp(zu(ix));
     end
+    if ~isempty(PM.M)
     M = [M;PM(ix).M];
     adj = [adj;PM(ix).adj];
     W   = [W;PM(ix).W];
     np   = [np;PM(ix).np(:)];
+    end
     for nix = 1:nbr   % loop over neighboring sections
         if  ~(numel(xPM{nix})==1 && isempty(xPM{nix}.M))
             if numel(xPM{nix})>=ix
@@ -332,7 +334,7 @@ for nbrix = 1:nbr
 end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%% Check consistency %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if any(sum(pm_mx)==0), disp('Warning: defective pm connectivity matrix');end
+% if any(sum(pm_mx)==0), disp('Warning: defective pm connectivity matrix');end
 % L.pm.adj are unique: report error if not
 % --------- sosi: invesitgate how duplicates could arise in the first place
 [bb, indx] = unique(L.pm.adj,'rows');

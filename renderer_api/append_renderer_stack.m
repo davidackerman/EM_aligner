@@ -1,4 +1,4 @@
-function resp = append_renderer_stack(rc,rc_base,fn, MET_format)
+function resp = append_renderer_stack(rc, rc_base, fn, MET_format, disableValidation)
 % ingests tiles provided in the fn MET format file into an existing Renderer collection
 % in the LOADING state. If the collection is in the 'COMPLETE'  state an
 % error will occur.
@@ -14,6 +14,7 @@ function resp = append_renderer_stack(rc,rc_base,fn, MET_format)
 % Author: Khaled Khairy. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 verbose = 1;
+if nargin<5, disableValidation = 0;end
 check_input(rc, rc_base, fn, MET_format);
 
 % str1_source     = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST";', rc.baseURL, rc_base.owner, rc_base.project);
@@ -29,8 +30,14 @@ check_input(rc, rc_base, fn, MET_format);
 % str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh ${MEMORY} ${JAVA_CLASS} ${PROJECT_PARAMS} --targetProject ${TARGET_PROJECT} --stack ${SOURCE_STACK} --targetStack ${TARGET_STACK} --targetOwner ${TARGET_OWNER} --metFile ${MET_FILE} --formatVersion ${MET_FORMAT};');
 % strcmd          = [str9 str10 str1_source target_project str2 str3 str4 str11 str6 str12];
 
-str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh 1G org.janelia.render.client.ImportMETClient --baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST --targetProject %s --stack %s --targetStack %s --targetOwner %s --metFile %s --formatVersion %s};', ...
-                   rc.baseURL, rc_base.owner, rc_base.project, rc.project, rc_base.stack, rc.stack, rc.owner, fn, MET_format);
+if disableValidation==0
+    str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh 1G org.janelia.render.client.ImportMETClient --baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST --targetProject %s --stack %s --targetStack %s --targetOwner %s --metFile %s --formatVersion %s;', ...
+        rc.baseURL, rc_base.owner, rc_base.project, rc.project, rc_base.stack, rc.stack, rc.owner, fn, MET_format);
+else
+    if verbose, disp('Disabling validation on the Renderer side');end
+    str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh 1G org.janelia.render.client.ImportMETClient --baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST --targetProject %s --stack %s --targetStack %s --targetOwner %s --metFile %s --formatVersion %s --disableValidation;', ...
+        rc.baseURL, rc_base.owner, rc_base.project, rc.project, rc_base.stack, rc.stack, rc.owner, fn, MET_format);
+end
 strcmd          = [str12];
 
 

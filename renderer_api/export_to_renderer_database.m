@@ -1,7 +1,8 @@
-function export_to_renderer_database(rc_target, rc, dir_scratch, Tout, tIds, z_val, v)
+function export_to_renderer_database(rc_target, rc, dir_scratch, ...
+    Tout, tIds, z_val, v, disableValidation)
 fn = [dir_scratch '/X_A_' num2str(randi(100000000)) '.txt'];
 %disp('Exporting temporary MET file');
-
+if nargin<8, disableValidation = 0;end
 fid = fopen(fn,'w');
 for tix = 1:size(Tout,1)
     fprintf(fid,'%d\t%s\t%d\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%d\t%d\t%d\t%s\t%d\n',...
@@ -23,7 +24,7 @@ end
 fclose(fid);
 %% append tiles to existing collection
 %disp(' ..... appending data to collection....');
-resp_append = append_renderer_stack(rc_target, rc, fn, v);
+resp_append = append_renderer_stack(rc_target, rc, fn, v, disableValidation);
 %% cleanup
 %disp(' .... cleanup..');
 try

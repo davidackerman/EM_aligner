@@ -1,4 +1,4 @@
-function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec] =...
+function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
     gen_section_based_tile_deformation_statistics(rc, zstart, zend, pm, opts)
 %% generate statistics about residuals and tile area and pixel dimensions
 
@@ -25,6 +25,8 @@ sctn_map  = cell(numel(zu1),1);
 tile_areas = cell(numel(zu1),1);
 tile_perimeters = cell(numel(zu1),1);
 tidsvec = cell(numel(zu1),1);
+Resx = cell(numel(zu1),1);
+Resy = cell(numel(zu1),1);
 % to generate histogram counts we need to define bin edges
 edges = [0.4:.02:1.7];
 counts = zeros(numel(zu1), numel(edges));   
@@ -90,8 +92,13 @@ parfor zix = 1:numel(zu1)
     
     
     % First: load point-matches and sectionn into "L" (point-matches are in L's pm struct field)
+    if (zix + opts.nbrs)>numel(zu1)
+        pmz2 = zu1(end);
+    else
+        pmz2 = zu1(zix + opts.nbrs);
+    end
     [L]  = ...
-        load_point_matches(zu1(zix), zu1(zix), rc, pm, opts.nbrs, ...
+        load_point_matches(zu1(zix), pmz2, rc, pm, opts.nbrs, ...
         opts.min_points, 0);
     
     % initialize variable tpr to hold point-match residuals
@@ -103,6 +110,8 @@ parfor zix = 1:numel(zu1)
     
     % generate point-match residuals from L.pm by transforming them and taking the sum of squared
     % residuals
+    res_vecx = [];
+    res_vecy = [];
     for pmix = 1:size(L.pm.M,1)
         a1 = L.pm.adj(pmix,1);
         a2 = L.pm.adj(pmix,2);
@@ -111,9 +120,18 @@ parfor zix = 1:numel(zu1)
         m1 = [m1 ones(size(m1,1),1)]*L.tiles(a1).tform.T;  % apply transformation
         m2 = [m2 ones(size(m2,1),1)]*L.tiles(a2).tform.T;  % apply transformation
         res = sum((m1-m2).^2);    %%%% sum of squared residuals
+        %disp(res);
+        %res_vec(pmix,:) = sqrt((m1(1)-m2(1))*(m1(1)-m2(1)) + (m1(1)-m2(1))*(m1(2)-m2(2)));
+        
+        %%%% sosi
+        res_vecx(pmix,:) = abs(m1(1)-m2(1));
+        res_vecy(pmix,:) = abs(m1(2)-m2(2));
+        
         tpr{a1} = [tpr{a1};res(1:2)];
         tpr{a2} = [tpr{a2};res(1:2)];
     end
+    Resx{zix} = res_vecx;
+    Resy{zix} = res_vecy;
     % store errors/confidence in cell array "confidence"
     for tix = 1:numel(L.tiles)
         if isempty(tpr{tix})
@@ -125,11 +143,17 @@ parfor zix = 1:numel(zu1)
     
 end
 toc
+Resx = cell2mat(Resx);
+Resy = cell2mat(Resy);
 %%
 
 figure;plot(zu1, mA, '-o', 'LineWidth',2);title(['Area median per layer: ' num2str(zstart) ' to ' num2str(zend)]);
 %figure;plot(zu1, mS, 'LineWidth',2);title('Perimeter median perlayer');
 
+title(rc.stack);
+
+figure; hist(real(Resx)); title([rc.stack ' -- Resx']);
+figure; hist(real(Resy)); title([rc.stack ' -- Resy']);
 
 
 

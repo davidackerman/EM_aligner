@@ -18,6 +18,8 @@ if ~isfield(opts, 'translate_to_origin'), opts.translate_to_origin = 1;end
 if ~isfield(opts, 'conn_comp'), opts.conn_comp = 0;end
 if ~isfield(opts, 'small_region_lambda'), opts.small_region_lambda = 10^(0);end
 if ~isfield(opts, 'small_region'), opts.small_region = 10;end
+if ~isfield(opts, 'complete'), opts.complete = 1;end
+if ~isfield(opts, 'disableValidation'), opts.disableValidation = 0;end
 
 if opts.stvec_flag==0 && opts.conn_comp==0, 
     disp('Setting opts.conn_comp to 1, to enable rigid model calculation');
@@ -73,7 +75,8 @@ for ix = 1:size(chnks,1)
     zlast(ix)  = z(chnks(ix,2));%str2double(sectionId{chnks(ix,2)});%str2double(sectionId{chnks(ix,2)});
     disp([zfirst(ix) zlast(ix)]);
     [L_vec, tIds, PM, pm_mx{ix}, sectionId_load, z_load]  = ...
-                   load_point_matches(zfirst(ix), zlast(ix), rc, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
+                   load_point_matches(zfirst(ix), zlast(ix),...
+                   rc, pm, opts.nbrs, opts.min_points, opts.xs_weight); % disp(pm_mx{ix});
     %L_vec = translate_to_origin(L_vec);
     if opts.use_peg
         L_vec = add_translation_peggs(L_vec, opts.peg_npoints, opts.peg_weight);
@@ -108,9 +111,14 @@ for ix = 1:size(chnks,1)
     else
         error('No connected components to solve for');
     end
+    try
     if ~isempty(rctarget)
-        ingest_section_into_renderer_database(mL,rctarget, rc, pwd, opts.translate_to_origin);
+        ingest_section_into_renderer_database(mL,rctarget, rc, pwd,...
+            opts.translate_to_origin, opts.complete, opts.disableValidation);
         if verbose, disp('Ingesting:'); disp(rctarget);end
+    end
+    catch err_ingest
+        kk_disp_err(err_ingest);
     end
 end
 

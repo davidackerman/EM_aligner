@@ -54,7 +54,8 @@ for cix = 1:numel(L_vec)
         
         if stvec_flag==0
             %%% perform rigid transformation
-            [ll2r, errR, mL, is, it, Res]  = get_rigid_approximation(L_vec(cix), opts.solver);
+            [ll2r, errR, mL, is, it, Res]  = get_rigid_approximation...
+                (L_vec(cix),opts.solver, opts);
             
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,5 +1,5 @@
 function [obj, errAb, mL, invalid_similarity, invalid_translation, R,...
-    A, b, B, d, W, K, Lm, xout, L2, U2, tB, td,...
+    Ar, br, Br, d, W, K, Lm, xout, L2, U2, tB, td,...
     At, bt, Bt, dt, Wt, Kt, Lmt, xoutt, L2t, U2t, tBt, tdt] = ...
     get_rigid_approximation(obj, solver, opts)
 %% calculates an approximation to a rigid transformation using the combination
@@ -44,7 +44,13 @@ lsq_options.apply_scaling   = 1;
 if nargin>1
    lsq_options.solver       = solver;
 end
-
+translation_only = 0;
+if nargin<3
+    translation_only = 0;
+end
+if nargin>2 && isfield(opts, 'translation_only')
+    translation_only = opts.translation_only;
+end
 % if ~isempty(gcp('nocreate'))
 %     lsq_options.distributed = 1;
 % else
@@ -57,16 +63,18 @@ if isdeployed
     disp(lsq_options);
     disp('-----------------------------------');
 end
-[mL,err, R, A, b, B, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
+if ~translation_only
+[mL,err, R, Ar, br, Br, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
     alignTEM_solver(obj, [], lsq_options);
 
 
 %% %% adjust scale--- mL
-scale_fac = ones(numel(mL.tiles),1);
+scale_fac = 1.0;
 if nargin>2
     if isfield(opts, 'apply_scaling'), lsq_options.apply_scaling = opts.apply_scaling;end
     if isfield(opts, 'scale_fac'), scale_fac = opts.scale_fac;end
 end
+scale_fac = ones(numel(mL.tiles),1) * scale_fac;
 if lsq_options.apply_scaling
 mtiles = mL.tiles;
 disp('Applying re-scaling');
@@ -105,7 +113,7 @@ for pix = 1:size(M,1) % loop over point matches
 end
 mL.pm.M = M;
 mL.pm.adj = adj;
-%% fit for translation only
+%% fit for translation 
 % Important: To do translation only we need to specify "no constraints", we
 % need to specify the tiles to fix and the polynomial degree should be zero
 %%%%%%%%%%%%%%%%%%%%%
@@ -131,6 +139,55 @@ end
 
 [mL2,errAb,R, At, bt, Bt, dt, Wt, Kt, Lmt, xoutt, L2t, U2t, tBt, tdt, invalid_translation] =...
     alignTEM_solver(mL, [], lsq_options);
+
+
+else
+     disp('---------------------------- TRANSLATION ONLY ----------------------');
+   err = [];
+   R = [];
+   Ar = [];
+   br= [];
+   Br= [];
+   d = [];
+   W = [];
+   K = [];
+   Lm = [];
+   xout = [];
+   L2 = [];
+   U2 = [];
+   tB=[];
+   td= [];
+   invalid_similarity = [];
+    %% fit for translation only
+% Important: To do translation only we need to specify "no constraints", we
+% need to specify the tiles to fix and the polynomial degree should be zero
+%%%%%%%%%%%%%%%%%%%%%
+mL = update_adjacency(obj);
+mL = update_XY(mL);
+lsq_options.solver          = 'backslash';%
+lsq_options.constraint      = 'none';%'explicit';%'similarity';% 'trivial';%
+lsq_options.pdegree         = 0;  %
+lsq_options.constraint_only = 0;
+lsq_options.lidfix          = 1;
+lsq_options.tfix            = numel(obj.tiles);
+
+lsq_options.constrain_edges = 0;
+lsq_options.edge_lambda         = 0;
+lsq_options.lambda              = 0;
+
+if isdeployed
+    disp('Translation-only solution using configuration:')
+    disp(lsq_options);
+    disp('-----------------------------------');
+end
+
+
+[mL2,errAb,R, At, bt, Bt, dt, Wt, Kt, Lmt, xoutt, L2t, U2t, tBt, tdt, invalid_translation] =...
+    alignTEM_solver(mL, [], lsq_options);
+    
+    
+    
+end
 
 %%% sosi --- 
 %%%

@@ -141,7 +141,7 @@ else
         disp('Flag (default is -999 for backslash)');disp(flag);
         disp('Done!');
     end
-    if ~strcmp(options.solver,'backslash')...
+    if ~strcmp(options.solver,'backslash') ...
             && ~strcmp(options.solver,'backslash--noreg')
         c1 = [0:numel(resvec)-1];
         c2 = resvec/norm(Lm);

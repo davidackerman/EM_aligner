@@ -4,6 +4,11 @@ function [M, adj, W, np, n1] = load_montage_pm(pm, sID, map_id,...
 % returns a 1x2 cell of xy coordinate matches M, adjacency (adj) linking the
 % two tiles/canvases by index based on their original position determined from map_id
 count = 1;
+M = [];
+adj = [];
+W = [];
+np = [];
+n1 = [];
 options = weboptions;
 options.Timeout = 60;
 n1 = 0;

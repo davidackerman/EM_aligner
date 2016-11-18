@@ -68,14 +68,18 @@ if strcmp(sl.solver_options.solver, 'jdr')
     dir_scratch = '/groups/flyTEM/home/khairyk/solver_paper_work/scratch';
     delete([dir_scratch '/*.json']);
     disp('calling jdr solver');
-    debugjdr = 1;
+    debugjdr = 0;
     lambda = sl.solver_options.lambda;
     degree = sl.solver_options.degree;
     
-    if sl.solve_options.jdr_options.stvec==0
+    if sl.solver_options.jdr_options.stvec==0  % calculate rigid_approximation followed by affine
+                                               % works!
+        disp('JDR: calculating both rigid and affine');
         L_jdr = L;
         stvec = 0;
-    else
+        fn_canvas_input = '';
+    else                                      % calcualte affine based on pre-calcualted rigid
+                                              % DOES NOT WORK YET --- DEBUG PLEASE
         L_jdr = Lr;
         stvec = 1;   % use fn_canvas_input as input for regularization
         %%% generate json rotation approximation tile-spec file
@@ -83,21 +87,15 @@ if strcmp(sl.solver_options.solver, 'jdr')
             [dir_scratch '/tmp_rap_canvases.json'];
         disp('Generating json rotation approximation tile-spec file ...');
         tic;jstr_rap = export_json(L_jdr, fn_canvas_input);toc;
+        if debugjdr
+            type(fn_canvas_input);
+        end
     end
     
     fnpmjson = ...
         [dir_scratch '/tmp_pm.json'];
     disp('Generating json point-match file ...');
     tic;jstr = PM_json(L_jdr, fnpmjson);toc;
-    
-    disp('Done');
-    
-    
-    if debugjdr
-        type(fn_canvas_input);
-    end
-    
-    disp('Done');
     
     %%% sosi
     %fnpmjson ='/groups/flyTEM/home/khairyk/downloads/JDR/example01_pm.json';
@@ -125,7 +123,7 @@ if strcmp(sl.solver_options.solver, 'jdr')
     
     
     
-    
+    %%% diagnostic and profiling information
     C = strsplit(resp_str, 'TIME_');
     c = strsplit(C{2}, ' ');
     time_gen_A = str2double(c{2});
@@ -134,8 +132,22 @@ if strcmp(sl.solver_options.solver, 'jdr')
     disp('finished cpp solution');
     kk_clock;
     %disp(resp_str);
-    mLjdr = update_transformation_from_json(Lr,fn_canvas_json_output);
-    
+    if sl.solver_options.jdr_options.stvec==0
+        mLjdr = update_transformation_from_json(L,fn_canvas_json_output);
+        
+        %%% remove peggs and last tile
+        last_tile = numel(mLjdr.tiles);
+        del_ix = find(mLjdr.pm.adj(:,2)==last_tile);
+        mLjdr.pm.M(del_ix,:)  = [];
+        mLjdr.pm.adj(del_ix,:) = [];
+        mLjdr.pm.W(del_ix) = [];
+        mLjdr.pm.np(del_ix) = [];
+        mLjdr.tiles(end) = [];
+        mLjdr = update_adjacency(mLjdr);
+    else
+        
+        mLjdr = update_transformation_from_json(Lr,fn_canvas_json_output);
+    end
     %%% to continue diagnostics we need to set to matrix_only
     sld = sl;
     sld.solver_options.matrix_only = 1;

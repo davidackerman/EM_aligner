@@ -64,9 +64,9 @@ if nargin==1
         str2 = [str2 ']],'];
         
         if ~isfield(MP{mix}, 'w')
-        w = ones(size(MP{mix}.q,1),1);
+         w = ones(size(MP{mix}.q,1),1);
         else
-            w = MP{mix}.w;
+            w = MP{mix}.w{1};
         end
         str3 = sprintf('\n\t\t\t"w": [');
         for qix = 1:size(MP{mix}.q,1)
@@ -126,7 +126,12 @@ elseif nargin>1
         end
         str2 = [str2 ']],'];
         
-        w = ones(size(MP{mix}.q,1),1);
+        if ~isfield(MP{mix}, 'w')
+            w = ones(size(MP{mix}.q,1),1);
+        else
+            w = MP{mix}.w{1};
+        end
+        
         str3 = sprintf('\n\t\t\t"w": [');
         for qix = 1:size(MP{mix}.q,1)
             %             str3 = [str3 num2str(w(qix))];

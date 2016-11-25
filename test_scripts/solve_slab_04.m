@@ -21,13 +21,13 @@ rcsource.verbose        = 0;
 
 % configure align collection
 
-rctarget_align.stack          = ['v2_align_mx_solver_1_15600_v4'];
+rctarget_align.stack          = ['v2_align_mx_solver_1_15600_v5'];
 rctarget_align.owner          ='flyTEM';
 rctarget_align.project        = '20161004_S3_cell11_Inlens_data';
 rctarget_align.service_host   = '10.40.3.162:8080';
 rctarget_align.baseURL        = ['http://' rctarget_align.service_host '/render-ws/v1'];
 rctarget_align.verbose        = 0;
-rctarget_align.versionNotes   = 'Fine alignment using matrix solver with Matlab backslash operator and translation-only regularization';
+rctarget_align.versionNotes   = 'Fine alignment using matrix solver with Matlab backslash operator and translation-only regularization lambda 1e5';
 
 % configure point-match collection
 pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
@@ -39,7 +39,7 @@ pm.match_collection = '20161004_S3_cell11_Inlens_data';
 opts.min_tiles = 2; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
-opts.lambda = 1e4;
+opts.lambda = 1e5;
 opts.edge_lambda = opts.lambda;
 opts.solver = 'backslash';
 opts.min_points = 5;
@@ -71,3 +71,4 @@ kk_clock;
 
 
 % delete_renderer_stack(rctarget_align);
+

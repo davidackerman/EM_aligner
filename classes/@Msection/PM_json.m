@@ -24,6 +24,8 @@ if ~isempty(L2.pm)
         MP{counter}.qz = L2.tiles(indx2).sectionId;
         MP{counter}.qId= tid2;
         MP{counter}.q  = M{mix,2};
+        
+        MP{counter}.w  = L2.pm.W(mix);
         counter = counter + 1;
     end
     if nargin == 1, js = pairs2json(MP); end% generate json blob to be ingested into point-match database

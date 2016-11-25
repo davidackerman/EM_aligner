@@ -137,7 +137,7 @@ if isempty(options.B)
         end
     elseif strcmp(options.constraint, 'similarity')
         if options.verbose,disp('---------------- Similarity constrained system ------------------');end
-        [d] = alignTEM_similarity_constrained_system_gen(L, options,tdim, ncoeff);
+        [d, Ds, Ks, Lms, fs] = alignTEM_similarity_constrained_system_gen(L, options,tdim, ncoeff);
         lidfix = 0;
         tfix = 0;
         options.constraint_only = 1;
@@ -165,6 +165,10 @@ if isempty(options.B)
 end
 if options.constraint_only 
     x2 = d;
+    A = Ds;
+    K = Ks;
+    Lm = Lms;
+    d = fs;
    
 else
     %% %%%%%%%%%%%%%%%%%%%%%%%%%% CONSTRUCT A AND b %%%%%%%%%%%%%%%%%%%%%%%%%

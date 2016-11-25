@@ -5,7 +5,7 @@
 		"outlier_lambda": 1000,
 		"solver": "backslash",
 		"min_points": 3,
-        "max_points": 20,
+        "max_points": 4,
 		"stvec_flag": 0,
 		"conn_comp": 1,
 		"distributed": 0,
@@ -15,8 +15,8 @@
 		"small_region": 5,
 		"calc_confidence": 1,
 		"translation_fac": 1,
-        "use_peg": 0,
-        "peg_weight": 0.0001,
+        "use_peg": 1,
+        "peg_weight": 0.000001,
         "peg_npoints": 5,
         "jdr_options":{
             "stvec": 0
@@ -45,7 +45,7 @@
         "initialize": 1,
         "complete": 1
 	},
-	"z_value": 1,
+	"z_value": 10,
     "filter_point_matches": 0,
     "temp_dir":"/scratch/khairyk",
 	"verbose": 1

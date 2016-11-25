@@ -13,6 +13,8 @@ if sl.verbose
     disp('Using source collection:');disp(sl.source_collection);
     disp('Using target collection:');disp(sl.target_collection);
 end
+solv_cmd = '/groups/flyTEM/home/khairyk/downloads/jdr/joint-image-registration-solver/jdr_solver';
+
 %%
 tic;if sl.verbose, disp('-- Loading point matches');end
 [L, tIds, PM, pm_mx, sectionId_load, z_load]  = ...
@@ -38,13 +40,19 @@ if sl.solver_options.use_peg
 end
 [L, ntiles] = reduce_to_connected_components(L, sl.solver_options.min_tiles);
 L = L(1);
-%% solve rigid approximation
+delete([dir_scratch '/*.json']);
+%% solve rigid approximation and export expected rigid
 disp('Generating json rotation approximation tile-spec file ...');
 sl.solver_options.distributed = 0;
 [Lr, errR, mL, is, it, Res, ...
     A, b, B, d, W, K, Lm, xout, L2, U2, tB, td,...
     At, bt, Bt, dt, Wt, Kt, Lmt, xoutt, L2t, U2t, tBt, tdt]  =...
     get_rigid_approximation(L, 'backslash', sl.solver_options);
+
+dir_scratch = '/groups/flyTEM/home/khairyk/solver_paper_work/scratch';
+fn_canvas_rap_backslash = [dir_scratch '/tmp_affine_backslash_canvases.json'];
+jstr_rap_backslash = export_json(Lr, fn_canvas_rap_backslash);
+disp(jstr_rap_backslash);
 
 if sl.solver_options.use_peg
     %%% remove peggs and last tile
@@ -57,8 +65,16 @@ if sl.solver_options.use_peg
     Lr.tiles(end) = [];
     Lr = update_adjacency(Lr);
 end
+dir_scratch = '/groups/flyTEM/home/khairyk/solver_paper_work/scratch';
+fn_canvas_r_backslash = [dir_scratch '/tmp_affine_backslash_canvases.json'];
+jstr_r_backslash = export_json(Lr, fn_canvas_r_backslash);
+disp('Rigid approximation --- using backslash');
+disp(jstr_r_backslash);
+
+
 %% sosi ---- solve affine and export expected transofmormations to compare
 
+%mL = Lr;xout = xoutt;A = At;
 [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
     invalid, time_Axb, time_gen_A] = ...
    solve_affine_explicit_region(Lr, sl.solver_options);
@@ -66,23 +82,61 @@ end
 dir_scratch = '/groups/flyTEM/home/khairyk/solver_paper_work/scratch';
 fn_canvas_affine_backslash = [dir_scratch '/tmp_affine_backslash_canvases.json'];
 jstr_aff_backslash = export_json(mL, fn_canvas_affine_backslash);
+
+disp('Affine approximation --- using backslash');
 disp(jstr_aff_backslash);
+
 [mLc, tpr, resout_backslash] = tile_based_point_pair_errors(mL, A, xout);
 mean_error_affine_backslash = mean(resout_backslash);
-if sl.solver_options.use_peg
-    %%% remove peggs and last tile
-    last_tile = numel(mL.tiles);
-    del_ix = find(mL.pm.adj(:,2)==last_tile);
-    mL.pm.M(del_ix,:)  = [];
-    mL.pm.adj(del_ix,:) = [];
-    mL.pm.W(del_ix) = [];
-    mL.pm.np(del_ix) = [];
-    mL.tiles(end) = [];
-    mL = update_adjacency(mL);
+
+
+%% sosi ---- solve jdr affine using rigid approximation as input
+fnpmjson = [dir_scratch '/tmp_pm.json'];
+tic;jstr = PM_json(Lr, fnpmjson);toc;
+
+lambda = sl.solver_options.lambda;
+degree = 1;
+stvec = 1;
+
+fn_canvas_json_output = [dir_scratch '/canvases_out.json'];
+
+fn_canvas_input = [dir_scratch '/tmp_rap_canvases.json'];
+jstr_rap = export_json(Lr, fn_canvas_input);
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%
+% % use fn_canvas_input to update Lr and solve with backslash
+% Lri= update_transformation_from_json(Lr,fn_canvas_input);
+% [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
+%     invalid, time_Axb, time_gen_A] = ...
+%    solve_affine_explicit_region(Lri, sl.solver_options);
+% 
+% dir_scratch = '/groups/flyTEM/home/khairyk/solver_paper_work/scratch';
+% fn_canvas_affine_backslash = [dir_scratch '/tmp_affine_backslash_canvases.json'];
+% jstr_aff_backslash = export_json(mL, fn_canvas_affine_backslash);
+% 
+% disp('Affine approximation --- using backslash');
+% disp(jstr_aff_backslash);
+% %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+cmd = [solv_cmd ' ' fnpmjson ' ' fn_canvas_json_output ' ' num2str(degree) ...
+    ' ' num2str(lambda) ' ' num2str(stvec) ' ' fn_canvas_input];
+tic;[a,resp_str] = system(cmd);toc
+disp(resp_str);
+
+mLjdr = update_transformation_from_json(Lr,fn_canvas_json_output);
+disp(fn_canvas_json_output);
+type(fn_canvas_json_output);
+
+disp([{mLjdr.tiles(:).renderer_id}' {mL.tiles(:).renderer_id}' {Lr.tiles(:).renderer_id}' ]);
+
+for ix = 1:numel(Lr.tiles)
+disp([mLjdr.tiles(ix).tform.T([1 2 4 5]) mL.tiles(ix).tform.T([1 2 4 5]) ]);
 end
+
+
 %%
 dir_scratch = '/groups/flyTEM/home/khairyk/solver_paper_work/scratch';
-delete([dir_scratch '/*.json']);
+
 disp('calling jdr solver');
 debugjdr = 1;
 lambda = sl.solver_options.lambda;
@@ -98,7 +152,7 @@ solv_cmd = '/groups/flyTEM/home/khairyk/downloads/jdr/joint-image-registration-s
 
 if sl.solver_options.jdr_options.stvec==0  % calculate rigid_approximation followed by affine
     % works!
-    disp('JDR: calculating both rigid and affine');
+    disp('JDR: calculating rigid');
     L_jdr = L;
     stvec = 0;
     fn_canvas_input = '';
@@ -117,18 +171,39 @@ end
 time_Axb = -999;
 time_gen_A = -999;
 %%
-disp('-------------------- Invoking cpp solver --------------');
+disp('-------------------- Invoking cpp solver to solve rigid approximation --------------');
+degree = 0;
+stvec = 0;
 cmd = [solv_cmd ' ' fnpmjson ' ' fn_canvas_json_output ' ' num2str(degree) ...
     ' ' num2str(lambda) ' ' num2str(stvec) ' ' fn_canvas_input];
 tic;[a,resp_str] = system(cmd);toc
-
+mLjdr = update_transformation_from_json(L,fn_canvas_json_output);
+%%% remove peggs and last tile
+    last_tile = numel(mLjdr.tiles);
+    del_ix = find(mLjdr.pm.adj(:,2)==last_tile);
+    mLjdr.pm.M(del_ix,:)  = [];
+    mLjdr.pm.adj(del_ix,:) = [];
+    mLjdr.pm.W(del_ix) = [];
+    mLjdr.pm.np(del_ix) = [];
+    mLjdr.tiles(end) = [];
+    mLjdr = update_adjacency(mLjdr);
+%%
+disp('-------------------- Invoking cpp solver to solve affine --------------');
+degree = 1;
+stvec = 1;
+fn_canvas_input = fn_canvas_json_output;
+cmd = [solv_cmd ' ' fnpmjson ' ' fn_canvas_json_output ' ' num2str(degree) ...
+    ' ' num2str(lambda) ' ' num2str(stvec) ' ' fn_canvas_input];
+tic;[a,resp_str] = system(cmd);toc
 %%% diagnostic and profiling information
 
 if debugjdr
     disp(resp_str);
     disp(fn_canvas_json_output);
     type(fn_canvas_json_output);
-    disp('expected:');
+    disp('Expected rigid:');
+    disp(jstr_r_backslash);
+    disp('Expected affine:');
     disp(jstr_aff_backslash);
 end
 

@@ -10,31 +10,33 @@
 % - from github check out the latest EM_aligner code
 %   found at https://github.com/khaledkhairy/EM_aligner
 %   into a directory of your choosing (called $EM_aligner below).
-% 
-% - preferably from within NoMachine (consult Janelia wiki for setup) 
-%   or another X client, request a full "broadwell" node (i.e. 32 CPUs) 
+%
+% - preferably from within NoMachine (consult Janelia wiki for setup)
+%   or another X client, request a full "broadwell" node (i.e. 32 CPUs)
 %   using the following command from a cluster login node:
 %  >qlogin -pe batch 32 -A flyTEM -l matlab=true -l broadwell=true
 % - start matlab (consult Janelia wiki for setup instructions) by running:
 %  >matlab&
-% - From within Matlab start a local matlab cluster by clicking on the 
-%   lower left corner and selecting "start parallel pool". Wait till 
+% - From within Matlab start a local matlab cluster by clicking on the
+%   lower left corner and selecting "start parallel pool". Wait till
 %   the prallel pool starts.
 % - Use the IDE to navigate to a ../$EM_aligner, right-click on EM_aligner
 %   and choose "add to path" directory and subdirectories
 % - Make a copy of the template_identity_regularized_affine_solution.m file
 %   found under $EM_aligner/template_production_scripts.
 % - Modify/Edit as needed and run
+% please send any errors (with complete error message output) to
+% khairyk@janelia.hhmi.org
 %
 % Author: Khaled Khairy
-%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Step 0: configuration -- MUST BE SET UP BY USER EVERY TIME
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clc;clear all;kk_clock;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Step 0: configuration -- MUST BE CAREFULLY SET UP BY USER EVERY TIME
+nfirst = 1;         % first section z-value (must be larger than zero)
+nlast  = 15600;     % last section number (z-value)
 
-nfirst = 1;
-nlast  = 15600;
-
-% configure rough collection
+% configure source (input) collection
 rc.stack          = 'v2_acquire';
 rc.owner          ='flyTEM';
 rc.project        = '20161004_S3_cell11_Inlens_data';
@@ -57,10 +59,14 @@ pm.owner            = 'hessh';
 pm.match_collection = '20161004_S3_cell11_Inlens_data';
 
 
-opts.dir_scratch = '/scratch/khairyk';     % setup scratch directory 
+opts.dir_scratch = '/scratch/khairyk';     % setup scratch directory
 opts.lambda = 10^(6);   % empirically determined for each sample or set of experiments
 opts.nbrs = 10;         % how many neighboring sections to consider in point-matchs when building solution system
+generate_diagnostics = 1;
+transfac = 1e-5;        % set low to decrease dependency on stage coordinates
 
+
+%%%%%%%%%%%%%%%%%%% YOU SHOULD NOT NEED TO EDIT BELOW THIS LINE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% DO NOT MODIFY unless you know what you're doing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -129,7 +135,7 @@ tdim = tdim * 2;        % because we have two dimensions, u and v.
 ncoeff = ntiles*tdim;
 disp('....done!');diary off;diary on;
 %% Step 2: Load point-matches
-disp('** STEP 2:  Load point-matches ....'); 
+disp('** STEP 2:  Load point-matches ....');
 disp(' ... predict sequence of PM requests to match sequence required for matrix A');
 sID_all = {};
 fac = [];
@@ -171,12 +177,12 @@ parfor ix = 1:size(sID_all,1)   % loop over sections
         [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
             map_id, opts.min_points, opts.max_points, wopts, fac(ix));
     end
-
-        M(ix) = {m};
-        adj(ix) = {a};
-        W(ix) = {w};
-        np(ix) = {n};
-
+    
+    M(ix) = {m};
+    adj(ix) = {a};
+    W(ix) = {w};
+    np(ix) = {n};
+    
 end
 clear sID_all
 disp('... concatenating point matches ...');
@@ -248,7 +254,7 @@ end
 % delete/cleanup
 for ix = 1:split
     try
-    delete(fn_split{ix});
+        delete(fn_split{ix});
     catch err_delete
         kk_disp_err(err_delete);
     end
@@ -270,11 +276,10 @@ w = cell2mat(w(:));
 Wmx = spdiags(w,0,size(A,1),size(A,1));
 clear w;
 d = reshape(T', ncoeff,1);clear T;
-transfac = 1e-5;
 tB = ones(ncoeff,1);
 tB(3:3:end) = transfac;
 tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
-K  = A'*Wmx*A + opts.lambda*(tB')*tB; 
+K  = A'*Wmx*A + opts.lambda*(tB')*tB;
 Lm  = A'*Wmx*b + opts.lambda*(tB')*d;
 [x2, R] = solve_AxB(K,Lm, opts, d);
 err = norm(A*x2-b);
@@ -283,28 +288,7 @@ Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
 %clear x2;clear Wmx A b tB
 disp(Tout);
 disp('.... done!');
-%% sosi try out a couple of other lambdas
-rcout.stack          = ['v2_align_mx_solver_1_15600_v7'];
-rcout.owner          ='flyTEM';
-rcout.project        = '20161004_S3_cell11_Inlens_data';
-rcout.service_host   = '10.40.3.162:8080';
-rcout.baseURL        = ['http://' rcout.service_host '/render-ws/v1'];
-rcout.verbose        = 0;
-rcout.versionNotes   = 'lambda = 1e6 -- translation factor = 1e-5 -- matrix solver with Matlab backslash operator -- fast script';
-
-opts.lambda = 1e6;
-transfac = 1e-5;
-tB = ones(ncoeff,1);
-tB(3:3:end) = transfac;
-tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
-K  = A'*Wmx*A + opts.lambda*(tB')*tB; 
-Lm  = A'*Wmx*b + opts.lambda*(tB')*d;
-[x2, R] = solve_AxB(K,Lm, opts, d);
-Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
-
-
-% % Step 5: ingest into Renderer database
-
+%% Step 5: ingest into Renderer database
 disp('** STEP 5:   Ingesting data .....');
 disp(' ..... translate to +ve space');
 delta = 0;
@@ -333,180 +317,22 @@ disp(' .... ingesting ....');
 parfor ix = 1:numel(cs)-1
     vec = cs(ix):cs(ix+1)-1;
     export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
-                                tIds(vec), z_val(vec), v, opts.disableValidation);
+        tIds(vec), z_val(vec), v, opts.disableValidation);
 end
 
 
-% % complete stack
+%% complete stack
 disp(' .... completing stack...');
 resp = set_renderer_stack_state_complete(rcout);
 disp('.... done!');
 diary off;
 
-% %
-[mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx, Resy] =...
-    gen_section_based_tile_deformation_statistics(rcout, nfirst, nlast, pm, opts);
-% %%  delete_renderer_stack(rcout);
-% [mAo, mSo, sctn_mapo, confidenceo, tile_areaso, tile_perimeterso, tidsveco, Resxo, Resyo] =...
-%      gen_section_based_tile_deformation_statistics(rc, nfirst, nlast, pm, opts);
- 
- %% sosi try out a couple of other lambdas
-rcout.stack          = ['v2_align_mx_solver_1_15600_v8'];
-rcout.owner          ='flyTEM';
-rcout.project        = '20161004_S3_cell11_Inlens_data';
-rcout.service_host   = '10.40.3.162:8080';
-rcout.baseURL        = ['http://' rcout.service_host '/render-ws/v1'];
-rcout.verbose        = 0;
-rcout.versionNotes   = 'lambda = 1e4 --transfac = 1e-5 -- matrix solver with Matlab backslash operator -- fast script';
-
-opts.lambda = 1e4;
-transfac = 1e-5;
-tB = ones(ncoeff,1);
-tB(3:3:end) = transfac;
-tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
-
-K  = A'*Wmx*A + opts.lambda*(tB')*tB; 
-Lm  = A'*Wmx*b + opts.lambda*(tB')*d;
-[x2, R] = solve_AxB(K,Lm, opts, d);
-Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
-
-
-% % Step 5: ingest into Renderer database
-
-disp('** STEP 5:   Ingesting data .....');
-disp(' ..... translate to +ve space');
-delta = 0;
-dx = min(Tout(:,3)) + delta;%mL.box(1);
-dy = min(Tout(:,6)) + delta;%mL.box(2);
-for ix = 1:size(Tout,1)
-    Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+%%  generate diagnostic graphs
+if generate_diagnostics
+    disp('Generating diagnostic graphs. This can take a few minutes .....')
+    [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx, Resy] =...
+        gen_section_based_tile_deformation_statistics(rcout, nfirst, nlast, pm, opts);
+    disp('Done!')
 end
-
-disp('... export to MET (in preparation to be ingested into the Renderer database)...');
-
-v = 'v1';
-if stack_exists(rcout)
-    disp('.... removing existing collection');
-    resp = create_renderer_stack(rcout);
-end
-if ~stack_exists(rcout)
-    disp('.... target collection not found, creating new collection in state: ''Loading''');
-    resp = create_renderer_stack(rcout);
-end
-
-chks = round(ntiles/32);
-cs = 1:chks:ntiles;
-cs(end) = ntiles;
-disp(' .... ingesting ....');
-parfor ix = 1:numel(cs)-1
-    vec = cs(ix):cs(ix+1)-1;
-    export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
-                                tIds(vec), z_val(vec), v, opts.disableValidation);
-end
-
-
-% % complete stack
-disp(' .... completing stack...');
-resp = set_renderer_stack_state_complete(rcout);
-disp('.... done!');
-diary off;
-
-% %
-[mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx, Resy] =...
-    gen_section_based_tile_deformation_statistics(rcout, nfirst, nlast, pm, opts);
-% %%  delete_renderer_stack(rcout);
-% [mAo, mSo, sctn_mapo, confidenceo, tile_areaso, tile_perimeterso, tidsveco, Resxo, Resyo] =...
-%      gen_section_based_tile_deformation_statistics(rc, nfirst, nlast, pm, opts);
- %% sosi try out a couple of other lambdas
-rcout.stack          = ['v2_align_mx_solver_1_15600_v9'];
-rcout.owner          ='flyTEM';
-rcout.project        = '20161004_S3_cell11_Inlens_data';
-rcout.service_host   = '10.40.3.162:8080';
-rcout.baseURL        = ['http://' rcout.service_host '/render-ws/v1'];
-rcout.verbose        = 0;
-rcout.versionNotes   = 'lambda = 1e5 -- transfac = 1e-7 -- matrix solver with Matlab backslash operator -- fast script';
-
-opts.lambda = 1e5;
-transfac = 1e-7;
-tB = ones(ncoeff,1);
-tB(3:3:end) = transfac;
-tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
-
-K  = A'*Wmx*A + opts.lambda*(tB')*tB; 
-Lm  = A'*Wmx*b + opts.lambda*(tB')*d;
-[x2, R] = solve_AxB(K,Lm, opts, d);
-Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
-
-
-% % Step 5: ingest into Renderer database
-
-disp('** STEP 5:   Ingesting data .....');
-disp(' ..... translate to +ve space');
-delta = 0;
-dx = min(Tout(:,3)) + delta;%mL.box(1);
-dy = min(Tout(:,6)) + delta;%mL.box(2);
-for ix = 1:size(Tout,1)
-    Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
-end
-
-disp('... export to MET (in preparation to be ingested into the Renderer database)...');
-
-v = 'v1';
-if stack_exists(rcout)
-    disp('.... removing existing collection');
-    resp = create_renderer_stack(rcout);
-end
-if ~stack_exists(rcout)
-    disp('.... target collection not found, creating new collection in state: ''Loading''');
-    resp = create_renderer_stack(rcout);
-end
-
-chks = round(ntiles/32);
-cs = 1:chks:ntiles;
-cs(end) = ntiles;
-disp(' .... ingesting ....');
-parfor ix = 1:numel(cs)-1
-    vec = cs(ix):cs(ix+1)-1;
-    export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
-                                tIds(vec), z_val(vec), v, opts.disableValidation);
-end
-
-
-% % complete stack
-disp(' .... completing stack...');
-resp = set_renderer_stack_state_complete(rcout);
-disp('.... done!');
-diary off;
-
-% %
-[mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx, Resy] =...
-    gen_section_based_tile_deformation_statistics(rcout, nfirst, nlast, pm, opts);
-% %%  delete_renderer_stack(rcout);
-% [mAo, mSo, sctn_mapo, confidenceo, tile_areaso, tile_perimeterso, tidsveco, Resxo, Resyo] =...
-%      gen_section_based_tile_deformation_statistics(rc, nfirst, nlast, pm, opts);
-%  
-%%
-% 
-% rcs.stack          = 'v3_align';
-% rcs.owner          ='flyTEM';
-% rcs.project        = '20161004_S3_cell11_Inlens_data';
-% rcs.service_host   = '10.40.3.162:8080';
-% rcs.baseURL        = ['http://' rc.service_host '/render-ws/v1'];
-% rcs.verbose        = 0;
-% [mAo, mSo, sctn_mapo, confidenceo, tile_areaso, tile_perimeterso, tidsveco, Resxo, Resyo] =...
-%     gen_section_based_tile_deformation_statistics(rcs, 1, 15600, pm);
-%%
-% rcs.stack          = 'v2_align_mx_solver_0_200';
-% rcs.owner          ='flyTEM';
-% rcs.project        = '20161004_S3_cell11_Inlens_data';
-% rcs.service_host   = '10.40.3.162:8080';
-% rcs.baseURL        = ['http://' rc.service_host '/render-ws/v1'];
-% rcs.verbose        = 0;
-% [mAo, mSo, sctn_mapo, confidenceo, tile_areaso, tile_perimeterso, tidsveco, Resxo, Resyo] =...
-%     gen_section_based_tile_deformation_statistics(rcs, 1, 4000, pm);
-
-
-
-
-
+% if deletion of stack is required uncomment %%  delete_renderer_stack(rcout);
 

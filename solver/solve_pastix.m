@@ -4,7 +4,7 @@ kk_clock;
 tic;
 if ~isfield(options, 'pastix'), 
     ncpus = 5;
-    parms_fn = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
+    parms_fn = '/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
 else
     ncpus = options.pastix.ncpus;
     parms_fn = options.pastix.parms_fn;
@@ -20,11 +20,11 @@ disp(['Matrix A (pastix) non-zeros : ' num2str(nnz(A))]);
 disp('Solving Ax=b system using pastix...');
 if options.pastix.split
     disp('Using split pastix');
-    dir_temp_mx = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
+    dir_temp_mx = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
     PASTIX_HOME = '/tier2/flyTEM/denisovg/pastix_split';
     PASTIX_DATA = [dir_temp_mx];
-    PASTIX_LOG  = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system/out.txt';
-    PASTIX_ERR  = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system/err.txt';
+    PASTIX_LOG  = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system/out.txt';
+    PASTIX_ERR  = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system/err.txt';
     lin_system_fn = 'linear_system_Ab.mat';
     full_path_lin_system_fn = [PASTIX_DATA '/' lin_system_fn];
     str_pastix_solver = PASTIX_HOME;
@@ -73,8 +73,8 @@ num_col = size(A, 2);
 %     cd ..
 %     cd(dir_curr);
 else
-    dir_temp_mx = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
-    %PASTIX_HOME = '/nobackup/flyTEM/khairy/FAFB00v13/pastix_solver';
+    dir_temp_mx = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
+    %PASTIX_HOME = '/nrs/flyTEM/khairy/FAFB00v13/pastix_solver';
     PASTIX_HOME = '/tier2/flyTEM/denisovg/pastix';
     PASTIX_DATA = [dir_temp_mx];
     lin_system_fn = 'linear_system_Ab.mat';

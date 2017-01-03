@@ -368,16 +368,19 @@ if needs_correction==0
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % solve montage scape system
-    [mLR, errR, mLS] = get_rigid_approximation(L2, 'backslash', rigid_opts);  % generate rigid approximation to use as regularizer
-    mL3 = mLR;
+    [mL3, errR, mLS] = get_rigid_approximation(L2, 'backslash', rigid_opts);  % generate rigid approximation to use as regularizer
      solver_opts.lambda = 1e3;
      solver_opts.edge_lambda = 1e3;
-
- %   [mL3, errA] = solve_affine_explicit_region(mLR, solver_opts); % obtain an affine solution
+    if isfield(ms, 'rough_solve')
+	if strcmp(ms.rough_solve, 'affine')
+          disp('using affine model for rough alignment');
+          [mL3, errA] = solve_affine_explicit_region(mL3, solver_opts); % obtain an affine solution
+	end
+    else
+	disp('using rigid model only for rough alignment');
+   end
     
-%     pdegree = 2;
-%     [mL3, errA] ...
-%     = solve_polynomial_explicit_region(mLR, pdegree, solver_opts);
+
 
 %%% sosi--- make sure solver did something
 for tix = 1:numel(L2.tiles)

@@ -41,7 +41,7 @@ if nargin<2, run_now = 1;end
 if ~isfield(ms, 'number_of_spark_nodes'), ms.number_of_spark_nodes = num2str(2);end
 %% clean up any previous jobs
 dir_spark_work = [ms.base_output_dir '/' ms.project '/' ms.stack  '/' ms.run_dir];
-if run_now,
+if run_now
     kk_mkdir(dir_spark_work);
     %% construct and submit point-match calculation for montage scapes
     cmd_str = [ms.script ' ' ms.service_host ' ' ms.owner ' ' ms.project ' '...
@@ -100,7 +100,7 @@ for imix = str2double(ms.first):str2double(ms.last)
     counter = counter + 1;
 end
 if montage_scape_gen_error,
-    warning('Not all montage scapes were generated. Aborting');
+    warning('Not all montage scapes were generated.');
 end
 
 

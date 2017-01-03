@@ -5,6 +5,7 @@
 		"outlier_lambda": 1000,
 		"solver": "backslash",
 		"min_points": 2,
+        "max_points": 50,
 		"nbrs": 4,
 		"xs_weight": 0.05,
 		"stvec_flag": 0,

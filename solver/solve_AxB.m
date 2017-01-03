@@ -1,4 +1,4 @@
-function [x2, R, time_solve] = solve_AxB(K,Lm,options,d)
+function [x2, R, time_solve, flag] = solve_AxB(K,Lm,options,d)
 % SOLVE
 % Performs the actual solve of the final linear system.
 % Input: K is a sparse square matrix assembled elsewhere nxn.

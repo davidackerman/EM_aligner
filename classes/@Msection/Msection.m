@@ -91,16 +91,16 @@ classdef Msection
                     % % rc.server='http://tem-services.int.janelia.org:8080/render-ws/v1';
                     rc = arg1;
                     z  = arg2; % is the z position of the section
-                    
+                    webopts = weboptions('TimeOut',30);
                     % % get a list of all tiles
                     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
                         rc.baseURL, rc.owner, rc.project, rc.stack, (z));
                     try
-                    j = webread(urlChar);
+                    j = webread(urlChar, webopts);
                     catch err_reading
                         kk_disp_err(err_reading);
                         disp('Trying again...');
-                        j = webread(urlChar);
+                        j = webread(urlChar, webopts);
                         disp('Success!');
                     end
                     % generate the tiles

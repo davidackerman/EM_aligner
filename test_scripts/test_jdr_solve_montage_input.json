@@ -45,7 +45,7 @@
         "initialize": 1,
         "complete": 1
 	},
-	"z_value": 10,
+	"z_value": 1,
     "filter_point_matches": 0,
     "temp_dir":"/scratch/khairyk",
 	"verbose": 1

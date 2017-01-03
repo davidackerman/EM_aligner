@@ -112,7 +112,7 @@ for ix = 1:numel(obj.tiles)
                 A(ix) = polyarea(P(:,1), P(:,2));
                 cm(ix,:) = sum([P(:,1)/4 P(:,2)/4],1);
                 if strcmp(style,'transparent')
-                    patch( P(:,1), P(:,2),c,  'EdgeColor', 'w', 'FaceColor', 'none');
+                    patch( P(:,1), P(:,2),c,  'EdgeColor', 'none', 'FaceColor', 'none');
                 elseif strcmp(style, 'filled')
                     if etix(ix)
                         patch( P(:,1), P(:,2),c,  'EdgeColor', 'k', 'FaceColor', 'g', 'FaceAlpha', 0.4);
@@ -164,7 +164,7 @@ for ix = 1:numel(obj.tiles)
                 end
                 
                 if strcmp(style,'transparent')
-                    patch( P(:,1), P(:,2),c,  'EdgeColor', 'w', 'FaceColor', 'none');
+                    patch( P(:,1), P(:,2),c,  'EdgeColor', 'none', 'FaceColor', 'none');
                 elseif strcmp(style, 'filled')
                     patch( P(:,1), P(:,2),c,  'EdgeColor', 'k', 'FaceColor', 'b');
                 else

@@ -282,7 +282,7 @@ for ix = 1:numel(zu)   % loop over sections
     if verbose > 0
         disp(zu(ix));
     end
-    if ~isempty(PM.M)
+    if ~isempty(PM(ix).M)
     M = [M;PM(ix).M];
     adj = [adj;PM(ix).adj];
     W   = [W;PM(ix).W];

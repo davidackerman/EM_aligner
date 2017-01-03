@@ -97,7 +97,25 @@ classdef tile
                     T(3,2) = Tdouble(6);
                     obj.tform.T = T;
                 else
-                    warning('only affine implemented so far for reading from Renderer');
+                    %warning('only affine implemented so far for reading from Renderer: truncating to affine');
+                    if numel(Tdouble)==12 % then we have 2nd order polynpomial
+                    T(3,3) = 1;
+                    T(1,1) = Tdouble(2);
+                    T(1,2) = Tdouble(8);
+                    T(2,1) = Tdouble(3);
+                    T(2,2) = Tdouble(9);
+                    T(3,1) = Tdouble(1);
+                    T(3,2) = Tdouble(7);
+                    elseif numel(Tdouble)==20
+                                           T(3,3) = 1;
+                    T(1,1) = Tdouble(2);
+                    T(1,2) = Tdouble(12);
+                    T(2,1) = Tdouble(3);
+                    T(2,2) = Tdouble(13);
+                    T(3,1) = Tdouble(1);
+                    T(3,2) = Tdouble(11);
+                    end
+                    obj.tform.T = T;
                 end
             end
             if nargin>1

@@ -24,6 +24,8 @@ obj = update_tile_info(obj);		% we don't need adjacency information in this file
 % assuming all tiles have the same transformation model
 if strcmp(class(obj.tiles(1).tform), 'affine2d')
     affine = 1;
+else 
+    affine = 0;
 end
 
 

@@ -69,12 +69,13 @@ if ~translation_only
 
 
 %% %% adjust scale--- mL
-scale_fac = 1.0;
+scale_faco = 1.0;
 if nargin>2
     if isfield(opts, 'apply_scaling'), lsq_options.apply_scaling = opts.apply_scaling;end
-    if isfield(opts, 'scale_fac'), scale_fac = opts.scale_fac;end
+    if isfield(opts, 'scale_fac'), scale_faco = opts.scale_fac;end
 end
-scale_fac = ones(numel(mL.tiles),1) * scale_fac;
+scale_fac = ones(numel(mL.tiles),1);
+scale_fac = scale_fac * scale_faco(1);
 if lsq_options.apply_scaling
 mtiles = mL.tiles;
 disp('Applying re-scaling');

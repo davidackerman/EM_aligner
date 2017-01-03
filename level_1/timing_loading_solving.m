@@ -1,7 +1,7 @@
 
 %%
 function [ntiles_o, ntiles_aff, toc_load_z, time_pm_load, time_gen_A,...
-    time_Axb, mean_error_affine, sz_A, nnzA, nnzK, xout] ...
+    time_Axb, median_error_affine, sz_A, nnzA, nnzK, xout, tile_err] ...
     = timing_loading_solving(sl, z)
 nparms = (sl.solver_options.degree + 1) * (sl.solver_options.degree + 2); % twice number of coefficients for a particular polynomial
 
@@ -65,6 +65,9 @@ Lr = update_adjacency(Lr);
 
 %%%%% if calling external C++ solver (using rigid approximation as regularizer)
 if strcmp(sl.solver_options.solver, 'jdr')
+    % % call cpp solver program
+    % clc;
+    disp('-------------------- Invoking cpp solver --------------');
     dir_scratch = '/groups/flyTEM/home/khairyk/solver_paper_work/scratch';
     delete([dir_scratch '/*.json']);
     disp('calling jdr solver');
@@ -102,9 +105,7 @@ if strcmp(sl.solver_options.solver, 'jdr')
     
     time_Axb = -999;
     time_gen_A = -999;
-    % % call cpp solver program
-    % clc;
-    disp('-------------------- Invoking cpp solver --------------');
+
     kk_clock;
     fn_canvas_json_output = ...
         [dir_scratch '/canvases_out.json'];
@@ -113,7 +114,15 @@ if strcmp(sl.solver_options.solver, 'jdr')
     
     cmd = [solv_cmd ' ' fnpmjson ' ' fn_canvas_json_output ' ' num2str(degree) ...
         ' ' num2str(lambda) ' ' num2str(stvec) ' ' fn_canvas_input];
+    
+    delete('/groups/flyTEM/home/khairyk/solver_paper_work/A.mm');
+    delete('/groups/flyTEM/home/khairyk/solver_paper_work/xout.mm');  
+    
+    
+    %%% issue system command directly (runs locally)
     tic;[a,resp_str] = system(cmd);toc
+    
+    %%% qsub
     
     if debugjdr
         disp(resp_str);
@@ -127,8 +136,10 @@ if strcmp(sl.solver_options.solver, 'jdr')
     C = strsplit(resp_str, 'TIME_');
     c = strsplit(C{2}, ' ');
     time_gen_A = str2double(c{2});
+    disp('Generate A:');disp(c{2});
     c = strsplit(C{3}, ' ');
     time_Axb = str2double(c{2});
+    disp('Solve:');disp(c{2});
     disp('finished cpp solution');
     kk_clock;
     %disp(resp_str);
@@ -148,12 +159,23 @@ if strcmp(sl.solver_options.solver, 'jdr')
         
         mLjdr = update_transformation_from_json(Lr,fn_canvas_json_output);
     end
-    %%% to continue diagnostics we need to set to matrix_only
-    sld = sl;
-    sld.solver_options.matrix_only = 1;
-    [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
-        invalid] = solve_affine_explicit_region(mLjdr,...
-        sld.solver_options);
+    %%% to continue diagnostics we need to get A and xout for jdr solution
+%     sld = sl;
+%     sld.solver_options.matrix_only = 1;
+%     [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
+%         invalid] = solve_affine_explicit_region(mLjdr,...
+%         sld.solver_options);
+
+
+[A,rows,cols,entries,rep,field,symm] = mmread('/groups/flyTEM/home/khairyk/solver_paper_work/A.mm');
+% [B,rows,cols,entries,rep,field,symm] = mmread('/groups/flyTEM/home/khairyk/solver_paper_work/B.mm');
+% [W,rows,cols,entries,rep,field,symm] = mmread('/groups/flyTEM/home/khairyk/solver_paper_work/W.mm');
+% [d,rows,cols,entries,rep,field,symm] = mmread('/groups/flyTEM/home/khairyk/solver_paper_work/d.mm');
+% [K,rows,cols,entries,rep,field,symm] = mmread('/groups/flyTEM/home/khairyk/solver_paper_work/K.mm');
+% [Lm,rows,cols,entries,rep,field,symm] = mmread('/groups/flyTEM/home/khairyk/solver_paper_work/Lm.mm');
+[xout,rows,cols,entries,rep,field,symm] = mmread('/groups/flyTEM/home/khairyk/solver_paper_work/xout.mm');
+
+mL = mLjdr;
     
 else
     
@@ -164,7 +186,7 @@ else
     %% solve affine
     [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
         invalid, time_Axb, time_gen_A] = solve_affine_explicit_region(Lr, sl.solver_options);
-    
+%     
 end
 nnzK = nnz(K);
 nnzA = nnz(A);
@@ -174,11 +196,11 @@ disp('time solving A x = b');
 disp(time_Axb);
 %% point-match erros and point-match tile-based errors
 % a_res = A * xout;
-[mLc, tpr, resout] = tile_based_point_pair_errors(mL, A, xout);
-mean_error_affine = mean(resout);
-ntiles_aff = size(K,1)/nparms; %numel(resout);%sum([mLc.tiles(:).state]);
+[mLc, tpr, resout, tile_err] = tile_based_point_pair_errors(mL, A, xout);
+median_error_affine = median(resout);
+ntiles_aff = numel(xout)/nparms; %numel(resout);%sum([mLc.tiles(:).state]);
 disp(ntiles_aff);
-disp(mean_error_affine);
+disp(median_error_affine);
 sz_A = size(A);
 % figure(1);hist(a_res);
 % figure(2); hist(resout);

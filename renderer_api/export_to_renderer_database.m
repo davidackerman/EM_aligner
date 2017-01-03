@@ -1,5 +1,6 @@
 function export_to_renderer_database(rc_target, rc, dir_scratch, ...
     Tout, tIds, z_val, v, disableValidation)
+%%% fast export for affines only
 fn = [dir_scratch '/X_A_' num2str(randi(100000000)) '.txt'];
 %disp('Exporting temporary MET file');
 if nargin<8, disableValidation = 0;end
@@ -24,6 +25,7 @@ end
 fclose(fid);
 %% append tiles to existing collection
 %disp(' ..... appending data to collection....');
+set_renderer_stack_state_loading(rc_target);
 resp_append = append_renderer_stack(rc_target, rc, fn, v, disableValidation);
 %% cleanup
 %disp(' .... cleanup..');

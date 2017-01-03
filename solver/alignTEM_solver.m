@@ -191,7 +191,7 @@ else
     end
     
     %% construct final matrices
-    if options.verbose,
+    if options.verbose
         disp('Solve constrained system');
         disp(['Using lambda: ' num2str(lambda)]);
         disp(['Constructing K and Lm for the method of normal equations']);

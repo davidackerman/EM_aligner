@@ -1,5 +1,5 @@
 function [append_resp] = ingest_section_into_LOADING_collection(...
-    mL,rc_target, rc_base, dir_work, translate_to_positive_space)
+    mL,rc_target, rc_base, dir_work, translate_to_positive_space, disableValidation)
 % This is a high-level function that:
 %* Ingests the data into an existing collection,
 %* creates one if the collection doesn't already exist
@@ -11,6 +11,7 @@ function [append_resp] = ingest_section_into_LOADING_collection(...
 %
 % Author: Khaled Khairy. Janelia Research Campus.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin<6, disableValidation = 0;end
 if nargin<5, translate_to_positive_space = 1;end
 
 if ~stack_exists(rc_base), error('base collection not found');end
@@ -42,7 +43,7 @@ else
 end
 
 %% append tiles to existing collection
-append_resp = append_renderer_stack(rc_target, rc_base, fn, v);
+append_resp = append_renderer_stack(rc_target, rc_base, fn, v, disableValidation);
 
 %% cleanup
 try

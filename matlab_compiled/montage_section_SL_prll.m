@@ -63,7 +63,7 @@ if sl.verbose
     disp('section data imported --- registration initiated');
     disp(['Found ' num2str(numel(L.tiles)) ' tiles']);
 end
-if sl.verbose,
+if sl.verbose
 tic;
 end
 

@@ -36,14 +36,14 @@ if nargin==1
         str1 = sprintf('\t\t\t"p": [[');
         for pxix = 1:size(MP{mix}.p,1)
             %             str1 = [str1 num2str(MP{mix}.p(pxix,1))];
-            str1 = [str1 sprintf('%.6f', MP{mix}.p(pxix,1))];
+            str1 = [str1 sprintf('%.16f', MP{mix}.p(pxix,1))];
             if pxix<size(MP{mix}.p,1), str1 = [str1 ','];end
         end
         str1 = [str1 '],['];
         
         for pix = 1:size(MP{mix}.p,1)
             %             str1 = [str1 num2str(MP{mix}.p(pix,2))];
-            str1 = [str1 sprintf('%.6f', MP{mix}.p(pix,2))];
+            str1 = [str1 sprintf('%.16f', MP{mix}.p(pix,2))];
             if pix<size(MP{mix}.p,1), str1 = [str1 ','];end
         end
         str1 = [str1 ']],'];
@@ -51,14 +51,14 @@ if nargin==1
         str2 = sprintf('\n\t\t\t"q": [[');
         for qix = 1:size(MP{mix}.q,1)
             %             str2 = [str2 num2str(MP{mix}.q(qix,1))];
-            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,1))];
+            str2 = [str2 sprintf('%.16f', MP{mix}.q(qix,1))];
             if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
         end
         str2 = [str2 '],['];
         
         for qix = 1:size(MP{mix}.q,1)
             %             str2 = [str2 num2str(MP{mix}.q(qix,2))];
-            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,2))];
+            str2 = [str2 sprintf('%.16f', MP{mix}.q(qix,2))];
             if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
         end
         str2 = [str2 ']],'];
@@ -71,7 +71,7 @@ if nargin==1
         str3 = sprintf('\n\t\t\t"w": [');
         for qix = 1:size(MP{mix}.q,1)
             %             str3 = [str3 num2str(w(qix))];
-            str3 = [str3 sprintf('%.6f', w(qix))];
+            str3 = [str3 sprintf('%.16f', w(qix))];
             if qix<size(MP{mix}.q,1), str3 = [str3 ','];end
         end
         str3 = [str3 ']'];
@@ -99,14 +99,14 @@ elseif nargin>1
         str1 = sprintf('\t\t\t"p": [[');
         for pxix = 1:size(MP{mix}.p,1)
             %             str1 = [str1 num2str(MP{mix}.p(pxix,1))];
-            str1 = [str1 sprintf('%.6f', MP{mix}.p(pxix,1))];
+            str1 = [str1 sprintf('%.16f', MP{mix}.p(pxix,1))];
             if pxix<size(MP{mix}.p,1), str1 = [str1 ','];end
         end
         str1 = [str1 '],['];
         
         for pix = 1:size(MP{mix}.p,1)
             %             str1 = [str1 num2str(MP{mix}.p(pix,2))];
-            str1 = [str1 sprintf('%.6f', MP{mix}.p(pix,2))];
+            str1 = [str1 sprintf('%.16f', MP{mix}.p(pix,2))];
             if pix<size(MP{mix}.p,1), str1 = [str1 ','];end
         end
         str1 = [str1 ']],'];
@@ -114,14 +114,14 @@ elseif nargin>1
         str2 = sprintf('\n\t\t\t"q": [[');
         for qix = 1:size(MP{mix}.q,1)
             %             str2 = [str2 num2str(MP{mix}.q(qix,1))];
-            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,1))];
+            str2 = [str2 sprintf('%.16f', MP{mix}.q(qix,1))];
             if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
         end
         str2 = [str2 '],['];
         
         for qix = 1:size(MP{mix}.q,1)
             %             str2 = [str2 num2str(MP{mix}.q(qix,2))];
-            str2 = [str2 sprintf('%.6f', MP{mix}.q(qix,2))];
+            str2 = [str2 sprintf('%.16f', MP{mix}.q(qix,2))];
             if qix<size(MP{mix}.q,1), str2 = [str2 ','];end
         end
         str2 = [str2 ']],'];
@@ -135,7 +135,7 @@ elseif nargin>1
         str3 = sprintf('\n\t\t\t"w": [');
         for qix = 1:size(MP{mix}.q,1)
             %             str3 = [str3 num2str(w(qix))];
-            str3 = [str3 sprintf('%.6f', w(qix))];
+            str3 = [str3 sprintf('%.16f', w(qix))];
             if qix<size(MP{mix}.q,1), str3 = [str3 ','];end
         end
         str3 = [str3 ']'];

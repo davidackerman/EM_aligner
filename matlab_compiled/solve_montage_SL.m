@@ -12,6 +12,7 @@ if sl.verbose,
     disp('Using solver options:');disp(sl.solver_options);
     disp('Using source collection:');disp(sl.source_collection);
     disp('Using target collection:');disp(sl.target_collection);
+    disp('Using point-match collection:');disp(sl.source_point_match_collection);
 end
 
 
@@ -22,7 +23,7 @@ if sl.solver_options.use_peg
     
     tic;if sl.verbose, disp('-- Loading point matches');end
     [L, tIds, PM, pm_mx, sectionId_load, z_load]  = ...
-        load_point_matches(sl.z_value,sl.z_value, sl.source_collection, ...
+        load_point_matches(sl.section_number,sl.section_number, sl.source_collection, ...
         sl.source_point_match_collection, 0, sl.solver_options.min_points, 0, sl.solver_options.max_points); % 
     toc
     if sl.filter_point_matches,
@@ -71,7 +72,7 @@ else
     tic;if sl.verbose, disp('Solving slab without pegs --- each connected component by itself');end
     [mL, pm_mx, err, R, ~, ntiles, PM, sectionId_load, z_load] = ...
         solve_slab(sl.source_collection, sl.source_point_match_collection, ...
-        sl.z_value, sl.z_value, [], sl.solver_options);
+        sl.section_number, sl.section_number, [], sl.solver_options);
     toc
     
 end
@@ -97,4 +98,4 @@ if sl.verbose
 end
 
 %% optional
-str = view_collection_dashboard(sl.target_collection); disp(str);
+%str = view_collection_dashboard(sl.target_collection); disp(str);

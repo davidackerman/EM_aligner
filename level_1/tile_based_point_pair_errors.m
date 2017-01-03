@@ -1,4 +1,4 @@
-function [mL, tpr, resout] = tile_based_point_pair_errors(mL, A, xout, j, minconf, maxconf)
+function [mL, tpr, resout, tile_err] = tile_based_point_pair_errors(mL, A, xout, j, minconf, maxconf)
 % generate point-pair residual information per tile
 res = A*xout;
 resx = zeros(size(res,1)/2,1);
@@ -31,14 +31,21 @@ for ix = 1:size(mL.pm.M,1)
 end
 
 % average the error
+delix = [];
 for ix = 1:numel(mL.tiles)
-    mL.tiles(ix).confidence = sum(tpr{ix},1)/size(tpr{ix},1);
-    if isempty(tpr{ix})
-        mL.tiles(ix).confidence = -50;
-    end
+        if isempty(tpr{ix})
+        mL.tiles(ix).confidence = [-50 -50];
+        tile_err(ix,:) = [-999 -999];%full(sum(tpr{ix},1)/size(tpr{ix},1));
+        delix = [delix;ix];
+        else
+        
+        tile_err(ix,:) = full(sum(tpr{ix},1)/size(tpr{ix},1));
+    mL.tiles(ix).confidence = full(sum(tpr{ix},1)/size(tpr{ix},1));
+        end
+
 end
 
-
+tile_err(delix,:) = [];
 
 
 %% split into z and display

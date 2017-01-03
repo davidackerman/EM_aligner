@@ -1,5 +1,7 @@
 function [mL,err,R, A, b, B, d, Wmx, K, Lm, xout, LL2, U2, tB, td, invalid, PM] = ...
     system_solve(nfirst, nlast, rc, pm, opts, rcout)
+% sosi: -----------> generalize to higher order polynomials
+% sosi: -----------> generalize to
 % example input:
 % clc;kk_clock;
 %

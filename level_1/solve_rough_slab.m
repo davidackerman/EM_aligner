@@ -3,7 +3,7 @@ function [L2, needs_correction, pmfn, zsetd, zrange, t,dir_spark_work, cmd_str, 
     ...
     solve_rough_slab(dir_store_rough_slab, rcsource, rctarget_montage, ...
     rctarget_rough,ms, nfirst, nlast, dir_rough_intermediate_store, ...
-    run_now, precalc_ids, precalc_matches, precalc_path)
+    run_now, precalc_ids, precalc_matches, precalc_path, solve_first, solve_last, solve_name)
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -68,7 +68,13 @@ target_solver_path = [dir_rough_intermediate_store '/solver_' num2str(nfirst) '_
 target_ids = [target_solver_path '/ids.txt'];
 target_matches = [target_solver_path '/matches.txt'];
 target_layer_images = [target_solver_path];
-
+    disp('Target layer images stored at:');
+    disp(target_layer_images);
+    disp('Matches stored at:');
+    disp(target_matches);
+    disp('Ids stored at:');
+    disp(target_ids);
+    
 if run_now==0
     precalc_ids = target_ids;
     precalc_matches = target_matches;
@@ -109,6 +115,12 @@ if run_now==1
     movefile(source_layer_images, target_layer_images);
     movefile(pmfn, target_matches);
     movefile(fn_ids, target_ids);
+    disp('Target layer images stored at:');
+    disp(target_layer_images);
+    disp('Matches stored at:');
+    disp(target_matches);
+    disp('Ids stored at:');
+    disp(target_ids);
 end
 
 if run_now==-1
@@ -133,7 +145,7 @@ if  ms.center_box<1.0
     
     %configure
     bfac = ms.center_box;   % confine to scaled down box around center
-    nbrs = 3;     % how far out to search for partners
+    nbrs = 2;     % how far out to search for partners
     thresh = 3;   % minimum # of point-pairs
     pmscale = 1.0;
     %%%%%%%%%%%%%%%
@@ -316,12 +328,15 @@ if needs_correction==0
     disp('Solving');
     % solve
     rigid_opts.apply_scaling = 1;
-    if rigid_opts.apply_scaling
+    rigid_opts.FAFB = 0;   % 0 means it is not FAFB dataset
+    rc = rcsource;
+    [zu, sID, sectionId, z, ns] = get_section_ids(rc, min(zu), max(zu));
+    scale_fac = ones(numel(zu),1);
+    
+    if rigid_opts.FAFB
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%%%%%% specify scale factor based on autoloader vs. no autoloader
-        rc = rcsource;
-        [zu, sID, sectionId, z, ns] = get_section_ids(rc, min(zu), max(zu));
-        scale_fac = ones(numel(zu),1);
+        
         fac = 1/0.935;
         wo = weboptions('Timeout', 60);
         for zix = 1:numel(zu)        %% loop over sections and identify scaling of first tile
@@ -335,21 +350,45 @@ if needs_correction==0
             %             disp(sl(trix));
             %         end
         end
-        rigid_opts.scale_fac = scale_fac;
+        
     end
+    rigid_opts.scale_fac = scale_fac;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    if nargin>=13
+        %%% reduce size for testing
+        disp('reducing section size ---------------------------------------');
+        num_sections_test = solve_last-solve_first + 1;
+        [zu, sID, sectionId, z, ns] = get_section_ids(rc, solve_first, solve_last);
+        scale_fac = ones(numel(zu),1);
+        
+        L2 = reduce_to_tile_subset(L2, find(zu==solve_first):find(zu==solve_last));
+        L_montage = Msection;
+        rctarget_rough.stack = solve_name;
+    end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % solve montage scape system
     [mLR, errR, mLS] = get_rigid_approximation(L2, 'backslash', rigid_opts);  % generate rigid approximation to use as regularizer
-%    mL3 = mLR;
+    mL3 = mLR;
      solver_opts.lambda = 1e3;
      solver_opts.edge_lambda = 1e3;
 
-    [mL3, errA] = solve_affine_explicit_region(mLR, solver_opts); % obtain an affine solution
+ %   [mL3, errA] = solve_affine_explicit_region(mLR, solver_opts); % obtain an affine solution
     
 %     pdegree = 2;
 %     [mL3, errA] ...
 %     = solve_polynomial_explicit_region(mLR, pdegree, solver_opts);
+
+%%% sosi--- make sure solver did something
+for tix = 1:numel(L2.tiles)
+disp([tix zu(tix) L2.tiles(tix).tform.T([1 2 4 5])  mL3.tiles(tix).tform.T([1 2 4 5])]);
+end
+
+% for tix = 1:numel(L2.tiles)
+% disp([tix zu(tix) L2.tiles(tix).tform.T([1 2 4 5])]);
+% end
+
+
 
     %%%%%%%%%%%%%%%%%%%%%%%%%
     mL3s = split_z(mL3);
@@ -361,23 +400,30 @@ if needs_correction==0
     % load montages
     disp('-- Loading montages (typical time for large FAFB sections and 32 workers --> 150 seconds)');
     tic
-    parfor zix = 1:numel(zu),
+    parfor zix = 1:numel(zu)
+        disp(zix);
         L_montage(zix) = Msection(rctarget_montage, zu(zix));
     end
     toc
+    
+    
     %%%% apply rough alignment solution to montages
     disp('-- Retrieve bounding box for each section (typical time for large FAFB sections and 32 workers --> 415 seconds');
     tic
-    parfor lix = 1:numel(L_montage),
+    %%% this is really slow .... speed up --- sosi
+    for lix = 1:numel(L_montage)
+        disp(lix);
         L_montage(lix) = get_bounding_box(L_montage(lix));
     end
-    
     mL3.update_tile_info_switch = -1;
     mL3 = get_bounding_box(mL3);
     Wbox = [mL3.box(1) mL3.box(3) mL3.box(2)-mL3.box(1) mL3.box(4)-mL3.box(3)];disp(Wbox);
     wb1 = Wbox(1);
     wb2 = Wbox(2);
     toc
+    
+    
+    %%%%%%%%%%%%%%
     disp('-- Perform transformation for all tiles in each section  (typical time for large FAFB sections and 32 workers --> 1000 seconds (7 minutes)');
     kk_clock;
     tic
@@ -385,23 +431,26 @@ if needs_correction==0
     smx = [fac 0 0; 0 fac 0; 0 0 1]; %scale matrix
     invsmx = [1/fac 0 0; 0 1/fac 0; 0 0 1];
     tmx2 = [1 0 0; 0 1 0; -wb1 -wb2 1]; % translation matrix for montage_scape stack
-    
     mL3T = cell(numel(L_montage),1);
     for lix = 1:numel(L_montage)
+        
+        %disp(lix)
         %%% sosi -- revise and generalize to use polynomials
         
         %%% limited to Affine
-        mL3T{lix} = mL3s(lix).tiles(1).tform.T;
+        mL3T{lix} = mL3s(lix).tiles(1).tform.T;  % only one tile per section (montage scapes)
     end
-    
-    for lix = 1:numel(L_montage)
+    disp('loop to update montage sections ......');
+    %%%% sosi ---- again... this takes too long, consider for instead of parfor
+    parfor lix = 1:numel(L_montage)
+        disp(lix);
         b1 = L_montage(lix).box;
         dx = b1(1);dy = b1(3);
         tmx1 = [1 0 0; 0 1 0; -dx -dy 1];  % translation matrix for section box
         
         tiles = L_montage(lix).tiles;
         T3 = mL3T{lix};
-        parfor tix = 1:numel(L_montage(lix).tiles)
+        for tix = 1:numel(L_montage(lix).tiles)
             newT = tiles(tix).tform.T * tmx1 * smx * T3 * tmx2 * (invsmx);
             tiles(tix).tform.T = newT;
         end
@@ -411,24 +460,93 @@ if needs_correction==0
         L_montage(lix).Y = y1;
     end
     opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
+    disp('Concatenating ....');
     L_montage = concatenate_tiles(L_montage);
     toc
-    kk_clock;
-    % save
-    try
-        fn = sprintf('%s/rough_aligned_slab_%d_%d.mat', dir_store_rough_slab, nfirst, nlast);
-        disp(['Saving rough aligned slab binary to ' fn ' ...']);
-        save(fn, 'L_montage', 'rctarget_rough', 'rcsource');
-        disp('Done!');
-    catch err_save
-        kk_disp_err(err_save);
-    end
-    %%% ingest into renderer database as rough collection
-    disp('-- Ingest into renderer database using overwrite. typical time: 15 minutes for large FAFB slab and 32 workers');
-    kk_clock;
-    tic
-    ingest_section_into_renderer_database_overwrite(L_montage,rctarget_rough, rcsource, pwd);
-    toc
-    kk_clock;
-    disp('Done!');
+    disp('done');
+% %     kk_clock;
+% %     %%% ingest into renderer database as rough collection
+% %     disp('-- Ingest into renderer database using overwrite. typical time: 15 minutes for large FAFB slab and 32 workers');
+% %     kk_clock;
+% %     tic
+% %     ingest_section_into_renderer_database_overwrite(L_montage,rctarget_rough, rcsource, pwd);
+% %     toc
+% %     kk_clock;
+% %     disp('Done!');    % save
+
+
+% %     try
+% %         fn = sprintf('%s/rough_aligned_slab_%d_%d.mat', dir_store_rough_slab, nfirst, nlast);
+% %         disp(['Saving rough aligned slab binary to ' fn ' ...']);
+% %         save(fn, 'L_montage', 'rctarget_rough', 'rcsource');
+% %         disp('Done!');
+% %     catch err_save
+% %         kk_disp_err(err_save);
+% %     end
+
 end
+%%%
+%% Step 5: ingest into Renderer database
+opts.disableValidation = 1;
+rcout = rctarget_rough;
+rc = rcsource;
+ntiles = numel(L_montage.tiles);
+Tout = zeros(ntiles,6);
+tiles = L_montage.tiles;
+for tix = 1:ntiles
+   Tout(tix,:) = tiles(tix).tform.T(1:6)';
+end
+tIds = cell(ntiles,1);
+for tix = 1:ntiles
+ tIds{tix} = L_montage.tiles(tix).renderer_id;
+end
+z_val = zeros(ntiles,1);
+for tix = 1:ntiles
+ z_val(tix)= L_montage.tiles(tix).z;
+end
+
+disp('** STEP 5:   Ingesting data .....');
+disp(' ..... translate to +ve space');
+delta = 0;
+dx = min(Tout(:,3)) + delta;%mL.box(1);
+dy = min(Tout(:,6)) + delta;%mL.box(2);
+for ix = 1:size(Tout,1)
+    Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+end
+
+disp('... export to MET (in preparation to be ingested into the Renderer database)...');
+
+v = 'v1';
+if stack_exists(rcout)
+    resp = create_renderer_stack(rcout);
+end
+if ~stack_exists(rcout)
+    disp('.... target collection not found, creating new collection in state: ''Loading''');
+    resp = create_renderer_stack(rcout);
+end
+
+chks = round(ntiles/128);
+cs = 1:chks:ntiles;
+cs(end) = ntiles;
+disp(' .... ingesting ....');
+parfor ix = 1:numel(cs)-1
+    disp(ix);
+    vec = cs(ix):cs(ix+1);
+    export_to_renderer_database(rcout, rc, pwd, Tout(vec,:),...
+        tIds(vec), z_val(vec), v, opts.disableValidation);
+end
+
+
+% % complete stack
+disp(' .... completing stack...');
+resp = set_renderer_stack_state_complete(rcout);
+disp('.... done!');
+diary off;
+
+    disp('Target layer images stored at:');
+    disp(target_layer_images);
+    disp('Matches stored at:');
+    disp(target_matches);
+    disp('Ids stored at:');
+    disp(target_ids);
+%%%%%%%

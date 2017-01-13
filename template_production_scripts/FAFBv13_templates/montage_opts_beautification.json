@@ -1,0 +1,41 @@
+{
+	"rs_acq_collection": {
+		"stack": "v12_acquire_merged",
+		"project": "FAFB00",
+		"verbose": "1"
+	},
+	"rs_montage_collection": {
+		"stack": "Revised_FAFB_montage",
+		"project": "FAFB_beautification",
+		"verbose": "1"
+	},
+	"pm_opts": {
+		"match_collection": "FAFB_pm_2"
+	},
+	"pm_filter_opts": {
+		"NumRandomSamplingsMethod": "Desired confidence",
+		"MaximumRandomSamples": "3000",
+		"DesiredConfidence": "99.8",
+		"PixelDistanceThreshold": "0.1"
+	},
+	"solver_opts": {
+		"min_tiles": "2",
+		"degree": "1",
+		"outlier_lambda": "1e1",
+		"lambda": "10^(-1)",
+		"solver": "backslash",
+		"min_points": "8",
+                "max_points": "100",
+		"nbrs": "0",
+		"xs_weight": "1/100",
+		"stvec_flag": "0",
+		"distributed": "0",
+		"conn_comp": "1",
+		"filter_pm": "0",
+		"use_peg": "1",
+		"peg_weight": "1e-4",
+		"peg_npoints": "5",
+		"distributed": "1"
+	},
+	"verbose": "true"
+}

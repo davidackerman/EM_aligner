@@ -140,7 +140,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% hack for Allen dataset: build pm struct using SURF
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isfield(ms, 'center_box'), ms.center_box = 1.0;end
+if ~isfield(ms, 'center_box'), ms.center_box = 1.0;end  % comment this out to use the center box
 if  ms.center_box<1.0
     
     %configure
@@ -328,7 +328,11 @@ if needs_correction==0
     disp('Solving');
     % solve
     rigid_opts.apply_scaling = 1;
-    rigid_opts.FAFB = 0;   % 0 means it is not FAFB dataset
+    if isfield(ms, 'FAFB')
+        rigid_opts.FAFB = ms.FAFB;   % 0 means it is not FAFB dataset
+    else 
+        rigid_opts.FAFB = 0;   % 0 means it is not FAFB dataset
+    end
     rc = rcsource;
     [zu, sID, sectionId, z, ns] = get_section_ids(rc, min(zu), max(zu));
     scale_fac = ones(numel(zu),1);

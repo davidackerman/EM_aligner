@@ -2,7 +2,7 @@ function [x2, R, time_total] = solve_pastix(A, b,options)
 %%% use pastix to solve this system
 kk_clock;
 tic;
-if ~isfield(options, 'pastix'), 
+if ~isfield(options, 'pastix')
     ncpus = 5;
     parms_fn = '/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
 else
@@ -21,7 +21,7 @@ disp('Solving Ax=b system using pastix...');
 if options.pastix.split
     disp('Using split pastix');
     dir_temp_mx = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
-    PASTIX_HOME = '/tier2/flyTEM/denisovg/pastix_split';
+    PASTIX_HOME = '/groups/flyTEM/flyTEM/from_tier2/denisovg/pastix_split';
     PASTIX_DATA = [dir_temp_mx];
     PASTIX_LOG  = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system/out.txt';
     PASTIX_ERR  = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system/err.txt';
@@ -75,7 +75,7 @@ num_col = size(A, 2);
 else
     dir_temp_mx = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
     %PASTIX_HOME = '/nrs/flyTEM/khairy/FAFB00v13/pastix_solver';
-    PASTIX_HOME = '/tier2/flyTEM/denisovg/pastix';
+    PASTIX_HOME = '/groups/flyTEM/flyTEM/from_tier2/flyTEM/denisovg/pastix';
     PASTIX_DATA = [dir_temp_mx];
     lin_system_fn = 'linear_system_Ab.mat';
     full_path_lin_system_fn = [PASTIX_DATA '/' lin_system_fn];

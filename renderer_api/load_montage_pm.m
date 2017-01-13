@@ -3,28 +3,22 @@ function [M, adj, W, np, n1] = load_montage_pm(pm, sID, map_id,...
 % load point-matches from pm for one single section sID
 % returns a 1x2 cell of xy coordinate matches M, adjacency (adj) linking the
 % two tiles/canvases by index based on their original position determined from map_id
+if nargin<6
+    wopts = weboptions;
+    wopts.Timeout = 60;
+end
 count = 1;
 M = [];
 adj = [];
 W = [];
 np = [];
 n1 = [];
-options = weboptions;
-options.Timeout = 60;
+% options = weboptions;
+% options.Timeout = 20;
 n1 = 0;
 for six = 1:numel(sID)  % loop over reacquires (if any)
     %disp([six count]);
-    urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
-        pm.server, pm.owner, pm.match_collection, sID{six});
-    %disp(['Montage: ' num2str(six) ' ' sID]);
-    try
-        jj = webread(urlChar, wopts);
-    catch err_fetch_pm
-        kk_disp_err(err_fetch_pm)
-        pause(1);
-        disp('trying again');
-        jj = webread(urlChar,options); % try again
-    end
+    jj = get_pms_montage(pm, sID{six}, wopts);
     n1 = n1 + numel(jj);
     for jix = 1:numel(jj)
         if size(jj(jix).matches.p',1)>=min_points
@@ -54,20 +48,10 @@ for six = 1:numel(sID)  % loop over reacquires (if any)
     
 end
 
-%%%% get point matches across those individual section ids
+%%%% crosslayer for reacquires: get point matches across those individual section ids
 for isix = 1:numel(sID)
     for jsix = isix+1:numel(sID)
-        urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-            pm.server, pm.owner, pm.match_collection, sID{isix}, sID{jsix});
-        disp([sID{isix} ' ---- ' sID{jsix}]);
-        j = webread(urlChar, options);
-        try
-            jj = webread(urlChar, options);
-        catch err_fetch_pm
-            kk_disp_err(err_fetch_pm)
-            pause(1);
-            jj = webread(urlChar,options); % try again
-        end
+        get_pms_cross_layer(pm, sID{isix}, sID{jsix}, wopts);
         n1 = n1 + numel(jj);
         for jix = 1:numel(jj)
             if size(jj(jix).matches.p',1)>=min_points

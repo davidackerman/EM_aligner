@@ -16,7 +16,7 @@
 		"NumRandomSamplingsMethod": "Desired confidence",
 		"MaximumRandomSamples": "3000",
 		"DesiredConfidence": "99.8",
-		"PixelDistanceThreshold": "0.009"
+		"PixelDistanceThreshold": "0.1"
 	},
 	"solver_opts": {
 		"min_tiles": "2",
@@ -24,7 +24,8 @@
 		"outlier_lambda": "1e1",
 		"lambda": "10^(-1)",
 		"solver": "backslash",
-		"min_points": "3",
+		"min_points": "8",
+                "max_points": "100",
 		"nbrs": "0",
 		"xs_weight": "1/100",
 		"stvec_flag": "0",

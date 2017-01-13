@@ -6,7 +6,7 @@ function montage_section_SL_prll(fn)
 % read json input
 sl = loadjson(fileread(fn));
 sl.solver_options.filter = sl.image_filter;
-if sl.verbose,
+if sl.verbose
     disp('Section montage process started');
     kk_clock();
     disp(['-------  Using input file: ' fn]);

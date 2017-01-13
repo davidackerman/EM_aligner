@@ -10,10 +10,12 @@ xnp = 0;
 count = 1;
 for six1 = 1:numel(sID1)                % loop over reacquires if present. Usually numel(sID1) is equal to 1
     for six2 = 1:numel(sID2)            % loop over reacquires if present. Usually numel(sID2) is equal to 1
-        urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-            pm.server, pm.owner, pm.match_collection, sID2{six2}, sID1{six1});
-        %disp(['Cross: ' num2str(six1) ' ' num2str(six2) ' ' sID2{six2} ' ' sID1{six1}]);
-        j = webread(urlChar, wopts);
+        
+        j = get_pms_cross_layer(pm, sID2{six2}, sID1{six1}, wopts);
+%         urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+%             pm.server, pm.owner, pm.match_collection, sID2{six2}, sID1{six1});
+%         %disp(['Cross: ' num2str(six1) ' ' num2str(six2) ' ' sID2{six2} ' ' sID1{six1}]);
+%         j = webread(urlChar, wopts);
         for jix = 1:numel(j)
             if size(j(jix).matches.p',1)>=min_points
                 % check that point-match is between tiles/canvases that exist in our working set

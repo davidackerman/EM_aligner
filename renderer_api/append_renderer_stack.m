@@ -1,4 +1,4 @@
-function resp = append_renderer_stack(rc, rc_base, fn, MET_format, disableValidation)
+function resp = append_renderer_stack(rc, rc_base, fn, MET_format, disableValidation, verbose)
 % ingests tiles provided in the fn MET format file into an existing Renderer collection
 % in the LOADING state. If the collection is in the 'COMPLETE'  state an
 % error will occur.
@@ -13,7 +13,9 @@ function resp = append_renderer_stack(rc, rc_base, fn, MET_format, disableValida
 %
 % Author: Khaled Khairy. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-verbose = 1;
+if nargin<6
+verbose = 0;
+end
 if nargin<5, disableValidation = 0;end
 check_input(rc, rc_base, fn, MET_format);
 
@@ -42,7 +44,7 @@ strcmd          = [str12];
 
 
 try
-    if verbose, 
+    if verbose 
         kk_clock();
         disp('Issuing system command to ingest:');
         disp(strcmd);

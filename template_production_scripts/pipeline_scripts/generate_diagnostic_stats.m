@@ -17,7 +17,7 @@ function [] = generate_diagnostic_stats(zstart, zend, todo, diag_dir, opts_fn)
     if nargin < 1, zstart = 1; end
     if nargin < 2, zend = 7062; end
     if nargin < 3, todo = 15; end
-    if nargin < 4, diag_dir = '/nobackup/flyTEM/khairy/FAFB00v13/map_diagrams'; end
+    if nargin < 4, diag_dir = '/nrs/flyTEM/khairy/FAFB00v13/map_diagrams'; end
 
     rs_source_opts = struct();
     pm_opts = struct();

@@ -1,5 +1,6 @@
 function resp = delete_renderer_section(rcd, z)
-% remove stack if it already exists
+% remove section if it already exists
+% z is the z-value of the section
 % rc is a struct with fields (baseURL, owner, project, stack)
 %
 % Author: Khaled Khairy
@@ -32,7 +33,7 @@ if verbose,
     disp(resp);
 end
 
-
+set_renderer_stack_state_complete(rcd);
 %%
 function check_input(rc)
 if ~isfield(rc, 'baseURL'), disp_usage; error('baseURL not provided');end

@@ -31,7 +31,7 @@ if ~isempty(tvalid)
 %         p = rand(peg_npoints, 2) + [x1(ix) y1(ix)];
         M{ix,1} = bocell{tvalid(ix)}(:,[1 2]);
         M{ix,2} = pt;
-        disp([M{ix,1} M{ix,2}]);
+        %disp([M{ix,1} M{ix,2}]);
         adj(ix,:) = [tvalid(ix) largetileix];
         np(ix) = n;
         W{ix} = ones(1,n) * fac;

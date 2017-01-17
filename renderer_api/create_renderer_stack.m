@@ -18,9 +18,13 @@ if ~isfield(rc, 'versionNotes'), rc.versionNotes = 'none';end
 %     str_versionNotes);
 % strcmd = [str1 str3 str8];
 
+% default the renderer binary to Janelia's setup
+if ~isfield(rc, 'renderbinPath')
+    rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
+end
 
-strcmd = sprintf('/groups/flyTEM/flyTEM/render/bin/manage-stack.sh --baseDataUrl %s --owner %s --project %s --action CREATE --stack %s --versionNotes "%s";',...
-    rc.baseURL, rc.owner, rc.project, rc.stack, rc.versionNotes);
+strcmd = sprintf('%s/manage-stack.sh --baseDataUrl %s --owner %s --project %s --action CREATE --stack %s --versionNotes "%s";',...
+    rc.renderbinPath, rc.baseURL, rc.owner, rc.project, rc.stack, rc.versionNotes);
 
 
 

@@ -1,4 +1,6 @@
 function [L, map_id, tIds] = load_all_tiles(rc, zu)
+% for collection rc, loads all tiles specified by vector zu of z-values
+% and returns and Msection object.
 options = weboptions;
 options.Timeout = 20;
 clear t;

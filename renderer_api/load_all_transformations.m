@@ -1,14 +1,20 @@
 function [T, map_id, tIds, section_id] = load_all_transformations(rc, zu, dir_scratch)
+% fastest way to load tile transformations from a renderer collection for 
+% z-values specified in vector zu.
+% Requires specification of a scratch directory.
 cd(dir_scratch);
 fn_layout = [dir_scratch '/layout_file_' num2str(randi(100000000)) '.txt'];
 % % Generate the layout file (the main input) using the Renderer service
 url_collection = sprintf('%s/owner/%s/project/%s/stack/%s', ...
     rc.baseURL, rc.owner, rc.project, rc.stack);
+
+%%% todo: get rid of curl command and use Matlab to do this.
 str = sprintf('curl -o %s %s/zRange/%.2f,%.2f/layoutFile', ...
     fn_layout, url_collection, zu(1), zu(end));
 [a,s] = system(str);
 disp(a);
 disp(s);
+
 % confirm generation of layout file
 if ~wait_for_file(fn_layout,30),
     disp(str);

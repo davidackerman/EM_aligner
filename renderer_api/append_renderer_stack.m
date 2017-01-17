@@ -32,13 +32,17 @@ check_input(rc, rc_base, fn, MET_format);
 % str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh ${MEMORY} ${JAVA_CLASS} ${PROJECT_PARAMS} --targetProject ${TARGET_PROJECT} --stack ${SOURCE_STACK} --targetStack ${TARGET_STACK} --targetOwner ${TARGET_OWNER} --metFile ${MET_FILE} --formatVersion ${MET_FORMAT};');
 % strcmd          = [str9 str10 str1_source target_project str2 str3 str4 str11 str6 str12];
 
+if ~isfield(rc, 'renderbinPath')
+    rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
+end
+
 if disableValidation==0
-    str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh 1G org.janelia.render.client.ImportMETClient --baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST --targetProject %s --stack %s --targetStack %s --targetOwner %s --metFile %s --formatVersion %s;', ...
-        rc.baseURL, rc_base.owner, rc_base.project, rc.project, rc_base.stack, rc.stack, rc.owner, fn, MET_format);
+    str12           = sprintf('%s/run_ws_client.sh 1G org.janelia.render.client.ImportMETClient --baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST --targetProject %s --stack %s --targetStack %s --targetOwner %s --metFile %s --formatVersion %s;', ...
+        rc.renderbinPath, rc.baseURL, rc_base.owner, rc_base.project, rc.project, rc_base.stack, rc.stack, rc.owner, fn, MET_format);
 else
     if verbose, disp('Disabling validation on the Renderer side');end
-    str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh 1G org.janelia.render.client.ImportMETClient --baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST --targetProject %s --stack %s --targetStack %s --targetOwner %s --metFile %s --formatVersion %s --disableValidation;', ...
-        rc.baseURL, rc_base.owner, rc_base.project, rc.project, rc_base.stack, rc.stack, rc.owner, fn, MET_format);
+    str12           = sprintf('%s/run_ws_client.sh 1G org.janelia.render.client.ImportMETClient --baseDataUrl %s --owner %s --project %s --changeMode REPLACE_LAST --targetProject %s --stack %s --targetStack %s --targetOwner %s --metFile %s --formatVersion %s --disableValidation;', ...
+        rc.renderbinPath, rc.baseURL, rc_base.owner, rc_base.project, rc.project, rc_base.stack, rc.stack, rc.owner, fn, MET_format);
 end
 strcmd          = [str12];
 

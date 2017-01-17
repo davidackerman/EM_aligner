@@ -252,12 +252,12 @@ rcfine_filtered.verbose        = 1;
 opts.min_points = 5;
 opts.max_points = 50;
 opts.nbrs = 3;
-opts.xs_weight = 1;
+opts.xs_weight = 1.0;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 
-opts.lambda = 10.^(1);
-opts.edge_lambda = 10^(1);
+opts.lambda = 10.^(-2);
+opts.edge_lambda = 10^(-2);
 opts.transfac = 1;
 opts.nchunks_ingest = 64;
 

@@ -7,6 +7,10 @@ function [im, v, url, resp_str] = get_image_box_renderer(rc, z, Wbox, scale, fn_
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% default the renderer binary to Janelia's setup
+if ~isfield(rc, 'renderbinPath')
+    rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
+end
 
 if nargin<5, fn_id = [];end
 %%% check input
@@ -27,7 +31,7 @@ url = sprintf('%s/owner/%s/project/%s/stack/%s/z/%s/box/%.0f,%.0f,%.0f,%.0f,%s/r
 
 
 % we will try multiple times
-cmd = sprintf('/groups/flyTEM/flyTEM/render/bin/render.sh --memory 7g --out %s --parameters_url "%s"', fn, url);
+cmd = sprintf('%s/render.sh --memory 7g --out %s --parameters_url "%s"',rc.renderbinPath, fn, url);
 [a, resp_str] = system(cmd);
 file_ready = 0;
 count = 1;

@@ -1,4 +1,5 @@
 function [m12_1, m12_2, js] = point_match_gen_SIFT_tiles(t1, t2)
+% don't use: hardcoded paths
 % Return point-matches based on SIFT features
 %
 % Depends on Eric T.'s packaging of Saalfeld's code that uses SIFT and filters point matches

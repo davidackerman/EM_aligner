@@ -1,4 +1,4 @@
-function resp = delete_renderer_section(rcd, z)
+function resp = delete_renderer_section(rc, z)
 % remove section if it already exists
 % z is the z-value of the section
 % rc is a struct with fields (baseURL, owner, project, stack)
@@ -6,14 +6,19 @@ function resp = delete_renderer_section(rcd, z)
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 verbose = 0;
-check_input(rcd);
+check_input(rc);
+% default the renderer binary to Janelia's setup
+if ~isfield(rc, 'renderbinPath')
+    rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
+end
 
-set_renderer_stack_state_loading(rcd);
 
-str1 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rcd.baseURL, rcd.owner, rcd.project);
-str2 = sprintf('TARGET_STACK="%s";', rcd.stack);
-str3 = sprintf('/groups/flyTEM/flyTEM/render/bin/manage-stack.sh ${PROJECT_PARAMS} --action DELETE --stack ${TARGET_STACK} --zValues %d', ...
-    z);
+set_renderer_stack_state_loading(rc);
+
+str1 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rc.baseURL, rc.owner, rc.project);
+str2 = sprintf('TARGET_STACK="%s";', rc.stack);
+str3 = sprintf('%s/manage-stack.sh ${PROJECT_PARAMS} --action DELETE --stack ${TARGET_STACK} --zValues %d', ...
+    rc.renderbinPath, z);
 strcmd = [str1 str2 str3];
 
 try
@@ -33,7 +38,7 @@ if verbose,
     disp(resp);
 end
 
-set_renderer_stack_state_complete(rcd);
+set_renderer_stack_state_complete(rc);
 %%
 function check_input(rc)
 if ~isfield(rc, 'baseURL'), disp_usage; error('baseURL not provided');end

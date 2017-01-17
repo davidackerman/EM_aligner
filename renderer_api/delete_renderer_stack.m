@@ -7,10 +7,14 @@ function resp = delete_renderer_stack(rc)
 verbose = 0;
 check_input(rc);
 
+% default the renderer binary to Janelia's setup
+if ~isfield(rc, 'renderbinPath')
+    rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
+end
 
 str1 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rc.baseURL, rc.owner, rc.project);
 str2 = sprintf('TARGET_STACK="%s";', rc.stack);
-str3 = sprintf('/groups/flyTEM/flyTEM/render/bin/manage-stack.sh ${PROJECT_PARAMS} --action DELETE --stack ${TARGET_STACK}');
+str3 = sprintf('%s/manage-stack.sh ${PROJECT_PARAMS} --action DELETE --stack ${TARGET_STACK}', rc.renderbinPath);
 strcmd = [str1 str2 str3];
 
 try
@@ -25,7 +29,7 @@ if strfind(resp, 'caught exception'),
     error('delete_renderer_stack: server-side error reported');
 end
 
-if verbose,
+if verbose
     disp(a);
     disp(resp);
 end

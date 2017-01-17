@@ -1,4 +1,5 @@
 function [m12_1, m12_2, v] = point_match_gen_SIFT(url1, url2)
+% don't use ---- still under testing --- hardcoded paths
 % Return point-matches based on SIFT features   --- still under development
 %
 % Depends on Eric T.'s packaging of Saalfeld's code that uses SIFT and filters point matches

@@ -20,6 +20,7 @@ str = savejson('', tids);
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tileIds',...
     rc.baseURL, rc.owner, rc.project, rc.stack,znew);
 
+%%% todo: get rid of curl command and use Matlab built-in functions
 str = sprintf('curl -X PUT --header "Content-Type: application/json" --header "Accept: application/json" -d "%s" "%s"', ...
       str, urlChar);
 

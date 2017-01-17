@@ -1,4 +1,4 @@
-function resp = set_section_z(rc, tiles, znew)
+function resp = set_tiles_z(rc, tiles, znew)
 % set section z value
 % tiles is an array of tiles whose z value will be set to znew
 % znew is the z-value that this section will be set to.
@@ -22,6 +22,7 @@ strtiles = strrep(strtiles, '"', '\"');
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tileIds',...
     rc.baseURL, rc.owner, rc.project, rc.stack,znew);
 
+%%% get rid of curl command and use Matlab built-in function
 str = sprintf('curl -X PUT --header "Content-Type: application/json" --header "Accept: application/json" -d "%s" "%s"', ...
       strtiles, urlChar);
 

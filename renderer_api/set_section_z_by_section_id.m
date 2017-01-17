@@ -14,6 +14,7 @@ set_renderer_stack_state_loading(rc);
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/section/%s/z',...
     rc.baseURL, rc.owner, rc.project, rc.stack,zid);
 
+%%% todo: get rid of curl command
 str = sprintf('curl -X PUT --header "Content-Type: application/json" --header "Accept: application/json" -d "%d" "%s"', ...
       znew, urlChar);
 

@@ -22,10 +22,13 @@ if numel(sID)>=n
         count = 1;
         for six1 = 1:numel(sID{ix})
             for six2 = 1:numel(sID{ix-(n-1)})
-                urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-                    pm.server, pm.owner, pm.match_collection, sID{ix-(n-1)}{six2}, sID{ix}{six1});
-                %disp(['Cross: ' num2str(ix) ' ' num2str(six1) ' ' num2str(six2) ' ' sID{ix-(n-1)}{six2} ' ' sID{ix}{six1}]);
-                j = webread(urlChar, options);
+                
+                j = get_pms_cross_layer(pm, sID{ix-(n-1)}{six2}, sID{ix}{six1}, options);
+                
+%                 urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+%                     pm.server, pm.owner, pm.match_collection, sID{ix-(n-1)}{six2}, sID{ix}{six1});
+%                 %disp(['Cross: ' num2str(ix) ' ' num2str(six1) ' ' num2str(six2) ' ' sID{ix-(n-1)}{six2} ' ' sID{ix}{six1}]);
+%                 j = webread(urlChar, options);
                 
                 %         np_vec(ix-(n-1)) = numel(j);
                 for jix = 1:numel(j)

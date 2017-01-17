@@ -1,13 +1,15 @@
-
-function generate_point_matches(rcrough, nfirst, nlast, fnjson)
-% --- sosi --- needs interface to spark script
+function generate_point_matches(nfirst, nlast, fnjson)
+% --- needs interface to spark script as an option
 % fn is json configuration for point-match generation
 % for example: fnjson = '/groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled/sample_point_match_gen_pairs_input.json';
 
+% read json input
+sl = loadjson(fileread(fnjson));
+
+rcrough = sl.target_collection;
 
 % use spark script
-
-%%%%% not implemented yet
+% ----  not implemented yet----
 
 % OR:
 % use Matlab's SURF
@@ -62,8 +64,7 @@ for pix = 1: numel(r)
 end
 %% 
 
-% read json input
-sl = loadjson(fileread(fnjson));
+
 for tpix = 1:numel(tp)
     disp(['**** processing tile set: ' num2str(tpix) ' of ' num2str(numel(tp))]);
     tic

@@ -225,6 +225,23 @@ mA_thresh = 0.2;
 %% [7] (optional) solve again (pass 2) based on filtered rough collection
 % this solution will disregard tiles that we know will cause larger deformation if included
 
+clear pm;
+ix = 1;
+pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(ix).owner = 'flyTEM';
+pm(ix).match_collection = 'v12_dmesh';
+ix = ix + 1;
+
+pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(ix).owner = 'flyTEM';
+pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
+ix = ix + 1;
+
+pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(ix).owner = 'flyTEM';
+pm(ix).match_collection = 'Beautification_cross_sift_00';  % cross section point-matches
+ix = ix + 1;
+
 rcfine_filtered.stack          = ['Revised_slab_' num2str(nfirst) '_' num2str(nlast) '_fine_filtered'];
 rcfine_filtered.owner          ='flyTEM';
 rcfine_filtered.project        = 'FAFB00_beautification';
@@ -235,17 +252,18 @@ rcfine_filtered.verbose        = 1;
 opts.min_points = 5;
 opts.max_points = 50;
 opts.nbrs = 3;
-opts.xs_weight = 0.5;
+opts.xs_weight = 1;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 
-opts.lambda = 10.^(0);
-opts.edge_lambda = 10^(0);
+opts.lambda = 10.^(1);
+opts.edge_lambda = 10^(1);
+opts.transfac = 1;
+opts.nchunks_ingest = 64;
 
 
-
-
-[mL,err] = ...
+delete_renderer_stack(rcfine_filtered);
+[err, R] = ...
          system_solve(nfirst, nlast, rcrough_filtered, pm, opts, rcfine_filtered);
 disp(err);
 

@@ -2,7 +2,7 @@ function [mL, pm_mx, err, R, L_vec, ntiles, PM, sectionId_load, z_load] = ...
     solve_slab(rc, pm, nfirst, nlast, rctarget, opts)
 % solve a slab (range of z-coordinates) within collection rc using point matches in point-match
 % collection pm.
-% the slab is delimited by nfirst and nlast, which are z-values. nlast is not included.
+% the slab is delimited by nfirst and nlast, which are z-values. 
 % For example usage see "test_solve_slab_01.m" under the "test_scripts" folder
 % pm_mx is a point-match count correlation matrix: useful for spotting missing point-matches or
 % excessive cross-layer correlation to generate point matches.

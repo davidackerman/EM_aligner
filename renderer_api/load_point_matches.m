@@ -40,8 +40,8 @@ if nargin < 6, min_points = 0; end
 if nargin < 7, xs_weight = 1; end
 if nargin < 8, max_points = inf; end
 verbose = 0;
-if isfield(pm, 'verbose')
-    verbose = pm.verbose;
+if isfield(pm(1), 'verbose')
+    verbose = pm(1).verbose;
 end
 
 % %% get the list of zvalues and section ids within the z range between nfirst and nlast (inclusive)
@@ -153,19 +153,22 @@ for ix = 1:numel(ns)
     count = 1;
     n1(ix) = 0;
     for six = 1:ns(ix)
-        urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
-            pm.server, pm.owner, pm.match_collection, sID{ix}{six});
-        %disp(sID{ix}{six});
-        if verbose > 0
-            disp(urlChar);
-        end
-        try
-            jj = webread(urlChar, options);
-        catch err_fetch_pm
-            kk_disp_err(err_fetch_pm)
-            pause(1);
-            jj = webread(urlChar,options); % try again
-        end
+        
+        jj = get_pms_montage(pm, sID{ix}{six}, options);
+        
+%         urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup', ...
+%             pm.server, pm.owner, pm.match_collection, sID{ix}{six});
+%         %disp(sID{ix}{six});
+%         if verbose > 0
+%             disp(urlChar);
+%         end
+%         try
+%             jj = webread(urlChar, options);
+%         catch err_fetch_pm
+%             kk_disp_err(err_fetch_pm)
+%             pause(1);
+%             jj = webread(urlChar,options); % try again
+%         end
         if iscell(jj)
             jj = jj{:};
         end
@@ -218,17 +221,22 @@ for ix = 1:numel(ns)
     %%%% get point matches across those individual section ids
     for isix = 1:ns(ix)
         for jsix = isix+1:ns(ix)
-            urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-                pm.server, pm.owner, pm.match_collection, sID{ix}{isix}, sID{ix}{jsix});
-            %disp([sID{ix}{isix} ' ---- ' sID{ix}{jsix}]);
-            j = webread(urlChar, options);
-            try
-                jj = webread(urlChar, options);
-            catch err_fetch_pm
-                kk_disp_err(err_fetch_pm)
-                pause(1);
-                jj = webread(urlChar,options); % try again
-            end
+            
+            jj = get_pms_cross_layer(pm, sID{ix}{isix}, sID{ix}{jsix}, options);
+            
+%             urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+%                 pm.server, pm.owner, pm.match_collection, sID{ix}{isix}, sID{ix}{jsix});
+%             %disp([sID{ix}{isix} ' ---- ' sID{ix}{jsix}]);
+%%%             j = webread(urlChar, options);
+%             try
+%                 jj = webread(urlChar, options);
+%             catch err_fetch_pm
+%                 kk_disp_err(err_fetch_pm)
+%                 pause(1);
+%                 jj = webread(urlChar,options); % try again
+%             end
+            
+            
             n1(ix) = n1(ix) + numel(jj);
             for jix = 1:numel(jj)
                 if size(jj(jix).matches.p',1)>=min_points

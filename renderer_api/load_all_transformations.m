@@ -21,7 +21,7 @@ fid = fopen(fn_layout, 'r');
 % C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%n%s%n%n%n%s', 'delimiter', '\t');
 C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%s%s%s%s%s%s', 'delimiter', '\t');
 fclose(fid);
-% delete(fn_layout);
+delete(fn_layout);
 z_val = C{1};
 tIds = C{2};
 T = [C{3}(:) C{4}(:) C{5}(:) C{6}(:) C{7}(:) C{8}(:)];

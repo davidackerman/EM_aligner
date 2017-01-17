@@ -1,6 +1,6 @@
-function [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch)
+function [T, map_id, tIds, section_id] = load_all_transformations(rc, zu, dir_scratch)
 cd(dir_scratch);
-fn_layout = [dir_scratch '/layout_file.txt'];
+fn_layout = [dir_scratch '/layout_file_' num2str(randi(100000000)) '.txt'];
 % % Generate the layout file (the main input) using the Renderer service
 url_collection = sprintf('%s/owner/%s/project/%s/stack/%s', ...
     rc.baseURL, rc.owner, rc.project, rc.stack);
@@ -22,7 +22,7 @@ fid = fopen(fn_layout, 'r');
 C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%s%s%n%s%s%s', 'delimiter', '\t');
 fclose(fid);
 delete(fn_layout);
-z_val = C{1};
+section_id = C{1};
 tIds = C{2};
 T = [C{3}(:) C{4}(:) C{5}(:) C{6}(:) C{7}(:) C{8}(:)];
 

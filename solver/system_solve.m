@@ -358,7 +358,8 @@ disp('-----------------------');
 K  = A'*Wmx*A + lambda*(tB')*tB;
 Lm  = A'*Wmx*b + lambda*(tB')*d;
 [x2, R] = solve_AxB(K,Lm, opts, d);
-err = norm(A*x2-b); disp(['Error norm(Ax-b): ' num2str(err)]);
+err = norm(A*x2-b); 
+disp(['Error norm(Ax-b): ' num2str(err)]);
 Error = err;
 Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
 %%

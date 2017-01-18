@@ -58,18 +58,21 @@ ms.base_output_dir              = ['/myscratch/temp_rough_base_output']; % scrat
      
 % Option [3]: enables filter and uses full montage scape -- this is the usual case, for example FAFB
 % dataset
-s.script                       = [ EM_aligner_path '/renderer_api/generate_montage_scape_point_matches_box.sh'];                        
+ms.script                       = [ EM_aligner_path '/renderer_api/generate_montage_scape_point_matches_box.sh'];                        
                            
 
-ms.number_of_spark_nodes        = '2.0';
+ms.number_of_spark_nodes        = '2.0';  % not used yet
 ms.first                        = num2str(nfirst);
 ms.last                         = num2str(nlast);
 ms.scale                        = num2str(scale);
 ms.center_box                   = 1.0; % ms.center_box<1.0 means use SURF point-matches and activate "Allen hack".
 ms.run_dir                      = ['Slab_' ms.first '_' ms.last '_scale_' ms.scale];
+ms.FAFB                         = 1;  % set to one if FAFB dataset is used
+ms.rough_solve                  = 'rigid';  % if set to 'affine' will do affine fitting of montage scapes after rigid.
 
 
-run_now = 1;
+run_now = 1;   % set to 1 to lauch spark process (needed in the first pass)
+               % set to 0 if spark succeeded but for debugging purposes you need to re-run rough alignment
 
 %% execution part
 if ~exist(dir_store_rough_slab, 'dir')

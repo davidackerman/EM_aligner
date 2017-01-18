@@ -1,6 +1,6 @@
 ##Prerequisites
 We are assuming that the Renderer and point-match services (and associated database) are set up and accessible for example at http://tem-services.int.janelia.org.
-Also, you are using Matlab 2015a and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) Matlab compiler and (optional) Parallel computing. The EM_aligner directory and subdirectories are on your Matlab path.
+Also, you are using Matlab 2016b and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) Matlab compiler and (optional) Parallel computing. The EM_aligner directory and subdirectories are on your Matlab path.
 
 ## Montaging of one section by calculating and using SURF point-matches: non-deployed point-match generation + solve
 Use this only if you don't have precalculated point-matches.
@@ -128,7 +128,7 @@ An example json input file is provided below.
 		"outlier_lambda": 1000,
 		"solver": "backslash",
 		"min_points": 3,
-        "max_points": 20,
+                "max_points": 20,
 		"stvec_flag": 0,
 		"conn_comp": 1,
 		"distributed": 0,
@@ -138,9 +138,9 @@ An example json input file is provided below.
 		"small_region": 5,
 		"calc_confidence": 1,
 		"translation_fac": 1,
-        "use_peg": 1,
-        "peg_weight": 0.0001,
-        "peg_npoints": 5
+                "use_peg": 1,
+                "peg_weight": 0.0001,
+                "peg_npoints": 5
 	},
 	"source_collection": {
 		"stack": "v12_acquire_merged",
@@ -162,8 +162,8 @@ An example json input file is provided below.
 		"service_host": "10.37.5.60:8080",
 		"baseURL": "http://10.37.5.60:8080/render-ws/v1",
 		"verbose": 1,
-        "initialize": 0,
-        "complete": 1
+                "initialize": 0,
+                "complete": 1
 	},
 	"z_value": 1,
     "filter_point_matches": 0,

@@ -1,7 +1,7 @@
-%% generate diagnostic information
+%% generate diagnostic information  --- do not use --- experimental
 clear all;
 Slab_definition;
-dir_temp = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_slabs';
+dir_temp = '/nrs/flyTEM/khairy/FAFB00v13/matlab_slabs';
 %%
 opts.min_tiles = 20; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3

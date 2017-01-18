@@ -51,7 +51,7 @@ end
 %%%% crosslayer for reacquires: get point matches across those individual section ids
 for isix = 1:numel(sID)
     for jsix = isix+1:numel(sID)
-        get_pms_cross_layer(pm, sID{isix}, sID{jsix}, wopts);
+        jj = get_pms_cross_layer(pm, sID{isix}, sID{jsix}, wopts);
         n1 = n1 + numel(jj);
         for jix = 1:numel(jj)
             if size(jj(jix).matches.p',1)>=min_points

@@ -1,7 +1,16 @@
 function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
     gen_section_based_tile_deformation_statistics(rc, zstart, zend, pm, opts)
-%% generate statistics about residuals and tile area and pixel dimensions
-
+%% generate statistics about residuals and tile deformation
+% Summarizes point-match residuals and tile deformation per tile and section taking
+% into accounts its neighbors.
+% opts fields and their defaults:
+%    min_points     : 5
+%    nbrs           : 4
+%
+% Output:
+%       mA, mS
+% Author: Khaled Khairy
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin<4
 % configure point-match collection
 pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
@@ -91,7 +100,7 @@ parfor zix = 1:numel(zu1)
     %% %%% determine point-matches, solution and residuals for this section
     
     
-    % First: load point-matches and sectionn into "L" (point-matches are in L's pm struct field)
+    % First: load point-matches and section into "L" (point-matches are in L's pm struct field)
     if (zix + opts.nbrs)>numel(zu1)
         pmz2 = zu1(end);
     else

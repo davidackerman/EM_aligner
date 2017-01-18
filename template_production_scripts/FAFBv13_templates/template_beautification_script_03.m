@@ -224,6 +224,7 @@ mA_thresh = 0.2;
 
 %% [7] (optional) solve again (pass 2) based on filtered rough collection
 % this solution will disregard tiles that we know will cause larger deformation if included
+delete_renderer_stack(rcfine_filtered); % remove this co
 
 clear pm;
 ix = 1;
@@ -256,18 +257,32 @@ opts.xs_weight = 1.0;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 
-opts.lambda = 10.^(-2);
-opts.edge_lambda = 10^(-2);
+opts.lambda = 10.^(-1);
+opts.edge_lambda = 10^(-1);
 opts.transfac = 1;
 opts.nchunks_ingest = 64;
 
+opts.peg_weight = 0.00001;
+opts.use_peg   = 1;
+opts.peg_npoints = 10;
 
-delete_renderer_stack(rcfine_filtered);
+
+
 [err, R] = ...
          system_solve(nfirst, nlast, rcrough_filtered, pm, opts, rcfine_filtered);
+
+% alternatively (slow)
+[mL, pm_mx, err, R, ~, ntiles, PM, sectionId_load, z_load] = ...
+    solve_slab(rcrough_filtered, pm, ...
+    nfirst, nfirst + 1, [], opts);
+
+
 disp(err);
-
-
+%% diagnostics
+dopts.nbrs = 3;
+dopts.min_oints = 5;
+[mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
+    gen_section_based_tile_deformation_statistics(rcfine_filtered, 2630, 2641, pm, opts);
 
 %% [8] insert beautified slab into full volume
 

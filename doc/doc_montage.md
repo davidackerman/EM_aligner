@@ -2,8 +2,8 @@
 We are assuming that the Renderer and point-match services (and associated database) are set up and accessible for example at http://tem-services.int.janelia.org.
 Also, you are using Matlab 2015a and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) Matlab compiler and (optional) Parallel computing. The EM_aligner directory and subdirectories are on your Matlab path.
 
-## Montaging of one section using SURF point-matches: non-deployed point-match generation + solve
-
+## Montaging of one section by calculating and using SURF point-matches: non-deployed point-match generation + solve
+Use this only if you don't have precalculated point-matches.
 A full montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number" will calculate point-matches using SURF features between tile pairs, persist those point-matches in a point-match database collection "target_point_match_collection", solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
 
 at the Matlab prompt:
@@ -101,5 +101,76 @@ Now the "compiled" output file can be called from a the shell (or used in a qsub
 An example for deploying multiple montage jobs (using a Matlab script) is provided [here] (/template_production_scripts/SPC_scripts/script_to_montage_multiple_sections_using_deployed_montager.m).
 
 
+## Montaging of one section using precalculated point-matches: non-deployed solve
+Use this if you already have precalculated point-matches. It perfoms a solve only
+A full montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number" will calculate point-matches using SURF features between tile pairs, persist those point-matches in a point-match database collection "target_point_match_collection", solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
+
+at the Matlab prompt:
+
+[1] fn = 'full_path_to_json_configuration_file.json';  %% specify the input json file
+
+[2] solve_montage_SL(fn); %% perform montage
+
+If CATMAID dynamic rendering is set up, you can view your registered montage using a URL for example similar to this:
+http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM&project=test&dynamicRenderHost=renderer:8080&catmaidHost=renderer-catmaid:8000
+
+
+
+An example json input file is provided below.
+
+
+```json
+
+{
+	"solver_options": {
+		"min_tiles": 3,
+		"degree": 1,
+		"outlier_lambda": 1000,
+		"solver": "backslash",
+		"min_points": 3,
+        "max_points": 20,
+		"stvec_flag": 0,
+		"conn_comp": 1,
+		"distributed": 0,
+		"lambda": 1.0,
+		"edge_lambda": 0.1,
+		"small_region_lambda": 10,
+		"small_region": 5,
+		"calc_confidence": 1,
+		"translation_fac": 1,
+        "use_peg": 1,
+        "peg_weight": 0.0001,
+        "peg_npoints": 5
+	},
+	"source_collection": {
+		"stack": "v12_acquire_merged",
+		"owner": "flyTEM",
+		"project": "FAFB00",
+		"service_host": "10.37.5.60:8080",
+		"baseURL": "http://10.37.5.60:8080/render-ws/v1",
+		"verbose": 1
+	},
+	"source_point_match_collection": {
+		"server": "http://10.40.3.162:8080/render-ws/v1",
+		"owner": "flyTEM",
+		"match_collection": "v12_dmesh"
+	},
+	"target_collection": {
+		"stack": "EXP_test_montage_solver_1",
+		"owner": "flyTEM",
+		"project": "test",
+		"service_host": "10.37.5.60:8080",
+		"baseURL": "http://10.37.5.60:8080/render-ws/v1",
+		"verbose": 1,
+        "initialize": 0,
+        "complete": 1
+	},
+	"z_value": 1,
+    "filter_point_matches": 0,
+    "temp_dir":"/scratch/khairyk",
+	"verbose": 1
+}
+
+```
 
 

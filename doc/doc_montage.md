@@ -102,10 +102,10 @@ An example for deploying multiple montage jobs (using a Matlab script) is provid
 
 
 ## Montaging of one section using precalculated point-matches: non-deployed solve
-Use this if you already have precalculated point-matches. It perfoms a solve only
-A full montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number" will calculate point-matches using SURF features between tile pairs, persist those point-matches in a point-match database collection "target_point_match_collection", solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
+Use this if you already have precalculated point-matches. It perfoms a solve only.
+A montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number". This will  solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
 
-at the Matlab prompt:
+Usage: At the Matlab prompt:
 
 [1] fn = 'full_path_to_json_configuration_file.json';  %% specify the input json file
 

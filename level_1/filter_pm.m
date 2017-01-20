@@ -13,7 +13,7 @@ if isfield(pm, 'verbose')
     verbose = pm.verbose;
 end
 
-warning off
+warning off all
 %% filter point matches using RANSAC
 geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
 geoTransformEst.Method = 'Random Sample Consensus (RANSAC)'; %'Least Median of Squares';
@@ -22,7 +22,7 @@ geoTransformEst.NumRandomSamplingsMethod = opts.NumRandomSamplingsMethod;% 'Desi
 geoTransformEst.MaximumRandomSamples = opts.MaximumRandomSamples;%3000;
 geoTransformEst.DesiredConfidence = opts.DesiredConfidence; %99.5;
 geoTransformEst.PixelDistanceThreshold = opts.PixelDistanceThreshold; %0.01;
-warning on;
+warning off all;
 
 M = pm.M;
 W = pm.W;
@@ -33,7 +33,7 @@ parfor pmix = 1:size(pm.M, 1)
     m = M(pmix,:);
     m1 = m{1};
     m2 = m{2};
-    warning off;[tform_matrix, inlierIdx] = step(geoTransformEst, m{2}, m{1});warning on;
+    warning off all;[tform_matrix, inlierIdx] = step(geoTransformEst, m{2}, m{1});
     m1 = m1(inlierIdx,:);
     m2 = m2(inlierIdx,:);
     M(pmix,:) = {m1,m2};

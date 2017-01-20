@@ -1,5 +1,5 @@
 function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
-    gen_diagnostics(rc, zstart, zend, pm, opts)
+    gen_diagnostics(rcsource, rc, zstart, zend, pm, opts)
 %% generate statistics about residuals and tile deformation
 % Summarizes point-match residuals and tile deformation per tile and section taking
 % into accounts its neighbors.
@@ -53,25 +53,31 @@ W = cell(numel(zu1),1);
 edges = [0.4:.02:1.7];
 counts = zeros(numel(zu1), numel(edges));
 webopts = weboptions('Timeout', 60);
-for zix = 1:numel(zu1)
+parfor zix = 1:numel(zu1)
     Ar = [];    % surface area of tiles
     Aratio = [];% surface area ratio of tiles
     S  = [];    % perimeter of tiles
     p = [];     % tile patch
     height = [];
     width = [];
-    % call the Renderer API to fetch tile information
+    % call the Renderer API to fetch tile information from target stack
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack,zu1(zix) );
     j = webread(urlChar, webopts);
     
+        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+        rcsource.baseURL, rcsource.owner, rcsource.project, rcsource.stack,zu1(zix) );
+    jo = webread(urlChar, webopts);
+    
     % AREA and PERIMETER process individual tiles: Calculate area and perimeter
     jt1 = tile;
+    jto = tile;
     sectionID = j(1).layout.sectionId;
     count = 1;
     tids = {};
     for jix = 1:numel(j)
         jt1(jix) = tile(j(jix));
+        jto(jix) = tile(jo(jix));
         tids(jix) = {jt1(jix).renderer_id};
         % make four corners for this tile
         x = 0;
@@ -87,11 +93,11 @@ for zix = 1:numel(zu1)
         p{jix} = {P};
         %cm(jix,:) = sum([P(:,1)/4 P(:,2)/4],1);  % center of mass of each tile
         
-        height(count) = jt1(jix).H;
-        width(count)  = jt1(jix).W;
+        height(count) = jto(jix).H;
+        width(count)  = jto(jix).W;
         % check polygon area
         Ar(count) = polyarea(P(:,1), P(:,2));
-        Aratio(count) = Ar(count)/(jt1(jix).H * jt1(jix).W);
+        Aratio(count) = Ar(count)/(jto(jix).H * jto(jix).W);
         
         %%% polygonperimeter
         s = 0;
@@ -99,7 +105,7 @@ for zix = 1:numel(zu1)
         s = s + sqrt((P(2,1)-P(3,1)).^2 + (P(2,2)-P(3,2)).^2);
         s = s + sqrt((P(3,1)-P(4,1)).^2 + (P(3,2)-P(4,2)).^2);
         s = s + sqrt((P(1,1)-P(4,1)).^2 + (P(1,2)-P(4,2)).^2);
-        S(count) = s;
+        S(count) = s/(2 * jto(jix).H + 2* jto(jix).W);
         
         
         count = count + 1;
@@ -235,11 +241,15 @@ if opts.show_deformation || opts.show_residuals
 end
 
 %% list section outliers and statistics per section
+disp('Area should be close to 1.0');
+
 for zix = 1:numel(zu1)  % loop over sections
     areas = abs(tile_areas{zix}./(H{zix}.*W{zix}));
-    disp('Area should be close to 1.0');
-    str1 = [num2str(zu1(zix)) ' dA -Mean: ' num2str(mean(areas)) ...
-        ' ----- Median: ' num2str(median(areas)) ' ---- Residual: ' num2str(confidence(zix))];
+    perim = abs(tile_perimeters{zix});
+    
+    str1 = [num2str(zu1(zix)) ' A: Mean: ' num2str(mean(areas)) ...
+        ' ----- Median: ' num2str(median(areas)) ' ---- Residual: '...
+        num2str(confidence(zix)) ' S: ' num2str(median(perim))];
     %     resx = Resx_store{zix};
     %     resy = Resy_store{zix};
     %

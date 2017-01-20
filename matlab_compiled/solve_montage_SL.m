@@ -1,13 +1,20 @@
-function solve_montage_SL(fn)
+function solve_montage_SL(argin)
 % Intended for deployment: solve matrix system based on json input provided by fn
 
 
+if isstruct(argin)
+    sl = argin;
+else
+    fn = argin;    
+    disp(['-------  Using input file: ' fn]);
 % read json input
 sl = loadjson(fileread(fn));
+end
+
 
 if sl.verbose,
     kk_clock();
-    disp(['Using input file: ' fn]);
+    
     disp(['Section(s) with z value:' num2str(sl.z_value)]);
     disp('Using solver options:');disp(sl.solver_options);
     disp('Using source collection:');disp(sl.source_collection);

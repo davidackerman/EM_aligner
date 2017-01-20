@@ -257,17 +257,22 @@ opts.xs_weight = 1/1000.0;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 
-opts.lambda = 10.^(-1);
-opts.edge_lambda = 10^(-1);
+opts.lambda = 10.^(4);
+opts.edge_lambda = 10^(4);
 opts.transfac = 1;
 opts.nchunks_ingest = 64;
+% % configure point-match filter
+opts.filter_point_matches = 1;
+opts.pmopts.NumRandomSamplingsMethod = 'Desired confidence';
+opts.pmopts.MaximumRandomSamples = 5000;
+opts.pmopts.DesiredConfidence = 99.9;
+opts.pmopts.PixelDistanceThreshold = .01;
 
+% opts.use_peg   = 0;
+% opts.peg_weight = 0.00001;
+% opts.peg_npoints = 10;
 
-opts.use_peg   = 0;
-opts.peg_weight = 0.00001;
-opts.peg_npoints = 10;
-
-
+opts.disableValidation = 1;
 
 [err, R] = ...
          system_solve(nfirst, nlast, rcrough_filtered, pm, opts, rcfine_filtered);

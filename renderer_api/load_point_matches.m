@@ -85,7 +85,7 @@ parfor ix = 1:1:numel(zu)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack, zu(ix));
     if rc.verbose
-        disp(['Read ' urlChar])
+        if rc.verbose, disp(['Read ' urlChar]); end
     end
     j = webread(urlChar, options);
     jt = tile;

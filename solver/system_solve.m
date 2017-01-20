@@ -91,6 +91,9 @@ function [err,R,xout] = system_solve(nfirst, nlast, rc, pm, opts, rcout)
 %% prepare quantities
 if ~isfield(opts, 'transfac'), opts.transfac = 1.0;end
 if ~isfield(opts, 'nchunks_ingest'), opts.nchunks_ingest = 32;end
+if ~isfield(opts, 'disableValidation'), opts.disableValidation = 1;end
+if ~isfield(opts, 'transfac'), opts.transfac = 1;end
+if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 0;end
 
 err = [];
 R = [];
@@ -185,7 +188,12 @@ PM.M = M;
 PM.adj = adj;
 PM.W = W;
 PM.np = np;
-%PM = filter_pm(PM, opts.pmopts);
+
+if opts.filter_point_matches
+    disp('Filtering point-matches');
+    %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
+    PM = filter_pm(PM, opts.pmopts);
+end
 
 M = PM.M;
 adj = PM.adj;
@@ -275,6 +283,7 @@ w = cell2mat(w(:));
 Wmx = spdiags(w,0,size(A,1),size(A,1));
 clear w;
 d = reshape(T', ncoeff,1);clear T;
+
 tB = ones(ncoeff,1);
 tB(3:3:end) = opts.transfac;
 tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
@@ -357,6 +366,11 @@ disp('--------- using lambda:');
 disp(lambda);
 disp('-----------------------');
 
+%%% translate smallest x and smallest y in d to zero
+x_coord = d(3:6:end);
+y_coord = d(6:6:end);
+d(3:6:end) = d(3:6:end)-min(x_coord);
+d(6:6:end) = d(6:6:end)-min(y_coord);
 
 K  = A'*Wmx*A + lambda*(tB')*tB;
 Lm  = A'*Wmx*b + lambda*(tB')*d;
@@ -375,8 +389,8 @@ disp('.... done!');
 disp('** STEP 5:   Ingesting data .....');
 disp(' ..... translate to +ve space');
 delta = 0;
-dx = min(Tout(:,3)) + delta;%mL.box(1);
-dy = min(Tout(:,6)) + delta;%mL.box(2);
+dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
 for ix = 1:size(Tout,1)
     Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
 end
@@ -393,6 +407,8 @@ if ~stack_exists(rcout)
     resp = create_renderer_stack(rcout);
 end
 
+if ntiles<opts.nchunks_ingest, opts.nchunks_ingest = ntiles;end
+
 chks = round(ntiles/opts.nchunks_ingest);
 cs = 1:chks:ntiles;
 cs(end) = ntiles;
@@ -400,7 +416,7 @@ disp(' .... ingesting ....');
 parfor ix = 1:numel(cs)-1
     vec = cs(ix):cs(ix+1);
     export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
-        tIds(vec), z_val(vec), v);
+        tIds(vec), z_val(vec), v, opts.disableValidation);
 end
 
 

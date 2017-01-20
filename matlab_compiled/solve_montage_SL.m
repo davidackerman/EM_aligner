@@ -63,11 +63,21 @@ if sl.solver_options.use_peg
     Lr.tiles(end) = [];
     Lr = update_adjacency(Lr);
     toc
-    tic;if sl.verbose, disp('-- Solving for affine');end
     
+    
+    if sl.solver_options.degree == 1
+        tic;
+        if sl.verbose, disp('-- Solving for affine');end
     [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
       invalid] = solve_affine_explicit_region(Lr, sl.solver_options);
     toc  
+    elseif sl.solver_options.degree>1
+        [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
+      invalid] = solve_polynomial_explicit_region(Lr, sl.solver_options.degree, sl.solver_options);
+    else
+        if sl.verbose, disp(' Only performed rigid approximation ' );end
+        mL = Lr;
+    end
     
 else
     tic;if sl.verbose, disp('Solving slab without pegs --- each connected component by itself');end

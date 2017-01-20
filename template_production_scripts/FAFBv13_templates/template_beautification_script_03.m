@@ -226,17 +226,17 @@ mA_thresh = 0.2;
 % this solution will disregard tiles that we know will cause larger deformation if included
 delete_renderer_stack(rcfine_filtered); % remove this co
 
-clear pm;
-ix = 1;
-pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
-pm(ix).owner = 'flyTEM';
-pm(ix).match_collection = 'v12_dmesh';
-ix = ix + 1;
-
+clear pm;ix = 1;
+% 
 % pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
 % pm(ix).owner = 'flyTEM';
-% pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
+% pm(ix).match_collection = 'v12_dmesh';
 % ix = ix + 1;
+
+pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(ix).owner = 'flyTEM';
+pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
+ix = ix + 1;
 
 pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
 pm(ix).owner = 'flyTEM';
@@ -253,7 +253,7 @@ rcfine_filtered.verbose        = 1;
 opts.min_points = 10;
 opts.max_points = 100;
 opts.nbrs = 3;
-opts.xs_weight = 1.0;
+opts.xs_weight = 1/1000.0;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 

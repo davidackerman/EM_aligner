@@ -5,8 +5,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % configure montage
 clc
-fn = '/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/config/solve_2630_2641.json';
-sl = loadjson(fileread(fn));
+fn1 = '/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/config/solve_2630_2641.json';
+sl = loadjson(fileread(fn1));
 sl.ncpus = 8;
 sl.local_scratch = '/scratch/khairyk';
 sl.bin_fn = '/groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled/montage_section_SL_prll';
@@ -171,7 +171,7 @@ ix = ix + 1;
 % configure solver
 opts.min_tiles = 20; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
-opts.outlier_lambda = 5e-1;  % large numbers result in fewer tiles excluded
+opts.outlier_lambda = 1e2;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';%'pastix';%%'gmres';%'backslash';'pastix';
 
 
@@ -233,10 +233,10 @@ pm(ix).owner = 'flyTEM';
 pm(ix).match_collection = 'v12_dmesh';
 ix = ix + 1;
 
-pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
-pm(ix).owner = 'flyTEM';
-pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
-ix = ix + 1;
+% pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+% pm(ix).owner = 'flyTEM';
+% pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
+% ix = ix + 1;
 
 pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
 pm(ix).owner = 'flyTEM';
@@ -250,8 +250,8 @@ rcfine_filtered.service_host   = '10.40.3.162:8080';
 rcfine_filtered.baseURL        = ['http://' rcfine_filtered.service_host '/render-ws/v1'];
 rcfine_filtered.verbose        = 1;
 
-opts.min_points = 5;
-opts.max_points = 50;
+opts.min_points = 10;
+opts.max_points = 100;
 opts.nbrs = 3;
 opts.xs_weight = 1.0;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
@@ -262,8 +262,9 @@ opts.edge_lambda = 10^(-1);
 opts.transfac = 1;
 opts.nchunks_ingest = 64;
 
+
+opts.use_peg   = 0;
 opts.peg_weight = 0.00001;
-opts.use_peg   = 1;
 opts.peg_npoints = 10;
 
 
@@ -272,17 +273,24 @@ opts.peg_npoints = 10;
          system_solve(nfirst, nlast, rcrough_filtered, pm, opts, rcfine_filtered);
 
 % alternatively (slow)
-[mL, pm_mx, err, R, ~, ntiles, PM, sectionId_load, z_load] = ...
-    solve_slab(rcrough_filtered, pm, ...
-    nfirst, nfirst + 1, [], opts);
+% [mL, pm_mx, err, R, ~, ntiles, PM, sectionId_load, z_load] = ...
+%     solve_slab(rcrough_filtered, pm, ...
+%     nfirst, nlast, rcfine_filtered, opts);
 
 
 disp(err);
 %% diagnostics
+zstart = 2630;
+zfinish = 2631;
+
 dopts.nbrs = 3;
-dopts.min_oints = 5;
+dopts.min_points = 5;
+dopts.show_deformation = 1;
+dopts.show_residuals = 1;
+
 [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
-    gen_section_based_tile_deformation_statistics(rcfine_filtered, 2630, 2641, pm, opts);
+    gen_diagnostics(rcfine_filtered, zstart, zfinish, pm, dopts);
+
 
 %% [8] insert beautified slab into full volume
 

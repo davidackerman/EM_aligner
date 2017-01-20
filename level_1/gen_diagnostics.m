@@ -1,27 +1,35 @@
 function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
-    gen_section_based_tile_deformation_statistics(rc, zstart, zend, pm, opts)
-%%%% deprecated ---- please use "gen_slab_diagnostics.m" instead
+    gen_diagnostics(rc, zstart, zend, pm, opts)
 %% generate statistics about residuals and tile deformation
 % Summarizes point-match residuals and tile deformation per tile and section taking
 % into accounts its neighbors.
 % opts fields and their defaults:
 %    min_points     : 5
 %    nbrs           : 4
-%
+%    show_deformation: 1      0 = don'e show
+%                             1 = display visible figure
+%                             2 = save image of invisible figure to disk (not implemented yet)
+%                             3 = captures invisible figure to memory (not implemented yet)
+%    show_residuals: 1        0 = don't show
+%                             1 = displays a visible figure
+%                             2 = save image of invisiblle figure to disk (not implemented yet)
+%                             3 = captures invisible figure to memory (not implemented yet)
 % Output:
 %       mA, mS
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin<4
-% configure point-match collection
-pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
-pm.owner            = 'flyTEM';
-pm.match_collection = 'v12_dmesh';
-
+    % configure point-match collection
+    pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
+    pm.owner            = 'flyTEM';
+    pm.match_collection = 'v12_dmesh';
+    
 end
 if nargin<5
-opts.min_points = 5;
-opts.nbrs = 4;
+    opts.min_points = 5;
+    opts.nbrs = 4;
+    opts.show_deformation = 1;
+    opts.show_residuals = 1;
 end
 
 
@@ -37,23 +45,26 @@ tile_perimeters = cell(numel(zu1),1);
 tidsvec = cell(numel(zu1),1);
 Resx = cell(numel(zu1),1);
 Resy = cell(numel(zu1),1);
+confidence = cell(numel(zu1,1));
+H = cell(numel(zu1),1);
+W = cell(numel(zu1),1);
 % to generate histogram counts we need to define bin edges
 edges = [0.4:.02:1.7];
-counts = zeros(numel(zu1), numel(edges));   
+counts = zeros(numel(zu1), numel(edges));
 webopts = weboptions('Timeout', 60);
 parfor zix = 1:numel(zu1)
-    %disp(zu1(zix));
     Ar = [];    % surface area of tiles
     Aratio = [];% surface area ratio of tiles
     S  = [];    % perimeter of tiles
     p = [];     % tile patch
+    height = [];
+    width = [];
     % call the Renderer API to fetch tile information
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack,zu1(zix) );
-
     j = webread(urlChar, webopts);
     
-    % process individual tiles
+    % AREA and PERIMETER process individual tiles: Calculate area and perimeter
     jt1 = tile;
     sectionID = j(1).layout.sectionId;
     count = 1;
@@ -75,7 +86,8 @@ parfor zix = 1:numel(zu1)
         p{jix} = {P};
         %cm(jix,:) = sum([P(:,1)/4 P(:,2)/4],1);  % center of mass of each tile
         
-        
+        height(count) = jt1(jix).H;
+        width(count)  = jt1(jix).W;
         % check polygon area
         Ar(count) = polyarea(P(:,1), P(:,2));
         Aratio(count) = Ar(count)/(jt1(jix).H * jt1(jix).W);
@@ -91,18 +103,20 @@ parfor zix = 1:numel(zu1)
         
         count = count + 1;
     end
+    H{zix} = height;
+    W{zix} = width;
     tidsvec{zix} = tids;
     counts(zix,:) = histc(Aratio, edges, 2);
     tile_areas{zix} = Ar;
     tile_perimeters{zix} = S;
     mA(zix) = median(Aratio);
     mS(zix) = median(S);
-    sctn_map{zix} = p;
+    sctn_map{zix} = p;   % needed to plot tile boxes
+    
     %% %%% determine point-matches, solution and residuals for this section
-    
-    
+
     % First: load point-matches and section into "L" (point-matches are in L's pm struct field)
-    if (zix + opts.nbrs)>numel(zu1)
+    if (zix + opts.nbrs+1)>numel(zu1)
         pmz2 = zu1(end);
     else
         pmz2 = zu1(zix + opts.nbrs);
@@ -118,7 +132,7 @@ parfor zix = 1:numel(zu1)
         tpr{tix} = [];
     end
     
-    % generate point-match residuals from L.pm by transforming them and taking the sum of squared
+    % Second: generate point-match residuals from L.pm by transforming them and taking the sum of squared
     % residuals
     res_vecx = [];
     res_vecy = [];
@@ -152,40 +166,105 @@ parfor zix = 1:numel(zu1)
     end
     
 end
-toc
+Resx_store = Resx;
+Resy_store = Resy;
 Resx = cell2mat(Resx);
 Resy = cell2mat(Resy);
+confidence_all = cell2mat(confidence);
 %%
 
 figure;plot(zu1, mA, '-o', 'LineWidth',2);title(['Area median per layer: ' num2str(zstart) ' to ' num2str(zend)]);
 %figure;plot(zu1, mS, 'LineWidth',2);title('Perimeter median perlayer');
-
 title(rc.stack);
+n = 0.1; % number of std for cutoff to determine outliers
+maxres = 2.0;  % cap res at this value so that color differences can be discerned
 
-figure; hist(real(Resx)); title([rc.stack ' -- Resx']);
-figure; hist(real(Resy)); title([rc.stack ' -- Resy']);
+Resx(Resx>mean(Resx)+n*std(Resx))= mean(Resx) + n* std(Resx); 
+Resy(Resy>mean(Resy)+n*std(Resy))= mean(Resy) + n* std(Resy);
 
-%% display
-if dopts.show_deformation
-    % c = [];
-    Ao = 2560*2160;
-    colormap jet;
-    for zix = 1:numel(zu1)
-        figure;
-        sm = sctn_map{zix};
-        areas = tile_areas{zix}/Ao;
-        %caxis([min(areas) max(areas)]);
-        c = mat2gray(areas, [min(areas) max(areas)]);
-        
-        for tix = 1:numel(sm)
-            P = sm{tix}{1};   % patch for this tile
-            patch( P(:,1), P(:,2), [c(tix)],'FaceColor', 'flat',   'EdgeColor', 'k' , 'Facealpha', 0.4);
+
+figure; hist(real(Resx), 100); title([char(rc.stack) ' -- histogram for all tiles Resx']);axis tight
+figure; hist(real(Resy), 100); title([char(rc.stack) ' -- histogram for all Resy']);axis tight
+
+%% display section tile box figures
+% at this point Resx and Resy contain residual information
+% tile_areas contains areas for individual tiles
+Ao = 6000;% H*W;
+%%% determine overall min and max for tile areas
+% areas = [];
+% resx = [];
+% resy = [];
+% for zix = 1:numel(zu1)
+%     areas = [areas tile_areas{zix}/Ao];
+%     resx = [resx Resx(zix)];
+%     resy = [resy Resy(zix)];
+% end
+areas = [cell2mat(tile_areas')]'/Ao;
+areas = abs(1-areas);  % measure area deviation from 1
+area_bounds = [min(areas) max(areas)];
+resx_bounds = [min(Resx) max(Resx)];
+resy_bounds = [min(Resy) max(Resy)];
+
+c_bounds = [min(confidence_all) max(confidence_all)];
+
+%%% display histogram of tile areas for full slab
+figure;hist(areas,100);title('Deformation histogram: 1 - tile area  (away from one) for whole slab');axis tight
+colormap jet;
+
+%%
+if opts.show_deformation || opts.show_residuals
+    for zix = 1:numel(zu1)  % loop over sections
+        if opts.show_deformation
+            areas = tile_areas{zix}./Ao;
+            % to properly see color differences we need to get rid of extreme values
+            areas(areas>mean(areas)+n*std(areas))= mean(areas) + n* std(areas); 
+            draw_colored_boxes(sctn_map{zix}, areas, area_bounds, ['Deformation : ' num2str(zu1(zix))]); % generate figure for y residuals
         end
-        daspect([1 1 1]);colorbar; axis ij
+        
+        if opts.show_residuals
+            % to properly see color differences we need to get rid of extreme values
+            c = confidence{zix};
+            c(c>mean(c)+n*std(c))= mean(c) + n* std(c); 
+            draw_colored_boxes(sctn_map{zix}, c, c_bounds, ['Residuals y: ' num2str(zu1(zix))]); % generate figure for y residuals
+
+%              resx = Resx_store{zix};
+%             resx(resx>mean(resx)+n*std(resx))= mean(resx) + n* std(resx); 
+%              resy = Resy_store{zix};
+%             resy(resy>mean(resy)+n*std(resy))= mean(resy) + n* std(resy); 
+%             
+  %resx(resx>maxres) = maxres;
+ % resy(resy>maxres) = maxres;
+  %resx_bounds(2) = maxres;
+  %resy_bounds(2) = maxres;
+ %           draw_colored_boxes(sctn_map{zix}, resx, resx_bounds, ['Residuals x: ' num2str(zu1(zix))]); % generate figure for y residuals
+            %draw_colored_boxes(sctn_map{zix}, resy, resy_bounds, ['Residuals y: ' num2str(zu1(zix))]); % generate figure for y residuals
+        end
     end
 end
 
+%% list section outliers and statistics per section
+for zix = 1:numel(zu1)  % loop over sections
+    areas = abs(1-tile_areas{zix}/Ao);
+    
+    str1 = [num2str(zu1(zix)) ' dA -Mean: ' num2str(mean(areas)) ' -Median: ' num2str(median(areas))];
+    resx = Resx_store{zix};
+    resy = Resy_store{zix};
+    
+    str2 = [ ' resx: Median: ' num2str(median(resx)) ' -outliers' num2str(numel(find(resx>maxres)))];
+    str3 = [ ' resy: Median: ' num2str(median(resy)) ' -outliers' num2str(numel(find(resy>maxres)))];
+    disp([str1 str2 str3]);
+    
+    resx(resx>maxres) = maxres;
+    resy(resy>maxres) = maxres;
+    
+    figure; 
+    subplot(3,1,1); hist(areas, 100); title([num2str(zu1(zix)) '-- Area deviation']); xlim([0 0.1]);
+    subplot(3,1,2);  hist(resx, 100); title([num2str(zu1(zix)) '-- resx']); xlim([0 maxres]);
+    subplot(3,1,3); hist(resy, 100); title([num2str(zu1(zix)) '-- resy']); xlim([0 maxres]);
+    drawnow;
+end
 
+%% generate histograms for each section
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -216,7 +295,7 @@ end
 %     areas = tile_areas{zix}/Ao;
 %     %caxis([min(areas) max(areas)]);
 %     c = mat2gray(areas, [min(areas) max(areas)]);
-%     
+%
 %     for tix = 1:numel(sm)
 %         P = sm{tix}{1};   % patch for this tile
 %         patch( P(:,1), P(:,2), [c(tix)],'FaceColor', 'flat',   'EdgeColor', 'k' , 'Facealpha', 0.4);
@@ -259,14 +338,14 @@ end
 % xlabel('case number')
 % ylabel('bins');
 % zlabel('count');
-% 
-% 
+%
+%
 % for k = 1:length(b)
 %     zdata = b(k).ZData;
 %     b(k).CData = zdata;
 %     b(k).FaceColor = 'interp';
 % end
-% 
+%
 % view(2);
 
 

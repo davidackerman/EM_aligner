@@ -14,7 +14,7 @@ if sl.verbose,
     disp('Using target collection:');disp(sl.target_collection);
     disp('Using point-match collection:');disp(sl.source_point_match_collection);
 end
-
+sl.section_number = sl.z_value; % same thing but messed up variable names later
 
 
 if sl.solver_options.use_peg
@@ -86,7 +86,7 @@ if sl.target_collection.initialize,
 end
 tic;if sl.verbose, disp('-- Ingesting section into collection');end
 resp = ingest_section_into_LOADING_collection(mL, sl.target_collection,...
-    sl.source_collection, sl.temp_dir, 1); % ingest
+    sl.source_collection, sl.temp_dir, 1, sl.disableValidation); % ingest
 if sl.target_collection.complete,
     if sl.verbose, disp('Completing collection');end
 resp = set_renderer_stack_state_complete(sl.target_collection);  % set to state COMPLETE

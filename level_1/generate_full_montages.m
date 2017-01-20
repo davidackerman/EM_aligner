@@ -85,7 +85,7 @@ for ix = nfirst:nlast
     jbname = sprintf('m_%d', ix);
     log_fn = sprintf('./log_%d.txt', ix);
        % prepare Matlab cache for this job
-    cache_str = ['export MCR_CACHE_ROOT=' sl.local_scratch '/mcr_cache_root.' num2str(ix) ';mkdir -p $MCR_CACHE_ROOT'];
+    cache_str = ['export MCR_CACHE_ROOT=' sl.scratch '/mcr_cache_root.' num2str(ix) ';mkdir -p $MCR_CACHE_ROOT'];
     mcr_root = [sl.scratch '/mcr_cache_root.' jbname];
     del_dir_mcr_root = sprintf('rm -rf %s', mcr_root);
     

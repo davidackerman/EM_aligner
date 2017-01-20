@@ -95,9 +95,11 @@ if sl.target_collection.initialize,
     if sl.verbose, disp('Initializing collection / Deleting existing');end
     delete_renderer_stack(sl.target_collection);  % delete existing collection if present
 end
+
 tic;if sl.verbose, disp('-- Ingesting section into collection');end
 resp = ingest_section_into_LOADING_collection(mL, sl.target_collection,...
     sl.source_collection, sl.temp_dir, 1, sl.disableValidation); % ingest
+
 if sl.target_collection.complete,
     if sl.verbose, disp('Completing collection');end
 resp = set_renderer_stack_state_complete(sl.target_collection);  % set to state COMPLETE

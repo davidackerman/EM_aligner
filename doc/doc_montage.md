@@ -132,7 +132,7 @@ An example json input file is provided below.
 		"stvec_flag": 0,
 		"conn_comp": 1,
 		"distributed": 0,
-		"lambda": 1.0,
+		"lambda": 0.1,
 		"edge_lambda": 0.1,
 		"small_region_lambda": 10,
 		"small_region": 5,
@@ -166,7 +166,7 @@ An example json input file is provided below.
                 "complete": 1
 	},
 	"z_value": 1,
-        "filter_point_matches": 0,
+        "filter_point_matches": 1,
         "temp_dir":"/scratch/khairyk",
 	"verbose": 1,
         "disableValidation": 0

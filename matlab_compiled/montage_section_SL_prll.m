@@ -1,15 +1,25 @@
-function montage_section_SL_prll(fn)
+function montage_section_SL_prll(argin)
 % Intended for deployment: 
-% generate montage based on json input provided by fn
-
-
+% generate montage based on json input provided by argin as function name
+% argin can also be a configuration struct (as if loading json configuration function)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isstruct(argin)
+    sl = argin;
+else
+    fn = argin;    
+    disp(['-------  Using input file: ' fn]);
 % read json input
 sl = loadjson(fileread(fn));
+end
+
+%% overrides and defaults
+if ~isfield(sl, 'disableValidation'), sl.disableValidation = 0;end
 sl.solver_options.filter = sl.image_filter;
+
 if sl.verbose
     disp('Section montage process started');
     kk_clock();
-    disp(['-------  Using input file: ' fn]);
+
     disp('-------  Using solver options:');disp(sl.solver_options);
     disp('-------  Using solver options:');disp(sl.SURF_options);
     disp('-------  Using source collection:');disp(sl.source_collection);
@@ -111,7 +121,7 @@ resp = set_renderer_stack_state_loading(sl.target_collection);
 if sl.verbose>=2,disp(resp);end
 disp('==== ingesting into loading collection ====');
 resp_ingest_loading = ingest_section_into_LOADING_collection(mL, sl.target_collection,...
-                                       sl.source_collection, pwd, 1); % ingest
+                                       sl.source_collection, pwd, 1, sl.disableValidation); % ingest
 if sl.verbose>=2, disp(resp_ingest_loading);end
 
 if ~isfield(sl, 'complete')

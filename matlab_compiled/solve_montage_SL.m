@@ -14,8 +14,9 @@ if sl.verbose,
     disp('Using target collection:');disp(sl.target_collection);
     disp('Using point-match collection:');disp(sl.source_point_match_collection);
 end
+%% overrides and checks
 sl.section_number = sl.z_value; % same thing but messed up variable names later
-
+if ~isfield(sl, 'disableValidation'), sl.disableValidation = 0;end
 
 if sl.solver_options.use_peg
     if sl.verbose, disp('Solving montage using pegs');end
@@ -26,7 +27,7 @@ if sl.solver_options.use_peg
         load_point_matches(sl.section_number,sl.section_number, sl.source_collection, ...
         sl.source_point_match_collection, 0, sl.solver_options.min_points, 0, sl.solver_options.max_points); % 
     toc
-    if sl.filter_point_matches,
+    if sl.filter_point_matches
         tic;if sl.verbose, disp('-- Filtering point matches');end
         pmfopts.NumRandomSamplingsMethod = 'Desired confidence';
         pmfopts.MaximumRandomSamples = 1000;

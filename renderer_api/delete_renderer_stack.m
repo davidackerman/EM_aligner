@@ -6,7 +6,7 @@ function resp = delete_renderer_stack(rc)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 verbose = 0;
 check_input(rc);
-
+if ~stack_read_only(rc)
 % default the renderer binary to Janelia's setup
 if ~isfield(rc, 'renderbinPath')
     rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
@@ -32,6 +32,9 @@ end
 if verbose
     disp(a);
     disp(resp);
+end
+else
+    warning('You cannot delete a stack in READ_ONLY state. Set to COMPLETE or LOADING first');
 end
 
 

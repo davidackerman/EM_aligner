@@ -166,9 +166,10 @@ An example json input file is provided below.
                 "complete": 1
 	},
 	"z_value": 1,
-    "filter_point_matches": 0,
-    "temp_dir":"/scratch/khairyk",
-	"verbose": 1
+        "filter_point_matches": 0,
+        "temp_dir":"/scratch/khairyk",
+	"verbose": 1,
+        "disableValidation": 0
 }
 
 ```

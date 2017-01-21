@@ -1,25 +1,25 @@
-function [err,R,xout] = system_solve(nfirst, nlast, rc, pm, opts, rcout)
-% Fast solve of section alignment when regularizer (starting collection) 
-% rc is provided
-% After solving, ingests solved tiles into Renderer collection (rcout)
+function [err,R, Tout] = system_solve(nfirst, nlast, rc, pm, opts, rcout)
+% Fast solve and ingest of section alignment when regularizer (starting collection)
+% rc and full set of point-matches pm is provided
+% After solving, ingests solved tiles into Renderer collection rcout if non empty
 %
 % INPUTS:
 % nfirst and nlast: z values (inclusive) to specify slab range
 % rc: source stack (usually roughly aligned) that will be used to determine
 %     regularization
-% pm: one or more (array) of point-match structs that defines (multiple) 
+% pm: one or more (array) of point-match structs that defines (multiple)
 %     sources of point-match collections to look for point-matches
 % opts: See example opts below
 % rcout: fine-aligned output collection
-% 
+%
 % OUTPUTS:
 %   err: total error of objective system (norm(Ax-b))
 %   R  : residual of regularized system (K*x2-Lm)
-%   xout: solution vector
+%   Tout: solution vector
 %
-% Note 1 : For fast direct solution of large systems (>250k tiles) please 
+% Note 1 : For fast direct solution of large systems (>250k tiles) please
 %         install and setup PaSTiX and set opts.solver to 'pastix'
-% Note 2 : For iterative solution of large systems set opts.solver to 
+% Note 2 : For iterative solution of large systems set opts.solver to
 %          gmres or bicgstab
 %
 % Author: Khaled Khairy
@@ -120,6 +120,16 @@ end
 % load all tiles in this range and pool into Msection object
 disp('Loading transformations and tile/canvas ids from Renderer database.....');
 [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
+
+%%%%% Experimental
+if opts.transfac<1.0  % then set x and y to 0,0 for each tile
+    % it is assumed in this case that translation has more freedom than other parameters
+    % typical case: keep everything rigid (high lambda) and really low opts.transfac
+    disp(['--- Warning: Setting all x and y to zero for starting vector']);
+    T(:,3) = 0;
+    T(:,6) = 0;
+end
+%%%%%%%%%%%%%%%%%%
 ntiles = size(T,1);
 disp(['..system has ' num2str(ntiles) ' tiles...']);
 %[L, map_id, tIds] = load_all_tiles(rc,zu);ntiles = numel(L.tiles);
@@ -366,16 +376,21 @@ disp('--------- using lambda:');
 disp(lambda);
 disp('-----------------------');
 
+
 %%% translate smallest x and smallest y in d to zero
 x_coord = d(3:6:end);
 y_coord = d(6:6:end);
 d(3:6:end) = d(3:6:end)-min(x_coord);
 d(6:6:end) = d(6:6:end)-min(y_coord);
 
+
 K  = A'*Wmx*A + lambda*(tB')*tB;
 Lm  = A'*Wmx*b + lambda*(tB')*d;
 [x2, R] = solve_AxB(K,Lm, opts, d);
-err = norm(A*x2-b); 
+%%%% sosi
+%disp(full([d(:) Lm(:) diag(tB) x2(:) R(:)]));
+%%%%%
+err = norm(A*x2-b);
 disp(['Error norm(Ax-b): ' num2str(err)]);
 Error = err;
 Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
@@ -385,44 +400,45 @@ clear K Lm d tb A b Wmx tB
 disp('.... done!');
 
 %% Step 5: ingest into Renderer database
-
-disp('** STEP 5:   Ingesting data .....');
-disp(' ..... translate to +ve space');
-delta = 0;
-dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-for ix = 1:size(Tout,1)
-    Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+if ~isempty(rcout)
+    disp('** STEP 5:   Ingesting data .....');
+    disp(' ..... translate to +ve space');
+    delta = 0;
+    dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+    dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
+    for ix = 1:size(Tout,1)
+        Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+    end
+    
+    disp('... export to MET (in preparation to be ingested into the Renderer database)...');
+    
+    v = 'v1';
+    if stack_exists(rcout)
+        disp('.... removing existing collection');
+        resp = create_renderer_stack(rcout);
+    end
+    if ~stack_exists(rcout)
+        disp('.... target collection not found, creating new collection in state: ''Loading''');
+        resp = create_renderer_stack(rcout);
+    end
+    
+    if ntiles<opts.nchunks_ingest, opts.nchunks_ingest = ntiles;end
+    
+    chks = round(ntiles/opts.nchunks_ingest);
+    cs = 1:chks:ntiles;
+    cs(end) = ntiles;
+    disp(' .... ingesting ....');
+    parfor ix = 1:numel(cs)-1
+        vec = cs(ix):cs(ix+1);
+        export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
+            tIds(vec), z_val(vec), v, opts.disableValidation);
+    end
+    
+    
+    % % complete stack
+    disp(' .... completing stack...');
+    resp = set_renderer_stack_state_complete(rcout);
 end
-
-disp('... export to MET (in preparation to be ingested into the Renderer database)...');
-
-v = 'v1';
-if stack_exists(rcout)
-    disp('.... removing existing collection');
-    resp = create_renderer_stack(rcout);
-end
-if ~stack_exists(rcout)
-    disp('.... target collection not found, creating new collection in state: ''Loading''');
-    resp = create_renderer_stack(rcout);
-end
-
-if ntiles<opts.nchunks_ingest, opts.nchunks_ingest = ntiles;end
-
-chks = round(ntiles/opts.nchunks_ingest);
-cs = 1:chks:ntiles;
-cs(end) = ntiles;
-disp(' .... ingesting ....');
-parfor ix = 1:numel(cs)-1
-    vec = cs(ix):cs(ix+1);
-    export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
-        tIds(vec), z_val(vec), v, opts.disableValidation);
-end
-
-
-% % complete stack
-disp(' .... completing stack...');
-resp = set_renderer_stack_state_complete(rcout);
 disp('.... done!');
 diary off;
 

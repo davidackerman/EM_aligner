@@ -69,7 +69,7 @@ classdef Msection
             % *Scenario 2: obj = Msection(rc, z); %  rc is a struct that defines a renderer collection. z is z-value in the renderer collection
             % *Scenario 3: obj = Msection(tile_array); %  tile_array = array of tile objects
             % *Scenario 4: obj = Msection(layout_original, z); %arg1 = full layout file path, arg2 = z section desired
-            
+            % *Scenario 5: obj = Msection(rc, zstart, zfinish); % gets at range of z's into one Msection object
             if nargin~=0
                 
                 %%%% generate Msection object from array of tile objects
@@ -131,6 +131,12 @@ classdef Msection
                     obj = import_from_layout_txt(obj, arg1, arg2);
                     obj = generate_hash_tables(obj);
                     obj = update_adjacency(obj);
+                    if ~isempty(obj.tiles), obj = update_tile_info(obj);end
+                end
+                %%%%%% import from Renderer collection over a range of z from arg2 to arg3
+                if nargin==3 && isstruct(arg1)
+                    %% in this case we construct a layer by directly reading the relevant z tile information from the layout file
+                    obj = get_slab_tiles(arg1, arg2, arg3);
                     if ~isempty(obj.tiles), obj = update_tile_info(obj);end
                 end
             end

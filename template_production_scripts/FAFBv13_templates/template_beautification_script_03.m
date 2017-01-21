@@ -228,10 +228,10 @@ delete_renderer_stack(rcfine_filtered); % remove this co
 
 clear pm;ix = 1;
 % 
-% pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
-% pm(ix).owner = 'flyTEM';
-% pm(ix).match_collection = 'v12_dmesh';
-% ix = ix + 1;
+pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(ix).owner = 'flyTEM';
+pm(ix).match_collection = 'v12_dmesh';
+ix = ix + 1;
 
 pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
 pm(ix).owner = 'flyTEM';
@@ -250,10 +250,10 @@ rcfine_filtered.service_host   = '10.40.3.162:8080';
 rcfine_filtered.baseURL        = ['http://' rcfine_filtered.service_host '/render-ws/v1'];
 rcfine_filtered.verbose        = 1;
 
-opts.min_points = 10;
-opts.max_points = 100;
-opts.nbrs = 3;
-opts.xs_weight = 1/1000.0;
+opts.min_points = 8;
+opts.max_points = 20;
+opts.nbrs = 4;
+opts.xs_weight = 1.0;
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 

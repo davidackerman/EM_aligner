@@ -22,7 +22,8 @@ Calculates an affine solution for a volume
 nfirst= 1;
 nlast = 10;
 
-%%%% define collection of point-matches that will be aggregated for the solve
+%%%% define collection of point-matches that will be aggregated for the solve.
+
 clear pm;ix = 1;
 % 
 pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';

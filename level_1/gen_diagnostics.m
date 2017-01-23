@@ -30,6 +30,7 @@ if nargin<5
     opts.nbrs = 4;
     opts.show_deformation = 1;
     opts.show_residuals = 1;
+    opts.show_deformation_summary = 1;
 end
 
 
@@ -268,6 +269,7 @@ for zix = 1:numel(zu1)  % loop over sections
 end
 
 %% summarize deformation for whole stack
+if opts.show_deformation_summary
 cc = counts(1:end,:);
 % plot results
 hf = figure;
@@ -286,7 +288,7 @@ end
 view(2);
 
 title('summary area deformation of stack');
-
+end
 
 
 

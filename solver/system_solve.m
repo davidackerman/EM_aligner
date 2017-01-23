@@ -94,6 +94,7 @@ if ~isfield(opts, 'nchunks_ingest'), opts.nchunks_ingest = 32;end
 if ~isfield(opts, 'disableValidation'), opts.disableValidation = 1;end
 if ~isfield(opts, 'transfac'), opts.transfac = 1;end
 if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 0;end
+if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
 
 err = [];
 R = [];
@@ -121,15 +122,7 @@ end
 disp('Loading transformations and tile/canvas ids from Renderer database.....');
 [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
 
-%%%%% Experimental
-if opts.transfac<1.0  % then set x and y to 0,0 for each tile
-    % it is assumed in this case that translation has more freedom than other parameters
-    % typical case: keep everything rigid (high lambda) and really low opts.transfac
-    disp(['--- Warning: Setting all x and y to zero for starting vector']);
-    T(:,3) = 0;
-    T(:,6) = 0;
-end
-%%%%%%%%%%%%%%%%%%
+
 ntiles = size(T,1);
 disp(['..system has ' num2str(ntiles) ' tiles...']);
 %[L, map_id, tIds] = load_all_tiles(rc,zu);ntiles = numel(L.tiles);
@@ -205,6 +198,48 @@ if opts.filter_point_matches
     PM = filter_pm(PM, opts.pmopts);
 end
 
+if opts.use_peg
+    %% generate new point-match entries to connect all tiles -- may not work for massive data yet
+    tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
+    if ~isempty(tvalid)
+        M = cell(numel(tvalid),2);
+        Weights = cell(numel(tvalid),1);
+        adj = zeros(numel(tvalid),2);
+        largetileix = ntiles + 1;   % linear index of fictitious tile
+        np = zeros(1, numel(tvalid));
+        % we need to get width and height information about all tvalid tile
+        % we are assuming all tiles have same width and height here
+        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s', ...
+            rc.baseURL, rc.owner, rc.project, rc.stack, tIds{tvalid(1)});
+        j = webread(urlChar);
+        W = j.width;
+        H = j.height;
+        for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
+            tix = tvalid(ix);
+            bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
+            aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
+                 *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
+            bo = [aa;bb];
+            tform = [T(tix,1) T(tix,4) 0; T(tix,2) T(tix,5) 0;T(tix,3) T(tix,6) 1];
+            p = bo*tform;
+            pt = p(:,1:2);
+            M{ix,1} = bo(:,[1 2]);
+            M{ix,2} = pt;
+            adj(ix,:) = [tix largetileix];
+            np(ix) = opts.peg_npoints;
+            Weights{ix} = ones(1,opts.peg_npoints) * opts.peg_weight ;
+        end
+        PM.M = [PM.M;M];
+        PM.adj = [PM.adj;adj];
+        PM.W = [PM.W;Weights];
+        PM.np = [PM.np;np'];
+    end
+    T(end+1,:) = [1 0 0 1 0 0];   % add the fictitious tile
+    tIds(end+1) = {'-8888'};
+    ntiles = ntiles + 1;
+    ncoeff = ncoeff + tdim;
+end
+
 M = PM.M;
 adj = PM.adj;
 W = PM.W;
@@ -216,6 +251,16 @@ np = PM.np;
 
 disp(' ..... done!');diary off;diary on;
 %% Step 3: generate row slabs of matrix A
+%%%%% Experimental: set xy to zero (after having added fictitious tile is using peg.
+if opts.transfac<1.0  % then set x and y to 0,0 for each tile
+    % it is assumed in this case that translation has more freedom than other parameters
+    % typical case: keep everything rigid (high lambda) and really low opts.transfac
+    disp(['--- Warning: Setting all x and y to zero for starting vector']);
+    T(:,3) = 0;
+    T(:,6) = 0;
+end
+%%%%%%%%%%%%%%%%%%
+
 disp('** STEP 3:    Generating system matrix .... ');
 split = opts.distribute_A;
 
@@ -394,6 +439,14 @@ err = norm(A*x2-b);
 disp(['Error norm(Ax-b): ' num2str(err)]);
 Error = err;
 Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
+
+
+if opts.use_peg  % delete fictitious tile
+    Tout(end,:) = [];
+    tIds(end) = [];
+    ntiles = ntiles - 1;
+    ncoeff = ncoeff - tdim;
+end
 %%
 clear x2;
 clear K Lm d tb A b Wmx tB

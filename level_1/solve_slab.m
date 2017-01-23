@@ -9,7 +9,7 @@ function [mL, pm_mx, err, R, L_vec, ntiles, PM, sectionId_load, z_load] = ...
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-verbose = 1;
+verbose = 0;
 if ~isfield(opts, 'nbrs'), opts.nbrs = 2;end
 if ~isfield(opts, 'min_points'), opts.min_points = 5;end
 if ~isfield(opts, 'xs_weight'), opts.xs_weight = 1;end

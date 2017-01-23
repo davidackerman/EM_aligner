@@ -177,7 +177,7 @@ opts.solver = 'backslash';%'pastix';%%'gmres';%'backslash';'pastix';
 
 
 opts.pastix.ncpus = 8;
-opts.pastix.parms_fn = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
+opts.pastix.parms_fn = '/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
 opts.pastix.split = 1; % set to either 0 (no split) or 1
 
 opts.matrix_only = 0;   % 0 = solve , 1 = only generate the matrix
@@ -226,6 +226,9 @@ mA_thresh = 0.2;
 % this solution will disregard tiles that we know will cause larger deformation if included
 delete_renderer_stack(rcfine_filtered); % remove this co
 
+zstart = 2630;
+zfinish = 2641;
+
 clear pm;ix = 1;
 % 
 pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
@@ -250,33 +253,70 @@ rcfine_filtered.service_host   = '10.40.3.162:8080';
 rcfine_filtered.baseURL        = ['http://' rcfine_filtered.service_host '/render-ws/v1'];
 rcfine_filtered.verbose        = 1;
 
+
+% configure solver
+opts.min_tiles = 20; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
+opts.outlier_lambda = 1e2;  % large numbers result in fewer tiles excluded
+opts.solver = 'backslash';%'pastix';%%'gmres';%'backslash';'pastix';
+
+
+% only relevant when solver is pastix
+opts.pastix.ncpus = 8;
+opts.pastix.parms_fn = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
+opts.pastix.split = 1; % set to either 0 (no split) or 1
+
+opts.matrix_only = 0;   % 0 = solve (default) , 1 = only generate the matrix. For debugging only
+opts.distribute_A = 1;  % # shards of A
+opts.dir_scratch = '/scratch/khairyk';
+opts.nchunks_ingest = 64;
+
 opts.min_points = 8;
-opts.max_points = 20;
+opts.max_points = 100;
 opts.nbrs = 4;
-opts.xs_weight = 1.0;
+opts.xs_weight = 0.1;  % ------------------------------------->
 opts.stvec_flag = 1;   % 0 = regularization against rigid model (i.e.; starting value is not supplied by rc)
 opts.distributed = 0;
 
-opts.lambda = 10.^(4);
-opts.edge_lambda = 10^(4);
-opts.transfac = 1;
-opts.nchunks_ingest = 64;
+opts.transfac = 1;  % let tiles translate more freely if transfac<1 (e.g. 1e-5)
+
+opts.lambda = 10.^(-3);  % ----------------------------------->
+opts.A = [];
+opts.b = [];
+opts.W = [];
+
 % % configure point-match filter
-opts.filter_point_matches = 1;
+opts.filter_point_matches = 1;  %------------------------------->
 opts.pmopts.NumRandomSamplingsMethod = 'Desired confidence';
 opts.pmopts.MaximumRandomSamples = 5000;
 opts.pmopts.DesiredConfidence = 99.9;
 opts.pmopts.PixelDistanceThreshold = .01;
 
-% opts.use_peg   = 0;
-% opts.peg_weight = 0.00001;
-% opts.peg_npoints = 10;
+opts.verbose = 1;
+opts.debug = 0;
 
+opts.use_peg   = 0;   % ------------------------------------>
+opts.peg_weight = 0.0001;
+opts.peg_npoints = 10;
 opts.disableValidation = 1;
 
+rcfine.stack = ['Revised_slab_2630_2641_fine_' num2str(log10(opts.lambda))];
+rcfine_filtered.versionNotes = ['lambda: ' num2str(opts.lambda) ' -- transfac: ' num2str(opts.transfac) ...
+                                ' -- filter pms: ' num2str(opts.filter_point_matches) ' -- use peg: ' ...
+                                num2str(opts.use_peg)];
+                            
 [err, R] = ...
-         system_solve(nfirst, nlast, rcrough_filtered, pm, opts, rcfine_filtered);
+         system_solve(zstart, zfinish, rcrough_filtered, pm, opts, rcfine_filtered);
+disp(err);
 
+%%%%%%%%%%%%%%%%%%%%%  
+opts.lambda = 10.^(-2);
+rcfine.stack = ['Revised_slab_2630_2641_fine_' num2str(log10(opts.lambda))];
+rcfine_filtered.versionNotes = ['lambda: ' num2str(opts.lambda) ' -- transfac: ' num2str(opts.transfac) ...
+                                ' -- filter pms: ' num2str(opts.filter_point_matches) ' -- use peg: ' ...
+                                num2str(opts.use_peg)];
+[err, R] = ...
+         system_solve(zstart, zfinish, rcrough_filtered, pm, opts, rcfine_filtered);
 % alternatively (slow)
 % [mL, pm_mx, err, R, ~, ntiles, PM, sectionId_load, z_load] = ...
 %     solve_slab(rcrough_filtered, pm, ...
@@ -284,18 +324,51 @@ opts.disableValidation = 1;
 
 
 disp(err);
-%% diagnostics
-zstart = 2630;
-zfinish = 2631;
+% % % % diagnostics
+% % 
+% % 
+% % dopts.nbrs = 3;
+% % dopts.min_points = 5;
+% % dopts.show_deformation = 0;
+% % dopts.show_residuals = 0;
+% % dopts.show_deformation_summary = 0;
+% % 
+% % 
+% % 
+% % [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
+% %     gen_diagnostics(rcsource, rcfine_filtered, zstart, zfinish, pm, dopts);
 
-dopts.nbrs = 3;
-dopts.min_points = 5;
-dopts.show_deformation = 1;
-dopts.show_residuals = 1;
-
-[mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
-    gen_diagnostics(rcfine_filtered, zstart, zfinish, pm, dopts);
-
+%% lambda vs deformation search
+% % diagnostics
+% dopts.nbrs = 4;
+% dopts.min_points = 8;
+% dopts.show_deformation = 0;
+% dopts.show_residuals = 0;
+% dopts.show_deformation_summary = 0;
+% 
+% count = 1;
+% def = [];
+% err = [];
+% l_used = [];
+% for lexp = -3:0.5:4
+%     opts.lambda = 10^(lexp);
+%     opts.edge_lambda = opts.lambda;
+%     
+%     [err(count)] = system_solve(zstart, zfinish, rcrough_filtered, pm, opts, rcfine_filtered);
+%     
+%     [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec] =...
+%         gen_diagnostics(rcsource, rcfine_filtered, zstart, zfinish, pm, dopts);
+%     
+%     def(count) = 1/mean(mA);
+%     l_used(count) = opts.lambda;
+%     
+%     disp([l_used(count) err(count) def(count)]);
+%     count = count + 1;
+% end
+% 
+% disp([l_used(:) err(:) def(:)]);
+% 
+% plot(log10(l_used), log10(err), 'o-', log10(l_used), log10(def), 'k-');
 
 %% [8] insert beautified slab into full volume
 

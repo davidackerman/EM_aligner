@@ -90,10 +90,28 @@ disp('-------  Using target_point_match_collection:');disp(sl.target_point_match
 % disp('Section full montage process started');
 % resp = set_renderer_stack_state_complete(sl.target_collection);
 %%
-% fnsm = '/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/solve_montage_input_beautification_2630_2641.json';
-% sl = loadjson(fileread(fnsm));
+fnsm = '/groups/flyTEM/home/khairyk/EM_aligner/configurations/solve_montage_fafb_section_5.json';
+sl = loadjson(fileread(fnsm));
 % sl.target_collection = montage_collection;
 % disp('Section solve-only montage process started');
+
+%%%% construct pm struct array like so:
+clear pm;ix = 1;
+% 
+pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(ix).owner = 'flyTEM';
+pm(ix).match_collection = 'v12_dmesh';
+ix = ix + 1;
+
+% pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+% pm(ix).owner = 'flyTEM';
+% pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
+% ix = ix + 1;
+
+pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(ix).owner = 'flyTEM';
+pm(ix).match_collection = 'Beautification_cross_sift_00';  % cross section point-matches
+ix = ix + 1;
 for ix = nfirst:nlast
     %delete_renderer_section(sl.target_collection, ix);
     sl.section_number = ix;
@@ -102,12 +120,14 @@ for ix = nfirst:nlast
     sl.target_collection.initialize = 0;
     sl.target_collection.complete = 1;
     jstr = savejson('', sl);
-    fid = fopen(fn, 'w');
-    fprintf(fid, jstr);
-    fclose(fid);
+    
+    
+%     fid = fopen(fn, 'w');
+%     fprintf(fid, jstr);
+%     fclose(fid);
     %montage_section_SL_prll(fn);
-    solve_montage_SL(fn)
-    delete(fn);
+    solve_montage_SL(sl)
+%     delete(fn);
 end
 set_renderer_stack_state_complete(sl.target_collection);
 %% [2] (optional) if neessaary slice sections into pieces and assemble
@@ -224,7 +244,7 @@ mA_thresh = 0.2;
 
 %% [7] (optional) solve again (pass 2) based on filtered rough collection
 % this solution will disregard tiles that we know will cause larger deformation if included
-delete_renderer_stack(rcfine_filtered); % remove this co
+%delete_renderer_stack(rcfine_filtered); % remove this co
 
 zstart = 2630;
 zfinish = 2641;
@@ -236,10 +256,10 @@ pm(ix).owner = 'flyTEM';
 pm(ix).match_collection = 'v12_dmesh';
 ix = ix + 1;
 
-pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
-pm(ix).owner = 'flyTEM';
-pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
-ix = ix + 1;
+% pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
+% pm(ix).owner = 'flyTEM';
+% pm(ix).match_collection = 'FAFB_pm_2';  % montage point-matches
+% ix = ix + 1;
 
 pm(ix).server = 'http://10.40.3.162:8080/render-ws/v1';
 pm(ix).owner = 'flyTEM';
@@ -280,7 +300,7 @@ opts.distributed = 0;
 
 opts.transfac = 1;  % let tiles translate more freely if transfac<1 (e.g. 1e-5)
 
-opts.lambda = 10.^(-3);  % ----------------------------------->
+opts.lambda = 10.^(-1);  % ----------------------------------->
 opts.A = [];
 opts.b = [];
 opts.W = [];
@@ -298,9 +318,9 @@ opts.debug = 0;
 opts.use_peg   = 0;   % ------------------------------------>
 opts.peg_weight = 0.0001;
 opts.peg_npoints = 10;
-opts.disableValidation = 1;
+opts.disableValidation = 0;
 
-rcfine.stack = ['Revised_slab_2630_2641_fine_' num2str(log10(opts.lambda))];
+rcfine_filtered.stack = ['Revised_slab_2630_2641_fine_lambda_m1' ];
 rcfine_filtered.versionNotes = ['lambda: ' num2str(opts.lambda) ' -- transfac: ' num2str(opts.transfac) ...
                                 ' -- filter pms: ' num2str(opts.filter_point_matches) ' -- use peg: ' ...
                                 num2str(opts.use_peg)];
@@ -310,13 +330,6 @@ rcfine_filtered.versionNotes = ['lambda: ' num2str(opts.lambda) ' -- transfac: '
 disp(err);
 
 %%%%%%%%%%%%%%%%%%%%%  
-opts.lambda = 10.^(-2);
-rcfine.stack = ['Revised_slab_2630_2641_fine_' num2str(log10(opts.lambda))];
-rcfine_filtered.versionNotes = ['lambda: ' num2str(opts.lambda) ' -- transfac: ' num2str(opts.transfac) ...
-                                ' -- filter pms: ' num2str(opts.filter_point_matches) ' -- use peg: ' ...
-                                num2str(opts.use_peg)];
-[err, R] = ...
-         system_solve(zstart, zfinish, rcrough_filtered, pm, opts, rcfine_filtered);
 % alternatively (slow)
 % [mL, pm_mx, err, R, ~, ntiles, PM, sectionId_load, z_load] = ...
 %     solve_slab(rcrough_filtered, pm, ...

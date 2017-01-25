@@ -7,6 +7,7 @@ function obj = export_MET(obj, dir_export_MET, flag, option, force)
 % option = 2  use dir_export_MET input as the full file name
 % force = 0 means only valid tiles will be exported (state >=1)
 
+% Note: flag options 0 and 1 will be deprecated soon.
 
 %% prepare and export MET file needed for ERIC to constuct CATMAID files
 if nargin<3, flag = 0;option = 0;end
@@ -55,7 +56,7 @@ for tix = 1:numel(obj.tiles)
                 obj.tiles(tix).cam, ...
                 obj.tiles(tix).path,...
                 obj.tiles(tix).temca_conf );
-        elseif flag==2
+        elseif flag==2    % this is the one almost exclusively used
             fprintf(fid,'%d\t%s\t%d\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%.12f\t%d\t%d\t%d\t%s\t%d\n',...
                 obj.tiles(tix).z,...
                 obj.tiles(tix).renderer_id, ...

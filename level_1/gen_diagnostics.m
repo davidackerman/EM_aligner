@@ -1,4 +1,4 @@
-function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, Resx,Resy] =...
+function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, sc] =...
     gen_diagnostics(rcsource, rc, zstart, zend, pm, opts)
 %% generate statistics about residuals and tile deformation
 % Summarizes point-match residuals and tile deformation per tile and section taking
@@ -268,6 +268,23 @@ for zix = 1:numel(zu1)  % loop over sections
     %     drawnow;
 end
 
+%% generate tile-based residual measure
+section_conf = {};
+for zix = 1:numel(zu1)  % loop over sections
+
+            % to properly see color differences we need to get rid of extreme values
+            tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
+            c = zeros(numel(tres),1);
+            for tix = 1:numel(tres)
+                c(tix) = sum(tres{tix}(:));
+            end
+            c(c>mean(c)+n*std(c))= mean(c) + n* std(c);
+            section_conf{zix} = c;
+            %draw_colored_boxes(sctn_map{zix}, c, [0 max(c)], ['Residuals for: ' num2str(zu1(zix))]); % generate figure for y residuals
+
+end
+sc = cell2mat(section_conf);
+hist(sc, 100);
 %% summarize deformation for whole stack
 if opts.show_deformation_summary
 cc = counts(1:end,:);

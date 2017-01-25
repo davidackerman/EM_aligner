@@ -21,7 +21,7 @@ strtiles = strrep(strtiles, '"', '\"');
 
 urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%d/tileIds',...
     rc.baseURL, rc.owner, rc.project, rc.stack,znew);
-
+% webread(char(urlChar);
 %%% get rid of curl command and use Matlab built-in function
 str = sprintf('curl -X PUT --header "Content-Type: application/json" --header "Accept: application/json" -d "%s" "%s"', ...
       strtiles, urlChar);

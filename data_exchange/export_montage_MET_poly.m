@@ -23,7 +23,7 @@ function export_montage_MET_poly(mL, fn)
 % dy = mL.box(3);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% do the actual export here
 %%% pay attention to the polynomial convention of Matlab's polynomial vs
-%%% the one the Rendere uses from this Website (http://bishopw.loni.ucla.edu/AIR5/2Dnonlinear.html#default):
+%%% the one the Renderer uses (below) from this Website (http://bishopw.loni.ucla.edu/AIR5/2Dnonlinear.html#default):
 % 1
 % x
 % y (end of 1st order)

@@ -62,6 +62,11 @@ function [I, J, S, w] = gen_A_b_row_range(fn, degree, np_vec, ...
 %     lsq_options.W = spdiags(w,0,size(lsq_options.A,1),size(lsq_options.A,1));
 %     
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% parameter definition for polynomials:
+% Definition of the parameters
+% u = a1 + a2 * x + a3 * y + a4 * xy + a5 * x^2 + a6 * y^2 +
+%     a7 *x^2 * y + a8 * x * y^2 + a9 * x^3 + a10 * y^3
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 load(fn);

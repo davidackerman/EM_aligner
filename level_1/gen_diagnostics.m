@@ -1,4 +1,5 @@
-function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec, sc] =...
+function [mA, mS, sctn_map, confidence, tile_areas, tile_perimeters, tidsvec,...
+    section_conf, residual_outliers_tid, area_outliers_tid, outliers_tid,  T] =...
     gen_diagnostics(rcsource, rc, zstart, zend, pm, opts)
 %% generate statistics about residuals and tile deformation
 % Summarizes point-match residuals and tile deformation per tile and section taking
@@ -31,7 +32,15 @@ if nargin<5
     opts.show_deformation = 1;
     opts.show_residuals = 1;
     opts.show_deformation_summary = 1;
+    opts.show_residual_histogram = 1;
+    opts.nstd = 2;
 end
+
+%%% defaults and overrides
+if ~isfield(opts, 'show_residual_histogram'), opts.show_residual_histogram = 0;end
+if ~isfield(opts, 'nstd'), opts.nstd = 2;end
+sc = [];
+
 
 
 [zu1, sID1, sectionId1, z1, ns1] = get_section_ids(rc, zstart, zend);
@@ -39,8 +48,11 @@ end
 %% find corresponding tile centers
 tic
 % initialize variables to store deformation and residuals
-confidence  = cell(numel(zu1),1);
 sctn_map  = cell(numel(zu1),1);
+residual_outliers_tids = cell(numel(zu1),1);
+area_outliers_tids = cell(numel(zu1),1);
+outliers_tids = cell(numel(zu1),1);
+section_conf = cell(numel(zu1), 1);
 tile_areas = cell(numel(zu1),1);
 tile_perimeters = cell(numel(zu1),1);
 tidsvec = cell(numel(zu1),1);
@@ -50,6 +62,7 @@ res_tiles_vec = cell(numel(zu1),1);
 confidence = zeros(numel(zu1,1));
 H = cell(numel(zu1),1);
 W = cell(numel(zu1),1);
+
 % to generate histogram counts we need to define bin edges
 edges = [0.4:.02:1.7];
 counts = zeros(numel(zu1), numel(edges));
@@ -66,7 +79,7 @@ parfor zix = 1:numel(zu1)
         rc.baseURL, rc.owner, rc.project, rc.stack,zu1(zix) );
     j = webread(urlChar, webopts);
     
-        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+    urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
         rcsource.baseURL, rcsource.owner, rcsource.project, rcsource.stack,zu1(zix) );
     jo = webread(urlChar, webopts);
     
@@ -120,6 +133,14 @@ parfor zix = 1:numel(zu1)
     mA(zix) = median(Aratio);
     mS(zix) = median(S);
     sctn_map{zix} = p;   % needed to plot tile boxes
+     %% determine area outliers
+    % for each tile, calculate the mean of means of point-match residuals
+    meann = mean(Aratio);
+    stdd = std(Aratio);
+        I = logical(abs(Aratio-meann)>opts.nstd*stdd);
+    %I = bsxfun(@gt, abs(bsxfun(@minus, Aratio, meann)), opts.nstd*stdd);
+    area_out = find(I)
+    area_outliers_tid{zix} = tidsvec{zix}(area_out);
     
     %% %%% determine point-matches, solution and residuals for this section
     
@@ -135,6 +156,7 @@ parfor zix = 1:numel(zu1)
     
     % initialize variable tpr to hold point-match residuals
     tpr = zeros(numel(L.tiles),1);   % tpr === transformed point-match residuals
+    visits = zeros(numel(L.tiles),1); % stores the number of tile-pair visits every tile experiences
     res_tiles = cell(numel(L.tiles),1);
     % Second: generate point-match residuals from L.pm by transforming them and taking the sum of squared
     % residuals
@@ -147,7 +169,8 @@ parfor zix = 1:numel(zu1)
         m2 = L.pm.M{pmix,2};
         m1 = [m1 ones(size(m1,1),1)]*L.tiles(a1).tform.T;  % apply transformation
         m2 = [m2 ones(size(m2,1),1)]*L.tiles(a2).tform.T;  % apply transformation
-        res = real(sqrt(sum((m1(1)-m2(1))*(m1(1)-m2(1))  + (m1(2)-m2(2)) * (m1(2)-m2(2)))));    %%%% sum of squared residuals
+        res = real(sqrt(sum((m1(:,1)-m2(:,1)).*(m1(:,1)-m2(:,1))  + (m1(:,2)-m2(:,2)).* (m1(:,2)-m2(:,2)))));    %%%% sum of squared residuals
+        res = res/size(m1,1);  % mean residual sum for this tile pair
         %disp(res);
         %res_vec(pmix,:) = sqrt((m1(1)-m2(1))*(m1(1)-m2(1)) + (m1(1)-m2(1))*(m1(2)-m2(2)));
         
@@ -155,27 +178,46 @@ parfor zix = 1:numel(zu1)
         %         res_vecx(pmix,:) = abs(m1(1)-m2(1));
         %         res_vecy(pmix,:) = abs(m1(2)-m2(2));
         %
-        tpr(a1) = [tpr(a1) + res];
-        tpr(a2) = [tpr(a2) + res];
-        res_tiles{a1} = [res_tiles{a1} res];
+        tpr(a1) = [tpr(a1) + res];  % add to bucket of tile a1
+        tpr(a2) = [tpr(a2) + res];  % add to bucket of tile a2
+        visits(a1) = visits(a1) + 1;              % counter for number of times tile a1 is visited
+        visits(a2) = visits(a2) + 1;
+        res_tiles{a1} = [res_tiles{a1} res];  % aggregate residuals for tile a1
         res_tiles{a2} = [res_tiles{a2} res];
     end
     res_tiles_vec{zix} = res_tiles;  % store tile residuals for this section
     Resx{zix} = res_vecx;
     Resy{zix} = res_vecy;
     % store errors/confidence in cell array "confidence"
-    confidence(zix) = 0;
-    for tix = 1:numel(L.tiles)
-        confidence(zix) = confidence(zix) + tpr(tix);%{sum(tpr{tix},1)/size(tpr{tix},1)};
+    %confidence(zix) = 0;
+    %for tix = 1:numel(L.tiles)
+    confidence(zix) = median(tpr./visits);%/visits(tix);% median of residuals of tiles in this section
+    %end
+    %confidence(zix) = confidence(zix)/numel(L.tiles); %mean residual for tiles
+     %% determine residual outliers
+     tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
+    c = zeros(numel(tres),1);
+    % for each tile, calculate the mean of means of point-match residuals
+    for tix = 1:numel(tres)
+        c(tix) = sum(tres{tix}(:))/numel(tres{tix}(:));
     end
-    
+    section_conf{zix} = c; %
+    meann = mean(section_conf{zix});
+    stdd = std(section_conf{zix});
+    I = logical(abs(section_conf{zix}-meann)>opts.nstd*stdd);
+%    I = bsxfun(@gt, abs(bsxfun(@minus, section_conf{zix}, meann)), opts.nstd*stdd);
+    resid_out = find(I)
+    residual_outliers_tid{zix} = tidsvec{zix}(resid_out);
+    %%%% outlier index
+    outlier_index = unique([resid_out(:); area_out(:)]);
+    outliers_tid{zix} = tidsvec{zix}(outlier_index);
 end
-Resx_store = Resx;
-Resy_store = Resy;
-Resx = cell2mat(Resx);
-Resy = cell2mat(Resy);
+% Resx_store = Resx;
+% Resy_store = Resy;
+% Resx = cell2mat(Resx);
+% Resy = cell2mat(Resy);
 %%
-
+n = 0.1; % number of std for cutoff to determine outliers
 
 %%
 if opts.show_deformation || opts.show_residuals
@@ -186,11 +228,11 @@ if opts.show_deformation || opts.show_residuals
     xlabel('Section number');
     ylabel('Area ratio median (ideally one)');
     %figure;plot(zu1, mS, 'LineWidth',2);title('Perimeter median perlayer');
-    n = 0.1; % number of std for cutoff to determine outliers
+    
     maxres = 2.0;  % cap res at this value so that color differences can be discerned
     
-    Resx(Resx>mean(Resx)+n*std(Resx))= mean(Resx) + n* std(Resx);
-    Resy(Resy>mean(Resy)+n*std(Resy))= mean(Resy) + n* std(Resy);
+    %     Resx(Resx>mean(Resx)+n*std(Resx))= mean(Resx) + n* std(Resx);
+    %     Resy(Resy>mean(Resy)+n*std(Resy))= mean(Resy) + n* std(Resy);
     
     
     % figure; hist(real(Resx), 100); title([char(rc.stack) ' -- histogram for all tiles Resx']);axis tight
@@ -243,73 +285,88 @@ end
 
 %% list section outliers and statistics per section
 disp('Area should be close to 1.0');
+MeanA = zeros(numel(zu1),1);
+MedianA = zeros(numel(zu1),1);
+MedianResidual = zeros(numel(zu1),1);
+MedianPerimeter = zeros(numel(zu1),1);
+ResidualOutliers  = zeros(numel(zu1),1);
+Outliers          = zeros(numel(zu1), 1);
+AreaOutliers  = zeros(numel(zu1),1);
 
 for zix = 1:numel(zu1)  % loop over sections
     areas = abs(tile_areas{zix}./(H{zix}.*W{zix}));
     perim = abs(tile_perimeters{zix});
     
-    str1 = [num2str(zu1(zix)) ' A: Mean: ' num2str(mean(areas)) ...
-        ' ----- Median: ' num2str(median(areas)) ' ---- Residual: '...
-        num2str(confidence(zix)) ' S: ' num2str(median(perim))];
-    %     resx = Resx_store{zix};
-    %     resy = Resy_store{zix};
-    %
-    %     str2 = [ ' resx: Median: ' num2str(median(resx)) ' -outliers' num2str(numel(find(resx>maxres)))];
-    %     str3 = [ ' resy: Median: ' num2str(median(resy)) ' -outliers' num2str(numel(find(resy>maxres)))];
-    disp([str1]);
+    MeanA(zix) = mean(areas);
+    MedianA(zix) = median(areas);
+    MedianResidual(zix) = confidence(zix);
+    MedianPerimeter(zix) = median(perim);
+    ResidualOutliers(zix) = numel(residual_outliers_tid{zix});
+    AreaOutliers(zix) = numel(area_outliers_tid{zix});
+    Outliers(zix) = numel(outliers_tid{zix});
+    SectionName{zix} = num2str(zu1(zix));
+%     str1 = [num2str(zu1(zix)) ' Mean A: ' num2str(mean(areas)) ...
+%         ' ----- Median A: ' num2str(median(areas)) ' ---- Median Residual (px): '...
+%         num2str(confidence(zix)) ' Median Perimeter: ' num2str(median(perim))];
+%     disp([str1]);
     
-    %     resx(resx>maxres) = maxres;
-    %     resy(resy>maxres) = maxres;
-    
-    %     figure;
-    %     subplot(3,1,1); hist(areas, 100); title([num2str(zu1(zix)) '-- Area deviation']); xlim([0 0.1]);
-    %     subplot(3,1,2);  hist(resx, 100); title([num2str(zu1(zix)) '-- resx']); xlim([0 maxres]);
-    %     subplot(3,1,3); hist(resy, 100); title([num2str(zu1(zix)) '-- resy']); xlim([0 maxres]);
-    %     drawnow;
 end
-
-%% generate tile-based residual measure
-section_conf = {};
-for zix = 1:numel(zu1)  % loop over sections
-
-            % to properly see color differences we need to get rid of extreme values
-            tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
-            c = zeros(numel(tres),1);
-            for tix = 1:numel(tres)
-                c(tix) = sum(tres{tix}(:));
-            end
-            c(c>mean(c)+n*std(c))= mean(c) + n* std(c);
-            section_conf{zix} = c;
-            %draw_colored_boxes(sctn_map{zix}, c, [0 max(c)], ['Residuals for: ' num2str(zu1(zix))]); % generate figure for y residuals
-
-end
-sc = cell2mat(section_conf);
-hist(sc, 100);
+T = table(MeanA,MedianA,MedianResidual,MedianPerimeter, ResidualOutliers, AreaOutliers, Outliers,...
+    'RowNames',SectionName');
+disp(T);
+%% generate tile-based residual measure and potential outliers
+% section_conf = {};
+% for zix = 1:numel(zu1)  % loop over sections
+%     
+%     tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
+%     c = zeros(numel(tres),1);
+%     % for each tile, calculate the mean of means of point-match residuals
+%     for tix = 1:numel(tres)
+%         c(tix) = sum(tres{tix}(:))/numel(tres{tix}(:));
+%     end
+%     
+%     section_conf{zix} = c;
+%     
+%     % filter by deviation from mean
+%     %c(c>mean(c)+n*std(c))= mean(c) + n* std(c);
+%     %% determine outliers
+%     meann = mean(section_conf{zix});
+%     stdd = std(section_conf{zix});
+%     I = bsxfun(@gt, abs(bsxfun(@minus, section_conf{zix}, meann)), 2*stdd);
+%     outliers_tid{zix} = tidsvec{zix}(find(I));
+%     
+% end
+%%
+% sc = cell2mat(section_conf);
+% 
+% if opts.show_residual_histogram
+%     hist(sc, 100);
+% end
 %% summarize deformation for whole stack
 if opts.show_deformation_summary
-cc = counts(1:end,:);
-% plot results
-hf = figure;
-ha = axes;
-b = bar3(edges, cc.'); % note the transpose to get the colors right
-xlabel('section number')
-ylabel('Area ratio (ideally 1)');
-zlabel('Area ratio');
-
-
-for k = 1:length(b)
-    zdata = b(k).ZData;
-    b(k).CData = zdata;
-    b(k).FaceColor = 'interp';
+    cc = counts(1:end,:);
+    % plot results
+    hf = figure;
+    ha = axes;
+    b = bar3(edges, cc.'); % note the transpose to get the colors right
+    xlabel('section number')
+    ylabel('Area ratio (ideally 1)');
+    zlabel('Area ratio');
+    
+    
+    for k = 1:length(b)
+        zdata = b(k).ZData;
+        b(k).CData = zdata;
+        b(k).FaceColor = 'interp';
+    end
+    view(2);
+    
+    title('summary area deformation of stack');
 end
-view(2);
-
-title('summary area deformation of stack');
-end
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %% analyze results
 % zconf = [];
 % for zix = 1:1%numel(zu1)

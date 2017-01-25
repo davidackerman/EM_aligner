@@ -24,7 +24,10 @@ end
 %% overrides and checks
 sl.section_number = sl.z_value; % same thing but messed up variable names later
 if ~isfield(sl, 'disableValidation'), sl.disableValidation = 0;end
+if ~isfield(sl.target_collection, 'initialize'), sl.target_collection.initialize = 0;end
+if ~isfield(sl.target_collection, 'complete'), sl.target_collection.complete = 0;end
 
+%% load point matches and solve
 if sl.solver_options.use_peg
     if sl.verbose, disp('Solving montage using pegs');end
     
@@ -98,7 +101,7 @@ end
 
 
 %% ingest into Renderer database (optional);
-if sl.target_collection.initialize,
+if sl.target_collection.initialize
     if sl.verbose, disp('Initializing collection / Deleting existing');end
     delete_renderer_stack(sl.target_collection);  % delete existing collection if present
 end
@@ -107,7 +110,7 @@ tic;if sl.verbose, disp('-- Ingesting section into collection');end
 resp = ingest_section_into_LOADING_collection(mL, sl.target_collection,...
     sl.source_collection, sl.temp_dir, 1, sl.disableValidation); % ingest
 
-if sl.target_collection.complete,
+if sl.target_collection.complete
     if sl.verbose, disp('Completing collection');end
 resp = set_renderer_stack_state_complete(sl.target_collection);  % set to state COMPLETE
 end

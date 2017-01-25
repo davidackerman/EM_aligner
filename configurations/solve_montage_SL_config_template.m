@@ -9,7 +9,7 @@ sl.solver_options.lambda                = 0.1;              % regularization par
 sl.solver_options.edge_lambda           = 0.1;
 sl.solver_options.translation_fac       = 1;
 sl.solver_options.use_peg               = 1;                % peg
-sl.solver_options.peg_weight            = 1e-05;            % peg
+sl.solver_options.peg_weight            = 1e-1;            % peg
 sl.solver_options.peg_npoints           = 5;                % peg
 
 sl.solver_options.outlier_lambda        = 1000;
@@ -35,6 +35,7 @@ sl.target_collection.owner          = 'flyTEM';
 sl.target_collection.project        = 'test';
 sl.target_collection.service_host   = '10.37.5.60:8080';
 sl.target_collection.baseURL        = 'http://10.37.5.60:8080/render-ws/v1';
+sl.target_collection.versionNotes   = 'experiments to optimize general section montaging';
 sl.target_collection.verbose        = 0;
 
 % configure point-match collection(s)
@@ -71,7 +72,8 @@ dopts.show_deformation_summary = 0;
                    dopts);
 figure;hist(section_conf,100);title('Residual histogram');
 figure;hist(tile_areas{1},100);title('Areas histogram');
-
+median(section_conf)
+%%
 del_ix = find(section_conf>9.0);
 del_tids = tidsvec{1}(del_ix);
 delete_renderer_tiles(sl.target_collection, del_tids);  %%% 

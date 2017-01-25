@@ -18,6 +18,7 @@ Calculates an affine solution for a volume
 
 
 ------------------------------------------- Example -----------------------------
+```json
 %% configure
 nfirst= 1;
 nlast = 10;
@@ -170,7 +171,7 @@ http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM
 ## Option 2: (In progress) Fine alignment strategies. 
 (under construction)
 
-
+```
 
 
 

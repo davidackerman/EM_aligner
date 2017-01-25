@@ -19,7 +19,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 	-	Client-side rendering: This is relevant to all steps requiring generation of point-matches; full section montage and cross-layer point-match generation.
 	-	Rough section alignment: This script
 	-	Point-match generation (two scripts)
--	Matlab 2015a and above, toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) compiler and (optional) Parallel computing.
+-	Matlab 2016b and above, toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) compiler and (optional) Parallel computing.
 
 
 

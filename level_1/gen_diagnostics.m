@@ -39,8 +39,20 @@ end
 %%% defaults and overrides
 if ~isfield(opts, 'show_residual_histogram'), opts.show_residual_histogram = 0;end
 if ~isfield(opts, 'nstd'), opts.nstd = 2;end
-sc = [];
+if ~isfield(opts, 'residual_info'), opts.residual_info = 0;end
 
+mA = [];
+mS = [];
+sctn_map = [];
+confidence = [];
+tile_areas = [];
+tile_perimeters = [];
+tidsvec = [];
+section_conf = [];
+residual_outliers_tid = [];
+area_outliers_tid = [];
+outliers_tid = [];
+T = []; 
 
 
 [zu1, sID1, sectionId1, z1, ns1] = get_section_ids(rc, zstart, zend);
@@ -49,8 +61,8 @@ sc = [];
 tic
 % initialize variables to store deformation and residuals
 sctn_map  = cell(numel(zu1),1);
-residual_outliers_tids = cell(numel(zu1),1);
-area_outliers_tids = cell(numel(zu1),1);
+residual_outliers_tid = cell(numel(zu1),1);
+area_outliers_tid = cell(numel(zu1),1);
 outliers_tids = cell(numel(zu1),1);
 section_conf = cell(numel(zu1), 1);
 tile_areas = cell(numel(zu1),1);
@@ -67,7 +79,7 @@ W = cell(numel(zu1),1);
 edges = [0.4:.02:1.7];
 counts = zeros(numel(zu1), numel(edges));
 webopts = weboptions('Timeout', 60);
-parfor zix = 1:numel(zu1)
+for zix = 1:numel(zu1)
     Ar = [];    % surface area of tiles
     Aratio = [];% surface area ratio of tiles
     S  = [];    % perimeter of tiles
@@ -91,6 +103,7 @@ parfor zix = 1:numel(zu1)
     tids = {};
     for jix = 1:numel(j)
         jt1(jix) = tile(j(jix));
+        %%%%WARNING: FIND PROPER INDEX FIRST --- SOSI
         jto(jix) = tile(jo(jix));
         tids(jix) = {jt1(jix).renderer_id};
         % make four corners for this tile
@@ -133,84 +146,86 @@ parfor zix = 1:numel(zu1)
     mA(zix) = median(Aratio);
     mS(zix) = median(S);
     sctn_map{zix} = p;   % needed to plot tile boxes
-     %% determine area outliers
+    %% determine area outliers
     % for each tile, calculate the mean of means of point-match residuals
     meann = mean(Aratio);
     stdd = std(Aratio);
-        I = logical(abs(Aratio-meann)>opts.nstd*stdd);
+    I = logical(abs(Aratio-meann)>opts.nstd*stdd);
     %I = bsxfun(@gt, abs(bsxfun(@minus, Aratio, meann)), opts.nstd*stdd);
     area_out = find(I)
     area_outliers_tid{zix} = tidsvec{zix}(area_out);
     
-    %% %%% determine point-matches, solution and residuals for this section
-    
-    % First: load point-matches and section into "L" (point-matches are in L's pm struct field)
-    if (zix + opts.nbrs+1)>numel(zu1)
-        pmz2 = zu1(end);
-    else
-        pmz2 = zu1(zix + opts.nbrs);
-    end
-    [L]  = ...
-        load_point_matches(zu1(zix), pmz2, rc, pm, opts.nbrs, ...
-        opts.min_points, 0);
-    
-    % initialize variable tpr to hold point-match residuals
-    tpr = zeros(numel(L.tiles),1);   % tpr === transformed point-match residuals
-    visits = zeros(numel(L.tiles),1); % stores the number of tile-pair visits every tile experiences
-    res_tiles = cell(numel(L.tiles),1);
-    % Second: generate point-match residuals from L.pm by transforming them and taking the sum of squared
-    % residuals
-    res_vecx = [];
-    res_vecy = [];
-    for pmix = 1:size(L.pm.M,1)
-        a1 = L.pm.adj(pmix,1);
-        a2 = L.pm.adj(pmix,2);
-        m1 = L.pm.M{pmix,1};
-        m2 = L.pm.M{pmix,2};
-        m1 = [m1 ones(size(m1,1),1)]*L.tiles(a1).tform.T;  % apply transformation
-        m2 = [m2 ones(size(m2,1),1)]*L.tiles(a2).tform.T;  % apply transformation
-        res = real(sqrt(sum((m1(:,1)-m2(:,1)).*(m1(:,1)-m2(:,1))  + (m1(:,2)-m2(:,2)).* (m1(:,2)-m2(:,2)))));    %%%% sum of squared residuals
-        res = res/size(m1,1);  % mean residual sum for this tile pair
-        %disp(res);
-        %res_vec(pmix,:) = sqrt((m1(1)-m2(1))*(m1(1)-m2(1)) + (m1(1)-m2(1))*(m1(2)-m2(2)));
+    if opts.residual_info
+        %% %%% determine point-matches, solution and residuals for this section
         
-        %%%% sosi
-        %         res_vecx(pmix,:) = abs(m1(1)-m2(1));
-        %         res_vecy(pmix,:) = abs(m1(2)-m2(2));
-        %
-        tpr(a1) = [tpr(a1) + res];  % add to bucket of tile a1
-        tpr(a2) = [tpr(a2) + res];  % add to bucket of tile a2
-        visits(a1) = visits(a1) + 1;              % counter for number of times tile a1 is visited
-        visits(a2) = visits(a2) + 1;
-        res_tiles{a1} = [res_tiles{a1} res];  % aggregate residuals for tile a1
-        res_tiles{a2} = [res_tiles{a2} res];
+        % First: load point-matches and section into "L" (point-matches are in L's pm struct field)
+        if (zix + opts.nbrs+1)>numel(zu1)
+            z2 = zu1(end);
+        else
+            z2 = zu1(zix + opts.nbrs);
+        end
+        [L]  = ...
+            load_point_matches(zu1(zix), z2, rc, pm, opts.nbrs, ...
+            opts.min_points, 0);
+        
+        % initialize variable tpr to hold point-match residuals
+        tpr = zeros(numel(L.tiles),1);   % tpr === transformed point-match residuals
+        visits = zeros(numel(L.tiles),1); % stores the number of tile-pair visits every tile experiences
+        res_tiles = cell(numel(L.tiles),1);
+        % Second: generate point-match residuals from L.pm by transforming them and taking the sum of squared
+        % residuals
+        res_vecx = [];
+        res_vecy = [];
+        for pmix = 1:size(L.pm.M,1)
+            a1 = L.pm.adj(pmix,1);
+            a2 = L.pm.adj(pmix,2);
+            m1 = L.pm.M{pmix,1};
+            m2 = L.pm.M{pmix,2};
+            m1 = [m1 ones(size(m1,1),1)]*L.tiles(a1).tform.T;  % apply transformation
+            m2 = [m2 ones(size(m2,1),1)]*L.tiles(a2).tform.T;  % apply transformation
+            res = real(sqrt(sum((m1(:,1)-m2(:,1)).*(m1(:,1)-m2(:,1))  + (m1(:,2)-m2(:,2)).* (m1(:,2)-m2(:,2)))));    %%%% sum of squared residuals
+            res = res/size(m1,1);  % mean residual sum for this tile pair
+            %disp(res);
+            %res_vec(pmix,:) = sqrt((m1(1)-m2(1))*(m1(1)-m2(1)) + (m1(1)-m2(1))*(m1(2)-m2(2)));
+            
+            %%%% sosi
+            %         res_vecx(pmix,:) = abs(m1(1)-m2(1));
+            %         res_vecy(pmix,:) = abs(m1(2)-m2(2));
+            %
+            tpr(a1) = [tpr(a1) + res];  % add to bucket of tile a1
+            tpr(a2) = [tpr(a2) + res];  % add to bucket of tile a2
+            visits(a1) = visits(a1) + 1;              % counter for number of times tile a1 is visited
+            visits(a2) = visits(a2) + 1;
+            res_tiles{a1} = [res_tiles{a1} res];  % aggregate residuals for tile a1
+            res_tiles{a2} = [res_tiles{a2} res];
+        end
+        res_tiles_vec{zix} = res_tiles;  % store tile residuals for this section
+        Resx{zix} = res_vecx;
+        Resy{zix} = res_vecy;
+        % store errors/confidence in cell array "confidence"
+        %confidence(zix) = 0;
+        %for tix = 1:numel(L.tiles)
+        confidence(zix) = median(tpr./visits);%/visits(tix);% median of residuals of tiles in this section
+        %end
+        %confidence(zix) = confidence(zix)/numel(L.tiles); %mean residual for tiles
+        %% determine residual outliers
+        tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
+        c = zeros(numel(tres),1);
+        % for each tile, calculate the mean of means of point-match residuals
+        for tix = 1:numel(tres)
+            c(tix) = sum(tres{tix}(:))/numel(tres{tix}(:));
+        end
+        section_conf{zix} = c; %
+        meann = mean(section_conf{zix});
+        stdd = std(section_conf{zix});
+        I = logical(abs(section_conf{zix}-meann)>opts.nstd*stdd);
+        %    I = bsxfun(@gt, abs(bsxfun(@minus, section_conf{zix}, meann)), opts.nstd*stdd);
+        resid_out = find(I);
+        residual_outliers_tid{zix} = tidsvec{zix}(resid_out);
+        %%%% outlier index
+        outlier_index = unique([resid_out(:); area_out(:)]);
+        outliers_tid{zix} = tidsvec{zix}(outlier_index);
     end
-    res_tiles_vec{zix} = res_tiles;  % store tile residuals for this section
-    Resx{zix} = res_vecx;
-    Resy{zix} = res_vecy;
-    % store errors/confidence in cell array "confidence"
-    %confidence(zix) = 0;
-    %for tix = 1:numel(L.tiles)
-    confidence(zix) = median(tpr./visits);%/visits(tix);% median of residuals of tiles in this section
-    %end
-    %confidence(zix) = confidence(zix)/numel(L.tiles); %mean residual for tiles
-     %% determine residual outliers
-     tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
-    c = zeros(numel(tres),1);
-    % for each tile, calculate the mean of means of point-match residuals
-    for tix = 1:numel(tres)
-        c(tix) = sum(tres{tix}(:))/numel(tres{tix}(:));
-    end
-    section_conf{zix} = c; %
-    meann = mean(section_conf{zix});
-    stdd = std(section_conf{zix});
-    I = logical(abs(section_conf{zix}-meann)>opts.nstd*stdd);
-%    I = bsxfun(@gt, abs(bsxfun(@minus, section_conf{zix}, meann)), opts.nstd*stdd);
-    resid_out = find(I)
-    residual_outliers_tid{zix} = tidsvec{zix}(resid_out);
-    %%%% outlier index
-    outlier_index = unique([resid_out(:); area_out(:)]);
-    outliers_tid{zix} = tidsvec{zix}(outlier_index);
 end
 % Resx_store = Resx;
 % Resy_store = Resy;
@@ -258,7 +273,7 @@ if opts.show_deformation || opts.show_residuals
             draw_colored_boxes(sctn_map{zix}, areas, area_bounds, ['Deformation : ' num2str(zu1(zix))]); % generate figure for y residuals
         end
         
-        if opts.show_residuals
+        if opts.show_residuals && opts.residual_info
             % to properly see color differences we need to get rid of extreme values
             tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
             c = zeros(numel(tres),1);
@@ -284,6 +299,8 @@ if opts.show_deformation || opts.show_residuals
 end
 
 %% list section outliers and statistics per section
+T = [];
+if opts.residual_info
 disp('Area should be close to 1.0');
 MeanA = zeros(numel(zu1),1);
 MedianA = zeros(numel(zu1),1);
@@ -305,28 +322,29 @@ for zix = 1:numel(zu1)  % loop over sections
     AreaOutliers(zix) = numel(area_outliers_tid{zix});
     Outliers(zix) = numel(outliers_tid{zix});
     SectionName{zix} = num2str(zu1(zix));
-%     str1 = [num2str(zu1(zix)) ' Mean A: ' num2str(mean(areas)) ...
-%         ' ----- Median A: ' num2str(median(areas)) ' ---- Median Residual (px): '...
-%         num2str(confidence(zix)) ' Median Perimeter: ' num2str(median(perim))];
-%     disp([str1]);
+    %     str1 = [num2str(zu1(zix)) ' Mean A: ' num2str(mean(areas)) ...
+    %         ' ----- Median A: ' num2str(median(areas)) ' ---- Median Residual (px): '...
+    %         num2str(confidence(zix)) ' Median Perimeter: ' num2str(median(perim))];
+    %     disp([str1]);
     
 end
 T = table(MeanA,MedianA,MedianResidual,MedianPerimeter, ResidualOutliers, AreaOutliers, Outliers,...
     'RowNames',SectionName');
 disp(T);
+end
 %% generate tile-based residual measure and potential outliers
 % section_conf = {};
 % for zix = 1:numel(zu1)  % loop over sections
-%     
+%
 %     tres = res_tiles_vec{zix};  % all tile residuals for section zu1(zix)
 %     c = zeros(numel(tres),1);
 %     % for each tile, calculate the mean of means of point-match residuals
 %     for tix = 1:numel(tres)
 %         c(tix) = sum(tres{tix}(:))/numel(tres{tix}(:));
 %     end
-%     
+%
 %     section_conf{zix} = c;
-%     
+%
 %     % filter by deviation from mean
 %     %c(c>mean(c)+n*std(c))= mean(c) + n* std(c);
 %     %% determine outliers
@@ -334,11 +352,11 @@ disp(T);
 %     stdd = std(section_conf{zix});
 %     I = bsxfun(@gt, abs(bsxfun(@minus, section_conf{zix}, meann)), 2*stdd);
 %     outliers_tid{zix} = tidsvec{zix}(find(I));
-%     
+%
 % end
 %%
 % sc = cell2mat(section_conf);
-% 
+%
 % if opts.show_residual_histogram
 %     hist(sc, 100);
 % end

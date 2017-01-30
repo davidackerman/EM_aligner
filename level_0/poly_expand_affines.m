@@ -23,5 +23,6 @@ tdim = tdim * 2;              % because we have two dimensions, u and v
 ninsert = tdim/2-3;  % for each dimension the first three coefficients come from the affine
 
 if degree==2
-    
+    Tp = [T(:,3) T(:,1) T(:,2) zeros(size(T,1), ninsert) T(:,6) T(:,4) T(:,5) zeros(size(T,1), ninsert)];
+end
 

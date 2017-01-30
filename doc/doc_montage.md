@@ -101,7 +101,7 @@ Now the "compiled" output file can be called from a the shell (or used in a qsub
 An example for deploying multiple montage jobs (using a Matlab script) is provided [here] (/template_production_scripts/SPC_scripts/script_to_montage_multiple_sections_using_deployed_montager.m).
 
 
-## Montaging of one section using precalculated point-matches: non-deployed solve
+## Montaging of one section using precalculated point-matches with json: non-deployed solve
 Use this if you already have precalculated point-matches. It perfoms a solve only.
 A montage of a specific section (a set of tiles sharing the same z value) defined by "source_collection" and "section_number". This will  solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
 
@@ -174,4 +174,92 @@ An example json input file is provided below.
 
 ```
 
+## Montage a series of sections using Matlab directly and assuming precalculated point-matches
+Use this if you already have precalculated point-matches. It perfoms a solve only.
+Montage one or more sections. This will  solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
+
+
+'''json
+
+% solver options
+sl.solver_options.degree                = 1;
+sl.solver_options.solver                = 'backslash';
+sl.solver_options.min_points            = 10;
+sl.solver_options.max_points            = 100;
+sl.solver_options.lambda                = 0.1;              % regularization parameter
+sl.solver_options.edge_lambda           = 0.1;
+sl.solver_options.translation_fac       = 1;
+sl.solver_options.use_peg               = 1;                % peg
+sl.solver_options.peg_weight            = 1e-2;             % peg
+sl.solver_options.peg_npoints           = 10;                % peg
+
+sl.solver_options.outlier_lambda        = 1000;
+sl.solver_options.small_region          = 5;
+sl.solver_options.calc_confidence       = 1;
+sl.solver_options.small_region_lambda   = 10;
+sl.solver_options.stvec_flag            = 0;
+sl.solver_options.conn_comp             = 1;
+sl.solver_options.distributed           = 0;
+sl.solver_options.min_tiles             = 3;
+
+% configure source collection
+sl.source_collection.stack          = 'v12_acquire_merged';
+sl.source_collection.owner          = 'flyTEM';
+sl.source_collection.project        = 'FAFB00';
+sl.source_collection.service_host   = '10.37.5.60:8080';
+sl.source_collection.baseURL        = 'http://10.37.5.60:8080/render-ws/v1';
+sl.source_collection.verbose        = 0;
+
+% configure target collection
+sl.target_collection.stack          = 'Revised_FAFB_montage_kk_m2';
+sl.target_collection.owner          = 'flyTEM';
+sl.target_collection.project        = 'FAFB00_beautification';
+sl.target_collection.service_host   = '10.37.5.60:8080';
+sl.target_collection.baseURL        = 'http://10.37.5.60:8080/render-ws/v1';
+sl.target_collection.versionNotes   = 'Created using script /nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/Beautification_script_generate_all_montages.m';
+sl.target_collection.verbose        = 0;
+sl.target_collection.complete       = 0;
+sl.target_collection.initialize     = 0;
+
+% configure point-match collection(s)
+clear pm;
+pmix = 1;
+pm(pmix).server = 'http://10.40.3.162:8080/render-ws/v1';
+pm(pmix).owner  = 'flyTEM';
+pm(pmix).match_collection = 'FAFB_pm_2';
+pmix = pmix + 1;
+sl.source_point_match_collection = pm;
+
+% other configurations
+sl.z_value = 1;
+sl.filter_point_matches = 1;
+sl.temp_dir = '/scratch/khairyk';
+sl.verbose = 0;
+
+
+
+%% call solve_montage_SL for every section and save diagnostics
+kk_clock;
+failed = zeros(100,1);
+save sl sl;
+parfor ix = 1:7062
+    c = load('sl.mat');
+    sl = c.sl;
+    sl.z_value = ix;
+    try
+    solve_montage_SL(sl);
+    catch err_montage
+        failed(ix) = 1;
+    end
+end
+               
+resp = set_renderer_stack_state_complete(sl.target_collection); % complete the stack
+
+kk_clock;
+if sum(failed)
+disp('Failed section list:');
+disp(find(failed));
+end
+               
+'''
 

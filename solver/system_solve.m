@@ -88,7 +88,7 @@ function [err,R, Tout] = system_solve(nfirst, nlast, rc, pm, opts, rcout)
 % opts.pmopts.PixelDistanceThreshold = 1;
 % opts.verbose = 1;
 % opts.debug = 0;
-if opts.degree>1,
+if opts.degree>1
     [err,R, Tout] = system_solve_polynomial(nfirst, nlast, rc, pm, opts, rcout);
 else
     %% prepare quantities
@@ -98,6 +98,8 @@ else
     if ~isfield(opts, 'transfac'), opts.transfac = 1;end
     if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 0;end
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
+    if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
+        
     
     err = [];
     R = [];
@@ -141,14 +143,14 @@ else
     fac = [];
     ismontage = [];
     count  = 1;
-    for ix = 1:numel(zu)   % loop over sections
-        %disp(['Montage: ' sID{ix}]);
+    for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
+        disp(['Setting up section: ' sID{ix}]);
         sID_all{count,1} = sID{ix};
         sID_all{count,2} = sID{ix};
         ismontage(count) = 1;
         fac(count) = 1;
         count = count + 1;
-        for nix = 1:opts.nbrs   % loop over neighboring sections
+        for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
             if (ix+nix)<=numel(zu)
                 %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
                 sID_all{count,1} = sID{ix};
@@ -161,7 +163,7 @@ else
     end
     clear sID
     % % perform pm requests
-    disp('Loading point-matches from point-match database ....');
+     disp('Loading point-matches from point-match database ....');
     wopts = weboptions;
     wopts.Timeout = 20;
     M   = {};
@@ -292,7 +294,9 @@ else
     disp(' .... export temporary files split_PM_*.mat...');%-----------------------
     fn_split = cell(split,1);
     for ix = 1:split
-        fn_split{ix} = [dir_scratch '/split_PM_' num2str(nfirst) '_' num2str(nlast) '_' num2str(randi(10000000)) '_' num2str(ix) '.mat'];
+        fn_split{ix} = [dir_scratch '/split_PM_' num2str(nfirst)...
+                       '_' num2str(nlast) '_'...
+                       num2str(randi(10000000)) '_' num2str(ix) '.mat'];
         vec = r(ix,1):r(ix,2);
         m = M(vec,:);
         a = adj(vec,:);

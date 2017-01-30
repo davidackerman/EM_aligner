@@ -49,7 +49,9 @@ num_col = size(A, 2);
     disp(['tiles_per_worker=' num2str(tiles_per_worker)]);
 %     delete(gcp);
 %     parpool(4);
-    parfor i=1:ncpus
+
+% could be parfor, but keep as for-loop for memory reasons
+    for i=1:ncpus
         disp(i);
         col_min = 1 + 6*(i-1)*tiles_per_worker;
         if i < ncpus

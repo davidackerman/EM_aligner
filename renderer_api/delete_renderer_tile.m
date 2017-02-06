@@ -8,7 +8,7 @@ function resp = delete_renderer_tile(rc, tileIDs)
 
 % Ensure tileIDs is a cell array of character vectors; easier for sprintf
 % later
-if ~iscellstr(tileIDs)
+if ~(iscellstr(tileIDs) || iscell(tileIDs))
     tileIDs = cellstr(tileIDs);
 end
 

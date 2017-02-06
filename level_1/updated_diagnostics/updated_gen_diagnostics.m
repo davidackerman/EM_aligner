@@ -1,4 +1,4 @@
-function [area_ratio_median, perimeter_ratio_median, section_map, confidence, tile_areas, tile_perimeters, tile_ids_vector,residuals_matrix, ...
+function [area_ratio_median, perimeter_ratio_median, section_map, montage_residuals_vector, tile_areas, tile_perimeters, tile_ids_vector,residuals_matrix, ...
     section_confidence, residual_outliers_tile_ids, area_ratio_outliers_tile_ids, outliers_tile_ids, Table] =...
     updated_gen_diagnostics(rcsource, rc, zstart, zend, point_matches, options)
 %% generate statistics about residuals and tile deformation
@@ -17,7 +17,7 @@ function [area_ratio_median, perimeter_ratio_median, section_map, confidence, ti
 %                             3 = captures invisible figure to memory (not implemented yet)
 % Output:
 %       mA, mS
-% Author: Khaled Khairy
+% Author: Khaled Khairy, David Ackerman
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin<4
     % configure point-match collection
@@ -34,25 +34,13 @@ if nargin<5
     options.show_deformation_summary = 1;
     options.show_residual_histogram = 1;
     options.nstd = 2;
+    options.number_of_cross_sections;
 end
 
 %%% defaults and overrides
 if ~isfield(options, 'show_residual_histogram'), options.show_residual_histogram = 0;end
 if ~isfield(options, 'nstd'), options.nstd = 2;end
 if ~isfield(options, 'residual_info'), options.residual_info = 0;end
-
-mA = [];
-mS = [];
-sctn_map = [];
-confidence = [];
-tile_areas = [];
-tile_perimeters = [];
-tidsvec = [];
-section_conf = [];
-residual_outliers_tid = [];
-area_outliers_tid = [];
-outliers_tid = [];
-Table = []; 
 
 % addd defaullttt forrrrrrrrrrrrrrrrrrrrrrrrrr thisssssssssssssssssssssssss
   dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
@@ -74,7 +62,7 @@ tile_ids_vector = cell(numel(unique_z),1);
 residual_x = cell(numel(unique_z),1);
 residual_y = cell(numel(unique_z),1);
 tile_residuals_vector = cell(numel(unique_z),1);
-confidence = zeros(numel(unique_z,1));
+montage_residuals_vector = zeros(numel(unique_z,1));
 height = cell(numel(unique_z),1);
 width = cell(numel(unique_z),1);
 
@@ -82,7 +70,6 @@ width = cell(numel(unique_z),1);
 edges = [0.4:.02:1.7];
 counts = zeros(numel(unique_z), numel(edges));
 webopts = weboptions('Timeout', 60);
-montage_residuals_vector = zeros(size(unique_z));
 parfor z_index = 1:numel(unique_z)
     rc_tile_area = [];    % surface area of tiles
     tile_area_ratio = [];% surface area ratio of tiles
@@ -106,9 +93,27 @@ parfor z_index = 1:numel(unique_z)
     sectionID = rc_data(1).layout.sectionId;
     count = 1;
     tile_ids = {};
+% % % %             rcsource_data_for_tiles_in_rc = rcsource_data(rcsource_tile_indices);        
+% % % %             x = zeros(1,numel(rc_data));
+% % % %             y = zeros(1,numel(rc_data));
+% % % %             rc_tile_position_x = [x; x + [rc_data.width]; x + [rc_data.width]; x];
+% % % %             rc_tile_position_y = [y; y; y + [rc_data.height]; y + [rc_data.height]];
+% % % %            %FOR NOW ONLY DO AFFINE%
+% % % %            rc_tile_position_transformed = [rc_tile_position_x
+            
     for rc_tile_index = 1:numel(rc_data)
+        
+        
+        
         %%%%WARNING: FIND PROPER INDEX FIRST --- SOSI
         % fixed this but should I be using Msection instead?
+
+        
+        
+        
+        
+        
+        
         rc_tiles(rc_tile_index) = tile(rc_data(rc_tile_index));
         rcsource_tile_index = rcsource_tile_indices(rc_tile_index);
         rcsource_tiles(rc_tile_index) = tile(rcsource_data(rcsource_tile_index));
@@ -181,8 +186,6 @@ parfor z_index = 1:numel(unique_z)
         tile_residuals = cell(numel(L.tiles),1);
         % Second: generate point-match residuals from L.pm by transforming them and taking the sum of squared
         % residuals
-        residual_vector_x = [];
-        residual_vector_y = [];
         for point_match_index = 1:size(L.pm.M,1)
             adjacent_tile_1 = L.pm.adj(point_match_index,1);
             adjacent_tile_2 = L.pm.adj(point_match_index,2);
@@ -192,29 +195,15 @@ parfor z_index = 1:numel(unique_z)
             point_matches_tile_2 = [point_matches_tile_2 ones(size(point_matches_tile_2,1),1)]*L.tiles(adjacent_tile_2).tform.T;  % apply transformation
             residual = real(sum(sqrt((point_matches_tile_1(:,1)-point_matches_tile_2(:,1)).*(point_matches_tile_1(:,1)-point_matches_tile_2(:,1))  + (point_matches_tile_1(:,2)-point_matches_tile_2(:,2)).* (point_matches_tile_1(:,2)-point_matches_tile_2(:,2)))));    %%%% sum of squared residuals
             residual = residual/size(point_matches_tile_1,1);  % mean residual sum for this tile pair
-            %disp(res);
-            %res_vec(pmix,:) = sqrt((m1(1)-m2(1))*(m1(1)-m2(1)) + (m1(1)-m2(1))*(m1(2)-m2(2)));
-            
-            %%%% sosi
-            %         res_vecx(pmix,:) = abs(m1(1)-m2(1));
-            %         res_vecy(pmix,:) = abs(m1(2)-m2(2));
-            %
-            transformed_point_match_residuals(adjacent_tile_1) = [transformed_point_match_residuals(adjacent_tile_1) + residual];  % add to bucket of tile adjacent_tile_1
-            transformed_point_match_residuals(adjacent_tile_2) = [transformed_point_match_residuals(adjacent_tile_2) + residual];  % add to bucket of tile adjacent_tile_2
+            transformed_point_match_residuals(adjacent_tile_1) = transformed_point_match_residuals(adjacent_tile_1) + residual;  % add to bucket of tile adjacent_tile_1
+            transformed_point_match_residuals(adjacent_tile_2) = transformed_point_match_residuals(adjacent_tile_2) + residual;  % add to bucket of tile adjacent_tile_2
             visits(adjacent_tile_1) = visits(adjacent_tile_1) + 1;              % counter for number of times tile a1 is visited
             visits(adjacent_tile_2) = visits(adjacent_tile_2) + 1;
             tile_residuals{adjacent_tile_1} = [tile_residuals{adjacent_tile_1} residual];  % aggregate residuals for tile a1
             tile_residuals{adjacent_tile_2} = [tile_residuals{adjacent_tile_2} residual];
         end
         tile_residuals_vector{z_index} = tile_residuals;  % store tile residuals for this section
-        residual_x{z_index} = residual_vector_x;
-        residual_y{z_index} = residual_vector_y;
-        % store errors/confidence in cell array "confidence"
-        %confidence(z_index) = 0;
-        %for tix = 1:numel(L.tiles)
-        confidence(z_index) = nanmedian(transformed_point_match_residuals./visits);%/visits(tix);% median of residuals of tiles in this section
-        %end
-        %confidence(z_index) = confidence(z_index)/numel(L.tiles); %mean residual for tiles
+        montage_residuals_vector(z_index) = nanmedian(transformed_point_match_residuals./visits);
         %% determine residual outliers
         tres = tile_residuals_vector{z_index};  % all tile residuals for section zu1(z_index)
         c = zeros(numel(tres),1);
@@ -222,8 +211,6 @@ parfor z_index = 1:numel(unique_z)
         for tix = 1:numel(tres)
             c(tix) = sum(tres{tix}(:))/numel(tres{tix}(:));
         end
-        fprintf('z_index %d',z_index);
-        montage_residuals_vector(z_index) = nanmedian(transformed_point_match_residuals./visits);% confidence(z_index);
         section_confidence{z_index} = c; %
         residual_mean = mean(section_confidence{z_index});
         residual_std = std(section_confidence{z_index});
@@ -258,10 +245,6 @@ if options.residual_info
                  disp('Loading transformations and tile/canvas ids from Renderer database.....');
                  [cross_section_point_matches, adjacency, weights, number_of_point_matches] = load_cross_section_pm(point_matches, section_Ids_grouped_by_z{z_index}, section_Ids_grouped_by_z{z_index+next_index}, ...
                      map_id, options.min_points, options.max_points, webopts, factor);
-%                 %             cross_section_point_matches_first_tiles = cellfun(@(pms, transformations,offsets) pms*transformations+offsets,...
-%                 %                  cross_section_point_matches(:,1),T(adjacency(:,1)),offsets(adjacency(:,1)),'UniformOutput',false);
-%                 %              cross_section_point_matches_second_tiles =  cellfun(@(pms, transformations,offsets) pms*transformations+offsets,...
-%                 %                  cross_section_point_matches(:,2),T(adjacency(:,2)), offsets(adjacency(:,2)),'UniformOutput',false);
                  if ~isempty(cross_section_point_matches)
                      residuals = cellfun(@(pm1,pm2,t1,t2,offsets1,offsets2) mean( sqrt( sum(((pm1*t1+offsets1)-(pm2*t2+offsets2)).^2,2) ) ), ...
                          cross_section_point_matches(:,1), cross_section_point_matches(:,2), T(adjacency(:,1)), T(adjacency(:,2)), offsets(adjacency(:,1)), offsets(adjacency(:,2)));
@@ -269,21 +252,8 @@ if options.residual_info
                      new_residuals_values(next_index) = median(accumarray(ic,residuals,[],@mean));
                      [~,~,ic] = unique(adjacency(:,2));
                      new_residuals_values(next_index+options.number_of_cross_sections) = median(accumarray(ic,residuals,[],@mean));
-     %                residuals_matrix_upper_triangular(z_index, next_index) = median(accumarray(ic,residuals,[],@mean));
-    %                 [~,~,ic] = unique(adjacency(:,2));
-    %                 residuals_matrix_lower_triangular(1, z_index) = median(accumarray(ic,residuals,[],@mean));
-                     %  residuals_matrix(sub2ind(residuals_matrix_size,[z_index, z_index+next_index],[z_index+next_index, z_index])) = [median(accumarray(ic,residuals,[],@mean)),median(accumarray(ic,residuals,[],@mean))];
- 
-
-                 end
+                  end
                  residuals_vector(z_index,:) = new_residuals_values;
-        %        residuals_matrix_upper_triangular([z_index, z_index+next_index])=1;
- %               residuals_matrix(next_index, z_index) = 1;median(accumarray(ic,residuals,[],@mean));
-                %   tile_residuals.sum(adjacency(index,1)) = tile_residuals.sum(adjacency(index,1)) + residuals(index);
-                %   tile_residuals.count(adjacency(index,1)) = tile_residuals.count(adjacency(index,1)) + 1;
-                %
-                %                 tile_residuals.sum(adjacency(index,2)) = tile_residuals.sum(adjacency(index,2)) + residuals(index);
-                %                 tile_residuals.count(adjacency(index,2)) = tile_residuals.count(adjacency(index,2)) + 1;
             end
         end
         
@@ -306,7 +276,7 @@ n = 0.1; % number of std for cutoff to determine outliers
 
 %%
 if options.show_deformation || options.show_residuals
-    figure;plot(unique_z, confidence, '-o', 'LineWidth',2);title(['Point-match residuals: ' num2str(zstart) ' to ' num2str(zend)]);
+    figure;plot(unique_z, montage_residuals_vector, '-o', 'LineWidth',2);title(['Point-match residuals: ' num2str(zstart) ' to ' num2str(zend)]);
     xlabel('Section number');
     ylabel('Point-match residual (sum of sum of squared distance)');
     figure;plot(unique_z, area_ratio_median, '-o', 'LineWidth',2);title(['Area ratio median per layer: ' num2str(zstart) ' to ' num2str(zend)]);
@@ -386,7 +356,7 @@ for z_index = 1:numel(unique_z)  % loop over sections
     
     MeanA(z_index) = mean(areas);
     MedianA(z_index) = median(areas);
-    MedianResidual(z_index) = confidence(z_index);
+    MedianResidual(z_index) = montage_residuals_vector(z_index);
     MedianPerimeter(z_index) = median(perim);
     ResidualOutliers(z_index) = numel(residual_outliers_tile_ids{z_index});
     AreaOutliers(z_index) = numel(area_ratio_outliers_tile_ids{z_index});

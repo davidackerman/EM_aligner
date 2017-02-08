@@ -1,5 +1,5 @@
 function [residuals_matrix] =...
-    generate_cross_section_point_match_residuals(rc, zstart, zend, point_matches, options, unique_z, section_Ids_grouped_by_z)
+    calculate_cross_section_point_match_residuals(rc, zstart, zend, point_matches, options, unique_z, section_Ids_grouped_by_z)
 % Calculates cross section residuals for renderer collection rc, from
 % zstart to zend using point matches point_matches. Need to ensure units
 % are correct.
@@ -53,7 +53,7 @@ unique_z_number_of_elements = numel(unique_z);
 simplified_residuals_matrix=zeros(unique_z_number_of_elements,options.number_of_cross_sections*2);
 
 % Print out status and loop through all unique zs
-fprintf('Progress:\n');
+fprintf('Progress:');
 fprintf(['\n' repmat('.',1,unique_z_number_of_elements) '\n\n']);
 parfor z_index=1:unique_z_number_of_elements
     % Load in transformations and map ids necessary to calculate
@@ -63,11 +63,9 @@ parfor z_index=1:unique_z_number_of_elements
     % [ Sn -> Sn+1 ,  Sn -> Sn+2  ,  Sn+1 -> Sn  ,  Sn+2 -> Sn ]
     % Necessary to have this variable because of parfor
     new_residuals_values=zeros(1,options.number_of_cross_sections*2);
-    % Will want everything as cells to be able to use cellfun below.
-    % We store the offsets as their own array and convert the remaining
-    % part of T to its own cell array.
+    % Store the offsets of T separately, and convert the remainder to a
+    % cell array for efficiency
     offsets = [T(:,3),T(:,6)];
-    offsets = mat2cell(offsets,ones(size(offsets,1),1),2);
     T(:,[3,6])=[];
     T=reshape(T, length(T),2,2);
     T=num2cell(T,[2,3]);
@@ -83,20 +81,33 @@ parfor z_index=1:unique_z_number_of_elements
             if ~isempty(cross_section_point_matches)
                 % We now calculate the residuals for each tile pair as the
                 % average of all point match residuals between the two
-                % tiles. Below, the point match positions for tile 1 are
-                % pm1*t1+offsets1 and for tile2 are pm2*t2+offsets2. We
-                % access the appropriate transformations and offsets using
-                % the adjacency matrix.
-                residuals = cellfun(@(pm1,pm2,t1,t2,offsets1,offsets2) mean( sqrt( sum(((pm1*t1+offsets1)-(pm2*t2+offsets2)).^2,2) ) ), ...
-                    cross_section_point_matches(:,1), cross_section_point_matches(:,2), T(adjacency(:,1)), T(adjacency(:,2)), offsets(adjacency(:,1)), offsets(adjacency(:,2)));
-            
+                % tiles. Below, we store the information for each pair for,
+                % eg., Sn->Sn+1 in ..._current_section_tiles and Sn+1->Sn
+                % in ..._next_section_tiles. ic1 assigns each unique tile
+                % number in Sn an index between 1 and
+                % length(unique(adjacency(:,1)). Likewise for ic2.
+                [~,~,ic1] = unique(adjacency(:,1),'stable');
+                num_unique_current_section_tiles = max(ic1);
+                [~,~,ic2] = unique(adjacency(:,2),'stable');
+                num_unique_next_section_tiles = max(ic2);
+                residuals_current_section_tiles = zeros(num_unique_current_section_tiles,1);
+                counts_current_section_tiles = zeros(num_unique_current_section_tiles,1);
+                residuals_next_section_tiles = zeros(num_unique_next_section_tiles,1);
+                counts_next_section_tiles = zeros(num_unique_next_section_tiles,1);
+                for i=1:length(cross_section_point_matches)
+                    residual = mean(sqrt(sum((cross_section_point_matches{i,1}*T{adjacency(i,1)}+offsets(adjacency(i,1),:) - (cross_section_point_matches{i,2}*T{adjacency(i,2)}+offsets(adjacency(i,2),:))).^2,2)));
+                    residuals_current_section_tiles(ic1(i)) = residuals_current_section_tiles(ic1(i)) + residual;
+                    residuals_next_section_tiles(ic2(i)) = residuals_next_section_tiles(ic2(i)) + residual;
+                    counts_current_section_tiles(ic1(i)) = counts_current_section_tiles(ic1(i))+1;
+                    counts_next_section_tiles(ic2(i)) = counts_next_section_tiles(ic2(i))+1;
+                end
+                
                 % To calculate the section residuals, we want to take the
-                % median of the mean residuals between each tile in the
-                % section and all its adjacent tiles. 
-                [~,~,ic] = unique(adjacency(:,1)); % Now each repeated element of adjacency(:,1) is indexed by the same value in ic, in the range 1 to length(unique(adjacency(:,1))). If we want ic to correspond to the first time the value appears in adjacency, use 'stable'
-                new_residuals_values(section_step) = median(accumarray(ic,residuals,[],@mean)); % Calculates the mean for each tile in the section (all residuals which have matching indices in ic), and calculates the median of those means
-                [~,~,ic] = unique(adjacency(:,2)); % Repeat for eg Sn+1 ->  Sn, which can differ slightly from Sn -> Sn+1
-                new_residuals_values(section_step+options.number_of_cross_sections) = median(accumarray(ic,residuals,[],@mean));
+                % median of the mean residuals; residuals/counts provides
+                % the mean residuals between each tile and all its adjacent
+                % tiles, as stored above
+                new_residuals_values(section_step) = median(residuals_current_section_tiles./counts_current_section_tiles);
+                new_residuals_values(section_step+options.number_of_cross_sections) = median(residuals_next_section_tiles./counts_next_section_tiles);
             end
             simplified_residuals_matrix(z_index,:) = new_residuals_values;
         end

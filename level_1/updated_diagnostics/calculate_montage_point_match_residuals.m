@@ -5,6 +5,10 @@ all_residuals_number_of_outliers = zeros(numel(unique_z),1);
 all_residuals_outliers_tile_ids = cell(numel(unique_z),1);
 all_number_of_unconnected_tiles = zeros(numel(unique_z),1);
 all_unconnected_tile_ids = cell(numel(unique_z),1);
+
+% Print out status and loop through all unique zs
+fprintf('Montage Residuals Progress:');
+fprintf(['\n' repmat('.',1,numel(unique_z)) '\n\n']);
 parfor z_index = 1:length(unique_z)
     %% %%% determine point-matches, solution and residuals for this section
     % First: load point-matches and section into "L" (point-matches are in L's pm struct field)
@@ -16,9 +20,7 @@ parfor z_index = 1:length(unique_z)
     [L]  = ...
         load_point_matches(unique_z(z_index), point_match_zlast, rc, point_matches, options.nbrs, ...
         options.min_points, 0);
-    if z_index ==7
-        why=1;
-    end
+    
     tile_residuals = cell(numel(L.tiles),1);
     % Second: generate point-match residuals from L.pm by transforming them and taking the sum of squared
     % residuals
@@ -43,7 +45,8 @@ parfor z_index = 1:length(unique_z)
     all_unconnected_tile_ids{z_index} = tile_ids(unconnected_tiles);
     tile_residuals(unconnected_tiles)=[];
     tile_ids(unconnected_tiles) = [];
-    [all_residuals_median(z_index), all_residuals_outliers_tile_ids{z_index},all_residuals_number_of_outliers(z_index)] = calculate_median_and_outliers(cellfun(@mean,tile_residuals),options.nstd,tile_ids);
+    [all_residuals_median(z_index), all_residuals_outliers_tile_ids{z_index},all_residuals_number_of_outliers(z_index)] = calculate_median_and_outliers(cellfun(@mean,tile_residuals),options.nstd,tile_ids, 'std');
+    fprintf('\b|\n');
 end
 output_struct.MontageResiduals.residuals = all_tile_residuals_vector;
 output_struct.MontageResiduals.median_of_means = all_residuals_median;

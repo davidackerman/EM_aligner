@@ -53,7 +53,7 @@ unique_z_number_of_elements = numel(unique_z);
 simplified_residuals_matrix=zeros(unique_z_number_of_elements,options.number_of_cross_sections*2);
 
 % Print out status and loop through all unique zs
-fprintf('Progress:');
+fprintf('Cross Section Residuals Progress:');
 fprintf(['\n' repmat('.',1,unique_z_number_of_elements) '\n\n']);
 parfor z_index=1:unique_z_number_of_elements
     % Load in transformations and map ids necessary to calculate
@@ -94,7 +94,7 @@ parfor z_index=1:unique_z_number_of_elements
                 counts_current_section_tiles = zeros(num_unique_current_section_tiles,1);
                 residuals_next_section_tiles = zeros(num_unique_next_section_tiles,1);
                 counts_next_section_tiles = zeros(num_unique_next_section_tiles,1);
-                for i=1:length(cross_section_point_matches)
+                for i=1:size(cross_section_point_matches,1)
                     residual = mean(sqrt(sum((cross_section_point_matches{i,1}*T{adjacency(i,1)}+offsets(adjacency(i,1),:) - (cross_section_point_matches{i,2}*T{adjacency(i,2)}+offsets(adjacency(i,2),:))).^2,2)));
                     residuals_current_section_tiles(ic1(i)) = residuals_current_section_tiles(ic1(i)) + residual;
                     residuals_next_section_tiles(ic2(i)) = residuals_next_section_tiles(ic2(i)) + residual;

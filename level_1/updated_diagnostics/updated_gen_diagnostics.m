@@ -47,7 +47,6 @@ toc;
 %%
 %% Montage and Cross-section residuals
 if options.residual_info
-    tic;
     [ output_struct2 ] = calculate_montage_point_match_residuals(rc, point_matches, options, unique_z);
     output_struct.MontageResiduals.residuals = output_struct2.MontageResiduals.residuals;
     output_struct.MontageResiduals.median_of_means = output_struct2.MontageResiduals.median_of_means;
@@ -55,7 +54,6 @@ if options.residual_info
     output_struct.MontageResiduals.outlier_tile_ids = output_struct2.MontageResiduals.outlier_tile_ids;
     output_struct.MontageResiduals.number_of_unconnected_tiles = output_struct2.MontageResiduals.number_of_unconnected_tiles;
     output_struct.MontageResiduals.unconnected_tile_ids = output_struct2.MontageResiduals.unconnected_tile_ids;
-    toc;
     residuals_matrix = calculate_cross_section_point_match_residuals(rc, zstart, zend, point_matches, options,unique_z, section_ids_grouped_by_z);
     residuals_matrix = residuals_matrix + diag(output_struct.MontageResiduals.median_of_means);
     output_struct.CrossSectionAndMontageResidualsMatrix = residuals_matrix;
@@ -130,35 +128,17 @@ end
 %% list section outliers and statistics per section
 Table = [];
 if options.residual_info
-    disp('Area should be close to 1.0');
-    MeanA = zeros(numel(unique_z),1);
-    MedianA = zeros(numel(unique_z),1);
-    MedianResidual = zeros(numel(unique_z),1);
-    MedianPerimeter = zeros(numel(unique_z),1);
-    ResidualOutliers  = zeros(numel(unique_z),1);
-    Outliers          = zeros(numel(unique_z), 1);
-    AreaOutliers  = zeros(numel(unique_z),1);
-    
-    for z_index = 1:numel(unique_z)  % loop over sections
-        areas = abs(output_struct.Area.areas{z_index}./(all_height{z_index}.*all_width{z_index}));
-        perim = abs(output_struct.Perimeter.perimeters{z_index});
-        
-        MeanA(z_index) = mean(areas);
-        MedianA(z_index) = median(areas);
-        MedianResidual(z_index) = output_struct.MontageResiduals.median_of_means(z_index);
-        MedianPerimeter(z_index) = median(perim);
-        ResidualOutliers(z_index) = output_struct.MontageResiduals.number_of_outliers(z_index);
-        AreaOutliers(z_index) = output_struct.Area.number_of_outliers(z_index);
-        Outliers(z_index) = numel(unique([output_struct.Area.outlier_tile_ids{z_index}(:);output_struct.MontageResiduals.outlier_tile_ids{z_index}(:)]));
-        SectionName{z_index} = num2str(unique_z(z_index));
-        %     str1 = [num2str(zu1(z_index)) ' Mean A: ' num2str(mean(areas)) ...
-        %         ' ----- Median A: ' num2str(median(areas)) ' ---- Median Residual (px): '...
-        %         num2str(confidence(z_index)) ' Median Perimeter: ' num2str(median(perim))];
-        %     disp([str1]);
-        
-    end
-    Table = table(MeanA,MedianA,MedianResidual,MedianPerimeter, ResidualOutliers, AreaOutliers, Outliers,...
+    MedianAreaRatio = output_struct.Area.median_of_means;
+    MedianPerimeterRatio = output_struct.Perimeter.median_of_means;
+    MedianMontageResidual = output_struct.MontageResiduals.median_of_means;
+    AreaOutliers  = output_struct.Area.number_of_outliers;
+    PerimeterOutliers  = output_struct.Perimeter.number_of_outliers;
+    MontageResidualOutliers  = output_struct.MontageResiduals.number_of_outliers;
+    TotalAreaAndPerimeterOutliers = cellfun(@(area_outlier_tile_ids, perimeter_outlier_tile_ids) numel(unique([area_outlier_tile_ids(:);perimeter_outlier_tile_ids(:)])), output_struct.Area.outlier_tile_ids,  output_struct.Perimeter.outlier_tile_ids);
+    SectionName = cellstr(num2str(unique_z'));
+    Table = table(MedianAreaRatio,MedianPerimeterRatio,MedianMontageResidual, AreaOutliers, PerimeterOutliers, MontageResidualOutliers, TotalAreaAndPerimeterOutliers,...
         'RowNames',SectionName');
+    output_struct.Table = Table;
     disp(Table);
 end
 %% generate tile-based residual measure and potential outliers

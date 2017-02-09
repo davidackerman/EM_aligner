@@ -12,17 +12,18 @@ url_collection = sprintf('%s/owner/%s/project/%s/stack/%s', ...
 str = sprintf('curl -o %s %s/zRange/%.2f,%.2f/layoutFile', ...
     fn_layout, url_collection, zu(1), zu(end));
 [a,s] = system(str);
-disp(a);
-disp(s);
-
+if rc.verbose
+    disp(a);
+    disp(s);
+end
 % confirm generation of layout file
 if ~wait_for_file(fn_layout,30),
     disp(str);
     error(' Could not generate layout file');
 end
 % confirm that the layout file has all layers in it;
-str = ['head -3 ' fn_layout];[a, c] = system(str);disp(c);
-str = ['tail -3 ' fn_layout];[a, c] = system(str);disp(c);
+str = ['head -3 ' fn_layout];[a, c] = system(str);if rc.verbose, disp(c); end
+str = ['tail -3 ' fn_layout];[a, c] = system(str);if rc.verbose, disp(c); end
 fid = fopen(fn_layout, 'r');
 % C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%n%s%n%n%n%s', 'delimiter', '\t');
 C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%s%s%s%s%s%s', 'delimiter', '\t');

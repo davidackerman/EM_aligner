@@ -1,6 +1,6 @@
 % % % diagnostics
 clear all;
-dopts.nbrs = 0;
+close all;
 dopts.min_points = 3;
 dopts.show_deformation_summary = 0;
 dopts.dir_scratch = '/scratch/ackermand';
@@ -28,7 +28,7 @@ rc_original.stack = 'v13_align';
 rc_original.verbose = 0;
 
 % First and last sections to be analyzed
-nfirst = 4480; nlast = 4490;
+zstart = 4480; zend = 4490;
 
 % Beautified stack
 rc_beautified = rc_original;
@@ -45,12 +45,12 @@ pm(2).server           = 'http://10.40.3.162:8080/render-ws/v1';
 pm(2).owner            = 'flyTEM';
 pm(2).match_collection = 'Beautification_cross_sift_00';
 
-original_output_struct = updated_gen_diagnostics(rcsource, rc_original, nfirst, nlast, pm, dopts);
-beautified_output_struct = updated_gen_diagnostics(rcsource, rc_beautified, nfirst, nlast, pm, dopts);
+original_output_struct = updated_gen_diagnostics(rcsource, rc_original, zstart, zend, pm);
+beautified_output_struct = updated_gen_diagnostics(rcsource, rc_beautified, zstart, zend, pm, dopts);
 
 %% Plot the matrices and ratio of the two
 
-all_z = (nfirst:nlast);
+all_z = (zstart:zend);
 iptsetpref('ImshowAxesVisible','on')
 maximum_of_fine_vs_original = max([beautified_output_struct.CrossSectionAndMontageResidualsMatrix(:); original_output_struct.CrossSectionAndMontageResidualsMatrix(:)]);
 label_spacing = max(1,floor(length(all_z)/5));

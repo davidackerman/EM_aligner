@@ -1,42 +1,58 @@
-function [residuals_matrix] =...
-    calculate_cross_section_point_match_residuals(rc, zstart, zend, point_matches, options, unique_z, section_Ids_grouped_by_z)
-% Calculates cross section residuals for renderer collection rc, from
-% zstart to zend using point matches point_matches. Need to ensure units
-% are correct.
+function [residuals_matrix] = calculate_cross_section_point_match_residuals(rc, zstart, zend, point_matches, varargin)
+%% Generate statistics about cross section residuals
+% Calculates cross section residuals for renderer collection rc, using
+% zstart, zend, point matches point matches and varargin. If varargin does
+% not contain unique_z and section_ids_grouped_by_z, they will be obtained
+% based on zstart and zend. 
+% varargin should contain 0-3 arguments:
+%    1:                       The input should be options
+%    2:                       The input should be unique_z and section_ids_grouped_by_z
+%    3:                       The input should be unique_z, section_ids_grouped_by_z and options
 % opts fields and their defaults:
-%    min_points               : 10
-%    max_points               : 100
-%    number_of_cross_sections : 2
-%    xs_weight                : 0.5
-%    dir_scratch              : '/scratch/ackermand'     
+%    min_points                   : 10
+%    max_points                   : 100
+%    number_of_cross_sections     : 2
+%    xs_weight                    : 0.5
+%    dir_scratch                  : '/scratch/ackermand' 
+%    plot_cross_section_residuals : false
 % Output:
-%       residuals_matrix
+%    residuals_matrix
 % Author: David Ackerman
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin<4
-    % Configure point-match collection
-    point_matches.server           = 'http://10.40.3.162:8080/render-ws/v1';
-    point_matches.owner            = 'flyTEM';
-    point_matches.match_collection = 'v12_dmesh';
-    
-end
-if nargin<5
-    % Configure options
-    options.min_points = 10;
-    options.max_points = 100;
-    options.number_of_cross_sections=2; % This is how many sections above/below the current section we will calculate residuals between
-    options.xs_weight=0.5;
-    options.dir_scratch = '/scratch/ackermand';
+
+% Check the input arguments
+options = [];
+if isempty(varargin)
+    [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend);
+elseif length(varargin)==1
+    if isstruct(varargin{1})
+        options = varargin{1};
+        [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend);
+    else
+        error('Not enough input arguments: need both unique_z and section_ids_grouped_by_z.');
+    end
+elseif length(varargin)==2
+    if isstruct(varargin{2})
+        error('Not enough input arguments: need both unique_z and section_ids_grouped_by_z.');
+    else
+       unique_z = varargin{1};
+       section_ids_grouped_by_z = varargin{2};
+    end
+elseif length(varargin)==3
+    if isstruct(varargin{3})
+        unique_z = varargin{1};
+        section_ids_grouped_by_z = varargin{2};
+        options = varargin{3};
+    end
 end
 
-if ~isfield(options, 'plot_cross_section_residuals')
-   options.plot_cross_section_residuals = false;
-end
-
-if nargin<7
-    % Get section ids
-    [unique_z, section_Ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend); 
-end
+% Configure options
+if ~isfield(options, 'min_points'), options.min_points = 10; end
+if ~isfield(options, 'max_points'), options.max_points = 100; end
+if ~isfield(options, 'number_of_cross_sections'), options.number_of_cross_sections = 2; end % This is how many sections above/below the current section we will calculate residuals between
+if ~isfield(options, 'xs_weight'), options.xs_weight = 0.5; end
+if ~isfield(options, 'dir_scratch'), options.dir_scratch = '/scratch/ackermand'; end
+if ~isfield(options, 'plot_cross_section_residuals'), options.plot_cross_section_residuals = false; end
 
 % Create scratch directory and change to it
  dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
@@ -76,7 +92,7 @@ parfor z_index=1:unique_z_number_of_elements
         if z_index+section_step<=unique_z_number_of_elements
             % Load the cross section point matches and adjacency matrix
             factor = options.xs_weight/(section_step+1);
-            [cross_section_point_matches, adjacency, ~, ~] = load_cross_section_pm(point_matches, section_Ids_grouped_by_z{z_index}, section_Ids_grouped_by_z{z_index+section_step}, ...
+            [cross_section_point_matches, adjacency, ~, ~] = load_cross_section_pm(point_matches, section_ids_grouped_by_z{z_index}, section_ids_grouped_by_z{z_index+section_step}, ...
                 map_id, options.min_points, options.max_points, webopts, factor);
             if ~isempty(cross_section_point_matches)
                 % We now calculate the residuals for each tile pair as the
@@ -141,7 +157,7 @@ if options.plot_cross_section_residuals
     c=colorbar();
     ylabel(c,'Residuals');
     set(c,'YTick',(0:.25:1),'YTickLabel',(0:max_residuals_matrix/4:max_residuals_matrix));
-
+    title(['Cross Section Residuals For ' num2str(zstart) '-' num2str(zend)]); 
 end
 
 end

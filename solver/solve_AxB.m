@@ -34,7 +34,7 @@ function [x2, R, time_solve, flag] = solve_AxB(K,Lm,options,d)
 time_solve = 0;
 if strcmp(options.solver, 'pastix')
 
-    [x2, R, time_solve] = solve_pastix(K,Lm,options);  % needs external PaStiX installed
+    kk_clock;[x2, R, time_solve] = solve_pastix(K,Lm,options);kk_clock;  % needs external PaStiX installed
     
 else
     tic_Axb = tic;

@@ -79,7 +79,7 @@ W = cell(numel(zu1),1);
 edges = [0.4:.02:1.7];
 counts = zeros(numel(zu1), numel(edges));
 webopts = weboptions('Timeout', 60);
-for zix = 1:numel(zu1)
+parfor zix = 1:numel(zu1)
     Ar = [];    % surface area of tiles
     Aratio = [];% surface area ratio of tiles
     S  = [];    % perimeter of tiles
@@ -124,7 +124,9 @@ for zix = 1:numel(zu1)
         width(count)  = jto(jix).W;
         % check polygon area
         Ar(count) = polyarea(P(:,1), P(:,2));
-        Aratio(count) = Ar(count)/(jto(jix).H * jto(jix).W);
+        % sosi ---- use H and W of rcsource
+        ao = (jto(jix).H * jto(jix).W);
+        Aratio(count) = Ar(count)/ao;
         
         %%% polygonperimeter
         s = 0;
@@ -152,7 +154,7 @@ for zix = 1:numel(zu1)
     stdd = std(Aratio);
     I = logical(abs(Aratio-meann)>opts.nstd*stdd);
     %I = bsxfun(@gt, abs(bsxfun(@minus, Aratio, meann)), opts.nstd*stdd);
-    area_out = find(I);
+    area_out = find(I)
     area_outliers_tid{zix} = tidsvec{zix}(area_out);
     
     if opts.residual_info
@@ -183,7 +185,7 @@ for zix = 1:numel(zu1)
             m2 = L.pm.M{pmix,2};
             m1 = [m1 ones(size(m1,1),1)]*L.tiles(a1).tform.T;  % apply transformation
             m2 = [m2 ones(size(m2,1),1)]*L.tiles(a2).tform.T;  % apply transformation
-            res = real(sqrt(sum((m1(:,1)-m2(:,1)).*(m1(:,1)-m2(:,1))  + (m1(:,2)-m2(:,2)).* (m1(:,2)-m2(:,2)))));    %%%% sum of squared residuals
+            res = real(sum(sqrt((m1(:,1)-m2(:,1)).*(m1(:,1)-m2(:,1))  + (m1(:,2)-m2(:,2)).* (m1(:,2)-m2(:,2)))));    %%%% sum of squared residuals
             res = res/size(m1,1);  % mean residual sum for this tile pair
             %disp(res);
             %res_vec(pmix,:) = sqrt((m1(1)-m2(1))*(m1(1)-m2(1)) + (m1(1)-m2(1))*(m1(2)-m2(2)));
@@ -446,6 +448,7 @@ end
 %
 %
 %
+
 
 
 

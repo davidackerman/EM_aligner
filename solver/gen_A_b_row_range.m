@@ -188,9 +188,24 @@ for pair_number = rstart:rend%1:size(M,1)           % loop over the pairs
         I(pvec) = [r1(:);r1(:);r1(:);r1(:);r1(:);r1(:);r2(:);r2(:);r2(:);r2(:);r2(:);r2(:)]; % for 2nd degree polynomial
         J(pvec) = [c11;c12;c13;c14;c15;c16;c17;c18;c19;c110;c111;c112];
         % Definition of parameters
+        
         % u = a1 + a2 * x + a3 * y + a4 * xy + a5 * x^2 + a6 * y^2
-        S(pvec) = [ones(np,1);vec1(:,1);vec1(:,2); vec1(:,1).*vec1(:,2); vec1(:,1).*vec1(:,1); vec1(:,2).*vec1(:,2);...
-            ones(np,1);vec1(:,1);vec1(:,2); vec1(:,1).*vec1(:,2); vec1(:,1).*vec1(:,1); vec1(:,2).*vec1(:,2)];
+%         S(pvec) = [ones(np,1);vec1(:,1);vec1(:,2); vec1(:,1).*vec1(:,2); vec1(:,1).*vec1(:,1); vec1(:,2).*vec1(:,2);...
+%             ones(np,1);vec1(:,1);vec1(:,2); vec1(:,1).*vec1(:,2); vec1(:,1).*vec1(:,1); vec1(:,2).*vec1(:,2)];
+%         
+        S(pvec) = [ones(np,1);...           % 1
+                  vec1(:,1);...             % x
+                  vec1(:,2);...             % y
+                  vec1(:,1).*vec1(:,2);...  % xy
+                  vec1(:,1).*vec1(:,1);...  % x2
+                  vec1(:,2).*vec1(:,2);...  % y2
+                  ones(np,1);...            %1
+                  vec1(:,1);...             % x
+                  vec1(:,2);...             % y
+                  vec1(:,1).*vec1(:,2);...  %xy
+                  vec1(:,1).*vec1(:,1);...  %x2
+                  vec1(:,2).*vec1(:,2)];... %y2
+              
     elseif tdim == 20
         I(pvec) = [r1(:);r1(:);r1(:);r1(:);r1(:);r1(:);r1(:);r1(:);r1(:);r1(:);...
             r2(:);r2(:);r2(:);r2(:);r2(:);r2(:);r2(:);r2(:);r2(:);r2(:)]; % for 3rd degree polynomial

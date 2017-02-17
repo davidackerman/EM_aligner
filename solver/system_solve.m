@@ -144,7 +144,7 @@ else
     ismontage = [];
     count  = 1;
     for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
-        disp(['Setting up section: ' sID{ix}]);
+        %disp(['Setting up section: ' sID{ix}]);
         sID_all{count,1} = sID{ix};
         sID_all{count,2} = sID{ix};
         ismontage(count) = 1;
@@ -336,7 +336,12 @@ else
     J1 = cell2mat(J(:));clear J;
     S1 = cell2mat(S(:));clear S;
     disp('..... done!');
-    %% Step 4: Solve
+    %% save intermediate state
+    disp('Saving state...');
+    save temp;
+    disp('... done!');
+    %% Step 4: Solve [ beyond this stage relevant parameters: opts.transfac
+    %                  and opts.lambda]
     disp('** STEP 4:   Solving ....'); diary off;diary on;
     % build system and solve it
     A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
@@ -344,7 +349,8 @@ else
     w = cell2mat(w(:));
     Wmx = spdiags(w,0,size(A,1),size(A,1));
     clear w;
-    d = reshape(T', ncoeff,1);clear T;
+    d = reshape(T', ncoeff,1);
+    %clear T;
     
     tB = ones(ncoeff,1);
     tB(3:3:end) = opts.transfac;
@@ -428,13 +434,13 @@ else
     disp(lambda);
     disp('-----------------------');
     
-    
+    if opts.transfac<1
     %%% translate smallest x and smallest y in d to zero
     x_coord = d(3:6:end);
     y_coord = d(6:6:end);
     d(3:6:end) = d(3:6:end)-min(x_coord);
     d(6:6:end) = d(6:6:end)-min(y_coord);
-    
+    end
     
     K  = A'*Wmx*A + lambda*(tB')*tB;
     Lm  = A'*Wmx*b + lambda*(tB')*d;
@@ -475,7 +481,7 @@ else
         v = 'v1';
         if stack_exists(rcout)
             disp('.... removing existing collection');
-            resp = create_renderer_stack(rcout);
+            resp = delete_renderer_stack(rcout);
         end
         if ~stack_exists(rcout)
             disp('.... target collection not found, creating new collection in state: ''Loading''');
@@ -501,5 +507,22 @@ else
     end
     disp('.... done!');
     diary off;
+    
+%     %%% sosi
+%     [Wbox, bbox, url] = get_slab_bounds_renderer(rcout);
+%     scale = 0.1;
+%     dx = 5/scale;
+%     x = Wbox(1) + Wbox(3)/2;
+%     y = Wbox(2);
+%     height = Wbox(4);
+%     disp([x y height dx]);
+%     [Iyz, Io] = get_yz_image_renderer(rcout, x, y, dx, height, scale,...
+%         nfirst, nlast, [2 2 1]);
+%     h =  size(Iyz,1);%20000;
+%     w =  size(Iyz,2);
+%     im = Iyz(1:h,:);
+%     I = imresize(im,[h/32 (w)]);
+%     imshow(I);
+%     %%%%
     
 end

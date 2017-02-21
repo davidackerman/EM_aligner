@@ -11,7 +11,7 @@ urlChar = sprintf('%s/owner/%s/project/%s/stack/%s', rc.baseURL, rc.owner, rc.pr
 
 try
     web_resp = webread(urlChar);
-    if strcmp(web_resp.state, 'READ_ONLY'),
+    if strcmp(web_resp.state, 'READ_ONLY')
         res = 1;
     else
         res = 0;

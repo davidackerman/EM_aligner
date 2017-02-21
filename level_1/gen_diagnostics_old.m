@@ -79,7 +79,7 @@ W = cell(numel(zu1),1);
 edges = [0.4:.02:1.7];
 counts = zeros(numel(zu1), numel(edges));
 webopts = weboptions('Timeout', 60);
-for zix = 1:numel(zu1)
+parfor zix = 1:numel(zu1)
     Ar = [];    % surface area of tiles
     Aratio = [];% surface area ratio of tiles
     S  = [];    % perimeter of tiles
@@ -124,7 +124,9 @@ for zix = 1:numel(zu1)
         width(count)  = jto(jix).W;
         % check polygon area
         Ar(count) = polyarea(P(:,1), P(:,2));
-        Aratio(count) = Ar(count)/(jto(jix).H * jto(jix).W);
+        % sosi ---- use H and W of rcsource
+        ao = (jto(jix).H * jto(jix).W);
+        Aratio(count) = Ar(count)/ao;
         
         %%% polygonperimeter
         s = 0;
@@ -152,7 +154,7 @@ for zix = 1:numel(zu1)
     stdd = std(Aratio);
     I = logical(abs(Aratio-meann)>opts.nstd*stdd);
     %I = bsxfun(@gt, abs(bsxfun(@minus, Aratio, meann)), opts.nstd*stdd);
-    area_out = find(I);
+    area_out = find(I)
     area_outliers_tid{zix} = tidsvec{zix}(area_out);
     
     if opts.residual_info
@@ -446,6 +448,7 @@ end
 %
 %
 %
+
 
 
 

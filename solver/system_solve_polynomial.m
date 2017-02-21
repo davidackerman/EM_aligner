@@ -24,8 +24,6 @@ function [err,R, Tout] = system_solve_polynomial(nfirst, nlast, rc, pm, opts, rc
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 % Example usage
 %
 % nfirst = 1;
@@ -95,6 +93,9 @@ if ~isfield(opts, 'disableValidation'), opts.disableValidation = 1;end
 if ~isfield(opts, 'transfac'), opts.transfac = 1;end
 if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 0;end
 if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
+if ~isfield(opts, 'xfac'), opts.xfac = 1;end;
+if ~isfield(opts, 'xfac'), opts.yfac = 1;end;
+
 
 err = [];
 R = [];
@@ -121,8 +122,6 @@ end
 % load all tiles in this range and pool into Msection object
 disp('Loading transformations and tile/canvas ids from Renderer database.....');
 [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
-
-
 ntiles = size(T,1);
 disp(['..system has ' num2str(ntiles) ' tiles...']);
 %[L, map_id, tIds] = load_all_tiles(rc,zu);ntiles = numel(L.tiles);
@@ -139,7 +138,7 @@ fac = [];
 ismontage = [];
 count  = 1;
 for ix = 1:numel(zu)   % loop over sections
-    %disp(['Montage: ' sID{ix}]);
+    disp(['predict PM sequence: ' sID{ix}]);
     sID_all{count,1} = sID{ix};
     sID_all{count,2} = sID{ix};
     ismontage(count) = 1;
@@ -192,11 +191,14 @@ PM.adj = adj;
 PM.W = W;
 PM.np = np;
 
+
 if opts.filter_point_matches
     disp('Filtering point-matches');
     %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
     PM = filter_pm(PM, opts.pmopts);
 end
+
+
 
 if opts.use_peg %&& opts.degree==1
     %% generate new point-match entries to connect all tiles -- may not work for massive data yet
@@ -244,6 +246,9 @@ M = PM.M;
 adj = PM.adj;
 W = PM.W;
 np = PM.np;
+clear PM;
+
+
 % cd(dir_scratch)
 % save PM M adj W -v7.3;
 % fn = [dir_scratch '/PM.mat'];
@@ -310,6 +315,7 @@ I = {};
 J = {};
 S = {};
 w = {};
+% parfor-ready
 parfor ix = 1:split
     [I{ix}, J{ix}, S{ix}, wout] = gen_A_b_row_range(fn_split{ix}, ...
         opts.degree, np,r_sum_vec, r(ix,1), r(ix,2));
@@ -333,6 +339,12 @@ I1 = cell2mat(I(:));clear I;
 J1 = cell2mat(J(:));clear J;
 S1 = cell2mat(S(:));clear S;
 disp('..... done!');
+
+%% save intermediate state 
+disp('Saving state...');
+save temp;
+disp('... done!');
+
 %% Step 4: Solve
 disp('** STEP 4:   Solving ....'); diary off;diary on;
 % build system and solve it
@@ -344,9 +356,23 @@ clear w;
 
 d = reshape(T', ncoeff,1);clear T;
 
+
+%%%%%%%%%%%%%%%%%%%%%%% generate tB (parameter weights)
 tB = ones(ncoeff,1);
-tB(3:3:end) = opts.transfac;
+%%% adjust the rigidity of translation dof
+tB(1:12:end) = opts.transfac;  % for x
+tB(7:12:end) = opts.transfac;  % for y
+%%% adjust regidity of higher-order parameters along x
+tB(4:12:end) = opts.xfac;
+tB(5:12:end) = opts.xfac;
+tB(6:12:end) = opts.xfac;
+%%% adjust rigidity of higher-order parameters along y
+tB(10:12:end) = opts.yfac;
+tB(11:12:end) = opts.yfac;
+tB(12:12:end) = opts.yfac;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
+
 
 
 %%%% determine regularization parameter if opts.lambda is a range
@@ -427,11 +453,11 @@ disp(lambda);
 disp('-----------------------');
 
 
-%%% translate smallest x and smallest y in d to zero
-x_coord = d(3:6:end);
-y_coord = d(6:6:end);
-d(3:6:end) = d(3:6:end)-min(x_coord);
-d(6:6:end) = d(6:6:end)-min(y_coord);
+%%% for second order polynomial translate smallest x and smallest y in d to zero
+x_coord = d(1:12:end);
+y_coord = d(7:12:end);
+d(1:12:end) = d(1:12:end)-min(x_coord);
+d(7:12:end) = d(7:12:end)-min(y_coord);
 
 
 K  = A'*Wmx*A + lambda*(tB')*tB;
@@ -444,7 +470,7 @@ err = norm(A*x2-b);
 disp(['Error norm(Ax-b): ' num2str(err)]);
 Error = err;
 Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
-
+[d(1:12) Tout(1,:)']
 
 if opts.use_peg  % delete fictitious tile
     Tout(end,:) = [];
@@ -462,19 +488,16 @@ if ~isempty(rcout)
     disp('** STEP 5:   Ingesting data .....');
     disp(' ..... translate to +ve space');
     delta = 0;
-    dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-    dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-    for ix = 1:size(Tout,1)
-        Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+    if opts.degree==2
+        dx = min(Tout(:,1)) + sign(Tout(1))* delta;%mL.box(1);
+        dy = min(Tout(:,7)) + sign(Tout(1))* delta;%mL.box(2);
+        for ix = 1:size(Tout,1)
+            Tout(ix,[1 7]) = Tout(ix, [1 7]) - [dx dy];
+        end
+        v = 'v3';
     end
-    
     disp('... export to MET (in preparation to be ingested into the Renderer database)...');
     
-    v = 'v1';
-    if stack_exists(rcout)
-        disp('.... removing existing collection');
-        resp = create_renderer_stack(rcout);
-    end
     if ~stack_exists(rcout)
         disp('.... target collection not found, creating new collection in state: ''Loading''');
         resp = create_renderer_stack(rcout);

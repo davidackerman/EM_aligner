@@ -55,6 +55,7 @@ if ~isfield(options, 'dir_scratch'), options.dir_scratch = '/scratch/ackermand';
 if ~isfield(options, 'plot_cross_section_residuals'), options.plot_cross_section_residuals = false; end
 
 % Create scratch directory and change to it
+ dir_current = pwd;
  dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
  kk_mkdir(dir_scratch);
  cd(dir_scratch);
@@ -159,7 +160,7 @@ if options.plot_cross_section_residuals
     set(c,'YTick',(0:.25:1),'YTickLabel',(0:max_residuals_matrix/4:max_residuals_matrix));
     title(['Cross Section Residuals For ' num2str(zstart) '-' num2str(zend)]); 
 end
-
+cd(dir_current);
 end
 
 

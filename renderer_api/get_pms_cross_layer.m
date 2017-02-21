@@ -27,8 +27,19 @@ try
 catch err_fetch_pm
     kk_disp_err(err_fetch_pm)
     pause(1);
-    disp('trying again');
-    jj = webread(char(U),wopts); % try again
+    if strfind(err_fetch_pm.message,'Maximum variable size allowed by the function is exceeded')
+        disp('trying again with websave');
+        filename = ['large_pm_file_' num2str(randi(3000000)) '_' strrep(num2str(sum(clock)),'.','') '.json'];
+        websave(filename,char(U), wopts);
+        jj_cell_array = loadjson(filename);
+        jj(numel(jj_cell_array),1)=struct('pGroupId',[],'pId',[],'qGroupId',[],'qId',[],'matches',[]);
+        for i=1:numel(jj_cell_array)
+            jj(i) = jj_cell_array{i};
+        end
+    else
+        disp('trying again');
+        jj = webread(char(U),wopts); % try again
+    end
 end
 
 

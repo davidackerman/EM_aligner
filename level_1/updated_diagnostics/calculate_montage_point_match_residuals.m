@@ -8,11 +8,12 @@ function [ output_struct ] = calculate_montage_point_match_residuals(rc, point_m
 %    2:                       The input should be zstart and zend, or unique_z and options
 %    3:                       The input should be zstart, zend, and options
 % options fields and their defaults:
-%    nstd            : 2      Number of standard deviations beyond which a
-%                             tile will be considered an outlier for its section based on its mean
-%                             residuals
-%    min_points      : 5      Minimum number of points for input to load_point_matches
-%
+%    outlier_deviation_for_residuals : 10 Max point match residual for tile
+%                                         before being considered an outlier
+%    min_points      : 10     Minimum number of points for input to load_point_matches
+%    output_data_per_tile : true  Output values and ratios for each tile
+%    dir_scratch : /scratch/ackermand Scratch directory
+
 % Output:
 %    output_struct:           Contains all tile-tile mean residuals, median
 %                             of mean tile residuals (averaged over all tile-tile pairs), number of
@@ -49,12 +50,22 @@ elseif length(varargin)==3
         [unique_z, ~, ~, ~, ~] = get_section_ids(rc, zstart, zend);
     end
 end
-if ~isfield(options, 'nstd'), options.nstd = 2; end
-if ~isfield(options, 'min_points'), options.min_points = 5; end
+if ~isfield(options, 'outlier_deviation_for_residuals'), options.outlier_deviation_for_residuals = 10; end
+if ~isfield(options, 'min_points'), options.min_points = 10; end
+if ~isfield(options,'output_data_per_tile'), options.output_data_per_tile = true; end
+if ~isfield(options, 'dir_scratch'), options.dir_scratch = '/scratch/ackermand'; end
 
-all_residuals_vector = cell(numel(unique_z),1);
+dir_current = pwd;
+dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
+kk_mkdir(dir_scratch);
+cd(dir_scratch);
+
+if options.output_data_per_tile, all_residuals_vector = cell(numel(unique_z),1); end
 all_residuals_median = zeros(numel(unique_z),1);
+all_residuals_mean = zeros(numel(unique_z),1);
+all_residuals_variance = zeros(numel(unique_z),1);
 all_residuals_outlier_count = zeros(numel(unique_z),1);
+all_residuals_outlier_percent = zeros(numel(unique_z),1);
 all_residuals_outlier_tile_indices = cell(numel(unique_z),1);
 all_residuals_outlier_tile_ids = cell(numel(unique_z),1);
 all_unconnected_count = zeros(numel(unique_z),1);
@@ -94,22 +105,36 @@ parfor z_index = 1:length(unique_z)
     all_unconnected_count(z_index) = sum(unconnected_tiles);
     all_unconnected_tile_ids{z_index} = tile_ids(unconnected_tiles);
     all_unconnected_tile_indices{z_index} = find(unconnected_tiles);
-    all_residuals_vector{z_index} = tile_residuals;  % Store tile residuals for this section
+    if options.output_data_per_tile, all_residuals_vector{z_index} = tile_residuals; end  % Store tile residuals for this section
     % Calculate median of mean tile residuals, and outliers
     only_greater_than = true;
-    [all_residuals_median(z_index), all_residuals_outlier_count(z_index), all_residuals_outlier_tile_indices{z_index}, all_residuals_outlier_tile_ids{z_index}] = ...
-        calculate_median_and_outliers(cellfun(@mean,tile_residuals), options.nstd, tile_ids, 'std', only_greater_than);
+    [all_residuals_median(z_index), all_residuals_mean(z_index), all_residuals_variance(z_index), all_residuals_outlier_count(z_index), all_residuals_outlier_percent(z_index), all_residuals_outlier_tile_indices{z_index}, all_residuals_outlier_tile_ids{z_index}] = ...
+        calculate_statistics_and_outliers(cellfun(@mean,tile_residuals), options.outlier_deviation_for_residuals, tile_ids, 'fixed_cutoff', only_greater_than);
     fprintf('\b|\n');
 end
 % Create output struct
-output_struct.values = all_residuals_vector;
-output_struct.median_of_means = all_residuals_median;
-output_struct.outlier_count = all_residuals_outlier_count;
-output_struct.outlier_tile_indices =all_residuals_outlier_tile_indices;
-output_struct.outlier_tile_ids = all_residuals_outlier_tile_ids;
-output_struct.unconnected_count = all_unconnected_count;
-output_struct.unconnected_tile_indices =all_unconnected_tile_indices;
-output_struct.unconnected_tile_ids = all_unconnected_tile_ids;
-
+if options.output_data_per_tile
+    output_struct.values = all_residuals_vector;
+    output_struct.median_of_means = all_residuals_median;
+    output_struct.mean_of_means = all_residuals_mean;
+    output_struct.variance_of_means = all_residuals_variance;
+    output_struct.outlier_count = all_residuals_outlier_count;
+    output_struct.outlier_percent = all_residuals_outlier_percent;
+    output_struct.outlier_tile_indices =all_residuals_outlier_tile_indices;
+    output_struct.outlier_tile_ids = all_residuals_outlier_tile_ids;
+    output_struct.unconnected_count = all_unconnected_count;
+    output_struct.unconnected_tile_indices =all_unconnected_tile_indices;
+    output_struct.unconnected_tile_ids = all_unconnected_tile_ids;
+else
+    output_struct.median_of_means = all_residuals_median;
+    output_struct.mean_of_means = all_residuals_mean;
+    output_struct.variance_of_means = all_residuals_variance;
+    output_struct.outlier_count = all_residuals_outlier_count;
+    output_struct.outlier_percent = all_residuals_outlier_percent;
+    output_struct.outlier_tile_ids = all_residuals_outlier_tile_ids;
+    output_struct.unconnected_count = all_unconnected_count;
+    output_struct.unconnected_tile_ids = all_unconnected_tile_ids;
+end
+cd(dir_current);
 end
 

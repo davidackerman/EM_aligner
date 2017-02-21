@@ -1,24 +1,23 @@
 % % % diagnostics
-clear all;
-close all;
-dopts.min_points = 3;
-dopts.show_deformation_summary = 0;
-dopts.dir_scratch = '/scratch/ackermand';
-dopts.xs_weight = 0.5;
-dopts.min_points            = 10;
-dopts.max_points            = 100;
-dopts.number_of_cross_sections = 2;
-dopts.show_residuals = 0;
-dopts.show_deformation = 0;
-dopts.residual_info = 1;
-dopts.nstd = 2;
-dopts.outlier_deviation_for_ratios = 0.04; % Cutoff for area ratio and perimeter ratio outliers: any tile ratios that stray by more than outlier_deviation_for_ratios*100% are outliers
+options.dir_scratch = '/scratch/ackermand';
+options.xs_weight = 0.5;
+options.min_points            = 10;
+options.max_points            = 100;
+options.number_of_cross_sections = 2;
+options.show_residuals = false; % Show_residuals and show_deformations are for plotting section maps
+options.show_deformations = false;
+options.show_table = false; % Whether or not to show the table
+options.output_data_per_tile = false; % Store all the data per tile (eg. residuals, area, area ratio etc) or not
+options.outlier_deviation_for_residuals = 10; % Cutoff average residual for tile, beyond which it is considered to be an outlier
+options.outlier_deviation_for_ratios = 0.10; % Cutoff for area ratio and perimeter ratio outliers: any tile ratios that stray by more than outlier_deviation_for_ratios*100% are outliers
 
-% Source, used for area and perimeter ratios
+% Source, used for area and perimeter ratios, empty if don't want area and
+% perimeter calculations
 rcsource.baseURL = 'http://10.37.5.60:8080/render-ws/v1';
 rcsource.owner = 'flyTEM';
 rcsource.project = 'FAFB00';
 rcsource.stack = 'v12_acquire_merged';
+rcsource = [];
 
 % Original, unbeautified stack
 rc_original.baseURL = 'http://10.37.5.60:8080/render-ws/v1';
@@ -45,8 +44,10 @@ pm(2).server           = 'http://10.40.3.162:8080/render-ws/v1';
 pm(2).owner            = 'flyTEM';
 pm(2).match_collection = 'Beautification_cross_sift_00';
 
+% If options is empty, defaults are used. If rcsource is empty, Area and
+% Periemter ratios are not calculated, unless show_deformations is true
 original_output_struct = updated_gen_diagnostics(rcsource, rc_original, zstart, zend, pm);
-beautified_output_struct = updated_gen_diagnostics(rcsource, rc_beautified, zstart, zend, pm, dopts);
+beautified_output_struct = updated_gen_diagnostics(rcsource, rc_beautified, zstart, zend, pm, options);
 
 %% Plot the matrices and ratio of the two
 

@@ -6,6 +6,7 @@ function [output_struct, varargout] = calculate_area_and_perimeter_ratios( rcsou
 %    outlier_deviation_for_ratios     : 0.04 , Deviation of tile area or perimeter beyond 
 %                                              which it is considered an outlier (eg., the tile can
 %                                              vary by +/- 4% when outlier_deviation_for_ratios = 0.04)
+%    output_data_per_tile             : true , Output values and ratios for each tile
 % Output:
 %    output_struct:           Contains, for both area and perimeter: 
 %                             all tile values, all tile ratios, median ratios per section, number of
@@ -20,9 +21,11 @@ function [output_struct, varargout] = calculate_area_and_perimeter_ratios( rcsou
 % Check and initialize options if necessary
 if nargin<5
     options.outlier_deviation_for_ratios = 0.04;
+    options.output_data_per_tile = true;
 end
 
 if ~isfield(options, 'outlier_deviation_for_ratios'), options.outlier_deviation_for_ratios = 0.04; end
+if ~isfield(options,'output_data_per_tile'), options.output_data_per_tile = true; end
 
 % Get the unique_z values and the section ids grouped by their z
 [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend);
@@ -30,18 +33,27 @@ if ~isfield(options, 'outlier_deviation_for_ratios'), options.outlier_deviation_
 numel_unique_z = numel(unique_z);
 all_rc_section_map  = cell(numel_unique_z,1);
 
-all_rc_areas = cell(numel_unique_z,1);
-all_rc_area_ratios = cell(numel_unique_z,1);
+if options.output_data_per_tile
+    all_rc_areas = cell(numel_unique_z,1);
+    all_rc_area_ratios = cell(numel_unique_z,1);
+    all_rc_perimeters = cell(numel_unique_z,1);
+    all_rc_perimeter_ratios = cell(numel_unique_z,1);
+end
+
 all_rc_area_ratio_median = zeros(numel_unique_z,1);
-all_rc_area_ratio_number_of_outliers = zeros(numel_unique_z,1);
-all_rc_tile_area_ratio_outliers_indices = cell(numel_unique_z,1);
+all_rc_area_ratio_mean = zeros(numel_unique_z,1);
+all_rc_area_ratio_variance = zeros(numel_unique_z,1);
+all_rc_area_ratio_outliers_count = zeros(numel_unique_z,1);
+all_rc_area_ratio_outliers_percent = zeros(numel_unique_z,1);
+all_rc_area_ratio_outliers_indices = cell(numel_unique_z,1);
 all_rc_area_ratio_outliers_tile_ids = cell(numel_unique_z,1);
 
-all_rc_perimeters = cell(numel_unique_z,1);
-all_rc_perimeter_ratios = cell(numel_unique_z,1);
 all_rc_perimeter_ratio_median = zeros(numel_unique_z,1);
-all_rc_perimeter_ratio_number_of_outliers = zeros(numel_unique_z,1);
-all_rc_tile_perimeter_ratio_outliers_indices = cell(numel_unique_z,1);
+all_rc_perimeter_ratio_mean = zeros(numel_unique_z,1);
+all_rc_perimeter_ratio_variance = zeros(numel_unique_z,1);
+all_rc_perimeter_ratio_outliers_count = zeros(numel_unique_z,1);
+all_rc_perimeter_ratio_outliers_percent = zeros(numel_unique_z,1);
+all_rc_perimeter_ratio_outliers_indices = cell(numel_unique_z,1);
 all_rc_perimeter_ratio_outliers_tile_ids = cell(numel_unique_z,1);
 % to generate histogram counts we need to define bin edges
 edges = [0:.02:10];
@@ -107,32 +119,56 @@ parfor z_index = 1:numel(unique_z)
     end
     % Calculate histogram and store section data in variable for all sections
     counts(z_index,:) = histc(rc_area_ratios, edges);
-    all_rc_areas{z_index} = rc_areas;
-    all_rc_perimeters{z_index} = rc_perimeters;
-    all_rc_area_ratios{z_index} = rc_area_ratios;
-    all_rc_perimeter_ratios{z_index} = rc_perimeter_ratios;
-    [all_rc_area_ratio_median(z_index), all_rc_area_ratio_number_of_outliers(z_index), all_rc_tile_area_ratio_outliers_indices{z_index}, all_rc_area_ratio_outliers_tile_ids{z_index}] = ...
-        calculate_median_and_outliers( rc_area_ratios, options.outlier_deviation_for_ratios, rc_ids, 'fixed_cutoff');
-    [all_rc_perimeter_ratio_median(z_index), all_rc_perimeter_ratio_number_of_outliers(z_index), all_rc_tile_perimeter_ratio_outliers_indices{z_index}, all_rc_perimeter_ratio_outliers_tile_ids{z_index}] = ...
-        calculate_median_and_outliers( rc_perimeter_ratios, options.outlier_deviation_for_ratios, rc_ids, 'fixed_cutoff');
+    if options.output_data_per_tile
+        all_rc_areas{z_index} = rc_areas;
+        all_rc_perimeters{z_index} = rc_perimeters;
+        all_rc_area_ratios{z_index} = rc_area_ratios;
+        all_rc_perimeter_ratios{z_index} = rc_perimeter_ratios;
+    end
+    [all_rc_area_ratio_median(z_index), all_rc_area_ratio_mean(z_index), all_rc_area_ratio_variance(z_index), all_rc_area_ratio_outliers_count(z_index), all_rc_area_ratio_outliers_percent(z_index), all_rc_area_ratio_outliers_indices{z_index}, all_rc_area_ratio_outliers_tile_ids{z_index}] = ...
+        calculate_statistics_and_outliers( rc_area_ratios, options.outlier_deviation_for_ratios, rc_ids, 'fixed_cutoff');
+    [all_rc_perimeter_ratio_median(z_index), all_rc_perimeter_ratio_mean(z_index), all_rc_perimeter_ratio_variance(z_index), all_rc_perimeter_ratio_outliers_count(z_index), all_rc_perimeter_ratio_outliers_percent(z_index), all_rc_perimeter_ratio_outliers_indices{z_index}, all_rc_perimeter_ratio_outliers_tile_ids{z_index}] = ...
+        calculate_statistics_and_outliers( rc_perimeter_ratios, options.outlier_deviation_for_ratios, rc_ids, 'fixed_cutoff');
     all_rc_section_map{z_index} = rc_positions_transformed; 
     fprintf('\b|\n');
 end
 
 % Create the output struct and optional outputs
-output_struct.Area.values = all_rc_areas;
-output_struct.Area.ratios = all_rc_area_ratios;
-output_struct.Area.median = all_rc_area_ratio_median;
-output_struct.Area.outlier_count = all_rc_area_ratio_number_of_outliers;
-output_struct.Area.outlier_tile_indices = all_rc_tile_area_ratio_outliers_indices;
-output_struct.Area.outlier_tile_ids = all_rc_area_ratio_outliers_tile_ids;
-
-output_struct.Perimeter.values = all_rc_perimeters;
-output_struct.Perimeter.ratios = all_rc_perimeter_ratios;
-output_struct.Perimeter.median = all_rc_perimeter_ratio_median;
-output_struct.Perimeter.outlier_count = all_rc_perimeter_ratio_number_of_outliers;
-output_struct.Perimeter.outlier_tile_indices = all_rc_tile_perimeter_ratio_outliers_indices;
-output_struct.Perimeter.outlier_tile_ids = all_rc_perimeter_ratio_outliers_tile_ids;
+if options.output_data_per_tile
+    output_struct.Area.values = all_rc_areas;
+    output_struct.Area.ratios = all_rc_area_ratios;
+    output_struct.Area.median = all_rc_area_ratio_median;
+    output_struct.Area.mean = all_rc_area_ratio_mean;
+    output_struct.Area.variance = all_rc_area_ratio_variance;
+    output_struct.Area.outlier_count = all_rc_area_ratio_outliers_count;
+    output_struct.Area.outlier_percent = all_rc_area_ratio_outliers_percent;
+    output_struct.Area.outlier_tile_indices = all_rc_area_ratio_outliers_indices;
+    output_struct.Area.outlier_tile_ids = all_rc_area_ratio_outliers_tile_ids;
+    
+    output_struct.Perimeter.values = all_rc_perimeters;
+    output_struct.Perimeter.ratios = all_rc_perimeter_ratios;
+    output_struct.Perimeter.median = all_rc_perimeter_ratio_median;
+    output_struct.Perimeter.mean = all_rc_perimeter_ratio_mean;
+    output_struct.Perimeter.variance = all_rc_perimeter_ratio_variance;
+    output_struct.Perimeter.outlier_count = all_rc_perimeter_ratio_outliers_count;
+    output_struct.Perimeter.outlier_percent = all_rc_perimeter_ratio_outliers_percent;
+    output_struct.Perimeter.outlier_tile_indices = all_rc_perimeter_ratio_outliers_indices;
+    output_struct.Perimeter.outlier_tile_ids = all_rc_perimeter_ratio_outliers_tile_ids;
+else
+    output_struct.Area.median = all_rc_area_ratio_median;
+    output_struct.Area.mean = all_rc_area_ratio_mean;
+    output_struct.Area.variance = all_rc_area_ratio_variance;
+    output_struct.Area.outlier_count = all_rc_area_ratio_outliers_count;
+    output_struct.Area.outlier_percent = all_rc_area_ratio_outliers_percent;
+    output_struct.Area.outlier_tile_ids = all_rc_area_ratio_outliers_tile_ids;
+    
+    output_struct.Perimeter.median = all_rc_perimeter_ratio_median;
+    output_struct.Perimeter.mean = all_rc_perimeter_ratio_mean;
+    output_struct.Perimeter.variance = all_rc_perimeter_ratio_variance;
+    output_struct.Perimeter.outlier_count = all_rc_perimeter_ratio_outliers_count;
+    output_struct.Perimeter.outlier_percent = all_rc_perimeter_ratio_outliers_percent;
+    output_struct.Perimeter.outlier_tile_ids = all_rc_perimeter_ratio_outliers_tile_ids;
+end
 
 if nargout > 1, varargout{1} = counts; end
 if nargout > 2, varargout{2} = all_rc_section_map; end

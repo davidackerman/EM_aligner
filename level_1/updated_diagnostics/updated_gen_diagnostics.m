@@ -1,4 +1,4 @@
-function [output_struct] = updated_gen_diagnostics(rcsource, rc, zstart, zend, point_matches, options)
+function [output_struct, all_section_maps] = updated_gen_diagnostics(rcsource, rc, zstart, zend, point_matches, options)
 %% Generates information about tile deformation and residuals
 % Summarizes tile deformation and point-match residuals per tile and
 % section using rcsource, r, zstart, zend, point matches and options.
@@ -8,7 +8,7 @@ function [output_struct] = updated_gen_diagnostics(rcsource, rc, zstart, zend, p
 % options fields and their defaults:
 %    outlier_deviation_for_ratios     : 0.04
 %    outlier_deviation_for_residuals  : 10
-%    residual_info   : false
+%    show_table   : false
 %    show_deformations: false 0 = don'e show
 %                             1 = display visible figure
 %                             2 = save image of invisible figure to disk (not implemented yet)
@@ -27,23 +27,31 @@ if nargin<6
     options=[];
 end
 
-do_area_and_perimeter_calculations = true;
-if isempty(rcsource)
-   do_area_and_perimeter_calculations = false; 
-end
 if ~isfield(options, 'outlier_deviation_for_ratios'), options.outlier_deviation_for_ratios = 0.04; end
 if ~isfield(options, 'outlier_deviation_for_residuals'), options.outlier_deviation_for_residuals = 10; end
-if ~isfield(options, 'residual_info'), options.residual_info = false; end
-if ~isfield(options,'show_deformations'), options.show_deformations = false; end
-if ~isfield(options,'show_residuals'), options.show_residuals = false; end
-if ~isfield(options,'output_data_per_tile'), options.output_data_per_tile = true; end
+if ~isfield(options, 'show_deformations'), options.show_deformations = false; end
+if ~isfield(options, 'show_residuals'), options.show_residuals = false; end
+if ~isfield(options, 'show_table'), options.show_table = false; end
+if ~isfield(options, 'output_data_per_tile'), options.output_data_per_tile = true; end
 
+do_area_and_perimeter_calculations = true;
+if isempty(rcsource)
+   do_area_and_perimeter_calculations = false;
+   if options.show_deformations
+      warning('No rcsource provided, setting show_deformations to false');
+      options.show_deformations=false;
+   end
+end
+
+if options.show_residuals || options.show_deformations
+   options.output_data_per_tile = true; 
+end
 output_struct=[];
 if do_area_and_perimeter_calculations
     [ output_struct, counts, all_section_maps, unique_z, section_ids_grouped_by_z] = calculate_area_and_perimeter_ratios(rcsource, rc, zstart, zend, options);
 else
     [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend);
-    if options.show_residuals || options.show_deformations
+    if options.show_residuals || nargout==2
        all_section_maps = calculate_section_maps(rc, zstart, zend, unique_z); 
     end
 end
@@ -97,33 +105,30 @@ if options.output_data_per_tile && (options.show_deformations || options.show_re
 end
 
 %% list section outliers and statistics per section
-Table = [];
-if options.residual_info
-    if do_area_and_perimeter_calculations
-        MedianAreaRatio = output_struct.Area.median;
-        MedianPerimeterRatio = output_struct.Perimeter.median;
-        MedianMontageResidual = output_struct.MontageResiduals.median_of_means;
-        AreaOutliers  = output_struct.Area.outlier_count;
-        AreaOutliersPercent = output_struct.Area.outlier_percent;
-        PerimeterOutliers  = output_struct.Perimeter.outlier_count;
-        PerimeterOutliersPercent  = output_struct.Perimeter.outlier_percent;
-        MontageResidualOutliers  = output_struct.MontageResiduals.outlier_count;
-        MontageResidualOutliersPercent  = output_struct.MontageResiduals.outlier_percent;
-        TotalAreaAndPerimeterOutliers = cellfun(@(area_outlier_tile_ids, perimeter_outlier_tile_ids) numel(unique([area_outlier_tile_ids(:);perimeter_outlier_tile_ids(:)])), output_struct.Area.outlier_tile_ids,  output_struct.Perimeter.outlier_tile_ids);
-        SectionName = cellstr(num2str(unique_z'));
-        Table = table(MedianAreaRatio,MedianPerimeterRatio,MedianMontageResidual, AreaOutliers, AreaOutliersPercent, PerimeterOutliers, PerimeterOutliersPercent, MontageResidualOutliers, MontageResidualOutliersPercent, TotalAreaAndPerimeterOutliers,...
-            'RowNames',SectionName');
-    else
-        MedianMontageResidual = output_struct.MontageResiduals.median_of_means;
-        MontageResidualOutliers  = output_struct.MontageResiduals.outlier_count;
-        MontageResidualOuliersPercent = output_struct.MontageResiduals.outlier_percent;
-        SectionName = cellstr(num2str(unique_z'));
-        Table = table(MedianMontageResidual, MontageResidualOutliers, MontageResidualOuliersPercent, ...
-            'RowNames',SectionName');
-    end
-    output_struct.Table = Table;
-    disp(Table);
+if do_area_and_perimeter_calculations
+    MedianAreaRatio = output_struct.Area.median;
+    MedianPerimeterRatio = output_struct.Perimeter.median;
+    MedianMontageResidual = output_struct.MontageResiduals.median_of_means;
+    AreaOutliers  = output_struct.Area.outlier_count;
+    AreaOutliersPercent = output_struct.Area.outlier_percent;
+    PerimeterOutliers  = output_struct.Perimeter.outlier_count;
+    PerimeterOutliersPercent  = output_struct.Perimeter.outlier_percent;
+    MontageResidualOutliers  = output_struct.MontageResiduals.outlier_count;
+    MontageResidualOutliersPercent  = output_struct.MontageResiduals.outlier_percent;
+    TotalAreaAndPerimeterOutliers = cellfun(@(area_outlier_tile_ids, perimeter_outlier_tile_ids) numel(unique([area_outlier_tile_ids(:);perimeter_outlier_tile_ids(:)])), output_struct.Area.outlier_tile_ids,  output_struct.Perimeter.outlier_tile_ids);
+    SectionName = cellstr(num2str(unique_z'));
+    Table = table(MedianAreaRatio,MedianPerimeterRatio,MedianMontageResidual, AreaOutliers, AreaOutliersPercent, PerimeterOutliers, PerimeterOutliersPercent, MontageResidualOutliers, MontageResidualOutliersPercent, TotalAreaAndPerimeterOutliers,...
+        'RowNames',SectionName');
+else
+    MedianMontageResidual = output_struct.MontageResiduals.median_of_means;
+    MontageResidualOutliers  = output_struct.MontageResiduals.outlier_count;
+    MontageResidualOuliersPercent = output_struct.MontageResiduals.outlier_percent;
+    SectionName = cellstr(num2str(unique_z'));
+    Table = table(MedianMontageResidual, MontageResidualOutliers, MontageResidualOuliersPercent, ...
+        'RowNames',SectionName');
 end
+output_struct.Table = Table;
+if options.show_table, disp(Table); end
 
 %% summarize deformation for whole stack
 edges = [0:.02:10];

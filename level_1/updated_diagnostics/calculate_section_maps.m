@@ -15,7 +15,6 @@ end
 numel_unique_z = numel(unique_z);
 all_section_maps  = cell(numel_unique_z,1);
 
-% to generate histogram counts we need to define bin edges
 webopts = weboptions('Timeout', 60);
 
 % Loop over all unique z and print out progress
@@ -31,7 +30,7 @@ parfor z_index = 1:numel(unique_z)
     numel_rc_data = numel(rc_data);
     rc_positions_transformed = cell(numel_rc_data,1);
    
-    % Loop over all rc tiles and calculate their areas, perimeters and their ratios to those of rcsource
+    % Loop over all rc tiles and calculate their deformed positions
     for rc_tile_index = 1:numel(rc_data)
         rc_tile = tile(rc_data(rc_tile_index));
         % make four corners for the tile

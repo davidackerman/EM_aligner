@@ -12,6 +12,7 @@ function [ output_struct ] = calculate_montage_point_match_residuals(rc, point_m
 %                                         before being considered an outlier
 %    min_points      : 10     Minimum number of points for input to load_point_matches
 %    output_data_per_tile : true  Output values and ratios for each tile
+%    dir_scratch : /scratch/ackermand Scratch directory
 
 % Output:
 %    output_struct:           Contains all tile-tile mean residuals, median
@@ -52,6 +53,12 @@ end
 if ~isfield(options, 'outlier_deviation_for_residuals'), options.outlier_deviation_for_residuals = 10; end
 if ~isfield(options, 'min_points'), options.min_points = 10; end
 if ~isfield(options,'output_data_per_tile'), options.output_data_per_tile = true; end
+if ~isfield(options, 'dir_scratch'), options.dir_scratch = '/scratch/ackermand'; end
+
+dir_current = pwd;
+dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
+kk_mkdir(dir_scratch);
+cd(dir_scratch);
 
 if options.output_data_per_tile, all_residuals_vector = cell(numel(unique_z),1); end
 all_residuals_median = zeros(numel(unique_z),1);
@@ -128,5 +135,6 @@ else
     output_struct.unconnected_count = all_unconnected_count;
     output_struct.unconnected_tile_ids = all_unconnected_tile_ids;
 end
+cd(dir_current);
 end
 

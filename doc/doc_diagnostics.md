@@ -7,7 +7,7 @@ Also, you are using Matlab 2016b and above with toolboxes: Computer Vision Syste
 
 ## use updated_diagnostics (recommended)
 Calling updated_gen_diagnostics(rcsource, rc, zstart, zend, point_matches, options) will produce an output struct that has information about areas, perimeters and residuals that can be useful for diagnosing issues in sections. 
-[Consult pdf file for more information] (doc/UpdatedDiagnosticsTools.pdf).
+[Consult pdf file for more information] (UpdatedDiagnosticsTools.pdf).
 
 
 

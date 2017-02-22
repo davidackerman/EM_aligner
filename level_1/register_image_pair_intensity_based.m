@@ -4,13 +4,19 @@ function [tform, show_pair_image,  p1, p2] = register_image_pair_intensity_based
 
 [optimizer,metric] = imregconfig('monomodal');
 
+% optimizer.GradientMagnitudeTolerance = 1.000000e-04;
+% optimizer.MinimumStepLength = 1e-6;%1.000000e-05;
+% optimizer.MaximumStepLength = 0.001;%6.250000e-02;
+% optimizer.MaximumIterations = 500;
+% optimizer.RelaxationFactor = 0.5;%5.000000e-01;
+
+
+
 optimizer.GradientMagnitudeTolerance = 1.000000e-04;
 optimizer.MinimumStepLength = 1e-6;%1.000000e-05;
-optimizer.MaximumStepLength = 0.001;%6.250000e-02;
-optimizer.MaximumIterations = 500;
-optimizer.RelaxationFactor = 0.5;%5.000000e-01;
-
-
+optimizer.MaximumStepLength = 0.01;%6.250000e-02;
+optimizer.MaximumIterations = 1000;
+optimizer.RelaxationFactor = 0.6;%5.000000e-01;
 
 disp('Using optimizer:');disp(optimizer);
 disp('Using metric:'); disp(metric);

@@ -2,6 +2,7 @@ function [T, map_id, tIds, section_id] = load_all_transformations(rc, zu, dir_sc
 % fastest way to load tile transformations from a renderer collection for 
 % z-values specified in vector zu.
 % Requires specification of a scratch directory.
+if ~isfield(rc, 'verbose'), rc.verbose = 0;end;
 cd(dir_scratch);
 fn_layout = [dir_scratch '/layout_file_' num2str(randi(100000000)) '.txt'];
 % % Generate the layout file (the main input) using the Renderer service

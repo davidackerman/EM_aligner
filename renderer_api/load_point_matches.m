@@ -77,6 +77,7 @@ end
 % end
 [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
 %% get a list of all tiles for those sections
+if ~isfield(rc, 'verbose'), rc.verbose = 0;end
 options = weboptions;
 options.Timeout = 60;
 clear t;

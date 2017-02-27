@@ -1,8 +1,8 @@
-%% register two images
 function [tform, show_pair_image,  p1, p2] = register_image_pair_intensity_based(im1, im2, npoints_per_pair)
+%% register two images
 %%%
 
-[optimizer,metric] = imregconfig('monomodal');
+[optimizer,metric] = imregconfig('multimodal');
 
 % optimizer.GradientMagnitudeTolerance = 1.000000e-04;
 % optimizer.MinimumStepLength = 1e-6;%1.000000e-05;
@@ -10,13 +10,11 @@ function [tform, show_pair_image,  p1, p2] = register_image_pair_intensity_based
 % optimizer.MaximumIterations = 500;
 % optimizer.RelaxationFactor = 0.5;%5.000000e-01;
 
+optimizer.InitialRadius = 1e-5;
+optimizer.MaximumIterations = 1500;
 
 
-optimizer.GradientMagnitudeTolerance = 1.000000e-04;
-optimizer.MinimumStepLength = 1e-6;%1.000000e-05;
-optimizer.MaximumStepLength = 0.01;%6.250000e-02;
-optimizer.MaximumIterations = 1000;
-optimizer.RelaxationFactor = 0.6;%5.000000e-01;
+
 
 disp('Using optimizer:');disp(optimizer);
 disp('Using metric:'); disp(metric);

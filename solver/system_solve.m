@@ -96,7 +96,7 @@ else
     if ~isfield(opts, 'nchunks_ingest'), opts.nchunks_ingest = 32;end
     if ~isfield(opts, 'disableValidation'), opts.disableValidation = 1;end
     if ~isfield(opts, 'transfac'), opts.transfac = 1;end
-    if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 0;end
+    if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
     if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
     if ~isfield(opts, 'delete_existing_collection'), opts.delete_existing_collection = 1; end    
@@ -337,9 +337,9 @@ else
     S1 = cell2mat(S(:));clear S;
     disp('..... done!');
     %% save intermediate state
-    disp('Saving state...');
-    save temp;
-    disp('... done!');
+%     disp('Saving state...');
+%     save temp;
+%     disp('... done!');
     %% Step 4: Solve [ beyond this stage relevant parameters: opts.transfac
     %                  and opts.lambda]
     disp('** STEP 4:   Solving ....'); diary off;diary on;

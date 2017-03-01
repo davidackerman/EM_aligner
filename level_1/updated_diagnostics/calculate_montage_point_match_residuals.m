@@ -50,10 +50,15 @@ elseif length(varargin)==3
         [unique_z, ~, ~, ~, ~] = get_section_ids(rc, zstart, zend);
     end
 end
+new_dir_scratch=false;
 if ~isfield(options, 'outlier_deviation_for_residuals'), options.outlier_deviation_for_residuals = 10; end
 if ~isfield(options, 'min_points'), options.min_points = 10; end
 if ~isfield(options,'output_data_per_tile'), options.output_data_per_tile = true; end
-if ~isfield(options, 'dir_scratch'), options.dir_scratch = '/scratch/ackermand'; end
+if ~isfield(options, 'dir_scratch')
+    new_dir_scratch=true;
+    options.dir_scratch = [pwd '/scratch_' num2str(randi(10000)) '_' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
+    warning('Will create temporary scratch directory %s which will be cleaned after', options.dir_scratch);
+end
 
 dir_current = pwd;
 dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
@@ -136,5 +141,8 @@ else
     output_struct.unconnected_tile_ids = all_unconnected_tile_ids;
 end
 cd(dir_current);
+if new_dir_scratch
+    system(sprintf('rm -rf %s', options.dir_scratch));
+end
 end
 

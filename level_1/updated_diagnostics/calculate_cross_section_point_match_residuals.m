@@ -47,11 +47,16 @@ elseif length(varargin)==3
 end
 
 % Configure options
+new_dir_scratch = false;
 if ~isfield(options, 'min_points'), options.min_points = 10; end
 if ~isfield(options, 'max_points'), options.max_points = 100; end
 if ~isfield(options, 'number_of_cross_sections'), options.number_of_cross_sections = 2; end % This is how many sections above/below the current section we will calculate residuals between
 if ~isfield(options, 'xs_weight'), options.xs_weight = 0.5; end
-if ~isfield(options, 'dir_scratch'), options.dir_scratch = '/scratch/ackermand'; end
+if ~isfield(options, 'dir_scratch')
+    new_dir_scratch=true;
+    options.dir_scratch = [pwd '/scratch_' num2str(randi(10000)) '_' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
+    warning('Will create temporary scratch directory %s which will be cleaned after', options.dir_scratch);
+end
 if ~isfield(options, 'plot_cross_section_residuals'), options.plot_cross_section_residuals = false; end
 
 % Create scratch directory and change to it
@@ -161,6 +166,9 @@ if options.plot_cross_section_residuals
     title(['Cross Section Residuals For ' num2str(zstart) '-' num2str(zend)]); 
 end
 cd(dir_current);
+if new_dir_scratch
+    system(sprintf('rm -rf %s', options.dir_scratch));
+end
 end
 
 

@@ -19,7 +19,7 @@ disp(['Matrix A (pastix) non-zeros : ' num2str(nnz(A))]);
 %% configure
 disp('Solving Ax=b system using pastix...');
 if options.pastix.split
-    disp('Using split pastix');
+  disp('Using split pastix');
     dir_temp_mx = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
     PASTIX_HOME = '/groups/flyTEM/flyTEM/from_tier2/denisovg/pastix_split';
     PASTIX_DATA = [dir_temp_mx];

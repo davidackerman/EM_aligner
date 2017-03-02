@@ -1,4 +1,5 @@
-function [ output_struct ] = calculate_montage_point_match_residuals(rc, point_matches, varargin)
+function [ output_struct ] = calculate_montage_point_match_residuals(...
+    rc, point_matches, varargin)
 %% Generate statistics about tile montage residuals
 % Calculates tile residuals per section for renderer collection rc using
 % point_matches point matches and varargin. varargin should contain either the

@@ -2,16 +2,28 @@ function [tform, show_pair_image,  p1, p2] = register_image_pair_intensity_based
 %% register two images
 %%%
 
-[optimizer,metric] = imregconfig('multimodal');
+% [optimizer,metric] = imregconfig('multimodal');
+% optimizer.InitialRadius = 1e-5;
+% optimizer.MaximumIterations = 1500;
 
+[optimizer,metric] = imregconfig('multimodal');
+optimizer.InitialRadius = 1e-7;
+optimizer.MaximumIterations = 2500;
+
+
+% [optimizer,metric] = imregconfig('monomodal');
 % optimizer.GradientMagnitudeTolerance = 1.000000e-04;
 % optimizer.MinimumStepLength = 1e-6;%1.000000e-05;
 % optimizer.MaximumStepLength = 0.001;%6.250000e-02;
 % optimizer.MaximumIterations = 500;
 % optimizer.RelaxationFactor = 0.5;%5.000000e-01;
 
-optimizer.InitialRadius = 1e-5;
-optimizer.MaximumIterations = 1500;
+% [optimizer,metric] = imregconfig('monomodal');
+% optimizer.GradientMagnitudeTolerance = 1.000000e-04;
+% optimizer.MinimumStepLength = 1e-6;%1.000000e-05;
+% optimizer.MaximumStepLength = 0.001;%6.250000e-02;
+% optimizer.MaximumIterations = 500;
+% optimizer.RelaxationFactor = 0.5;%5.000000e-01;
 
 
 

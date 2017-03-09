@@ -1,4 +1,5 @@
-function [resp] = fuse_collections(rcsource, rcfixed, rcmoving, overlap, rcout, collection_start)
+function [resp] = fuse_collections(...
+    rcsource, rcfixed, rcmoving, overlap, rcout, collection_start)
 %%% stack fusion
 %%% input: fixed collection
 %%%        moving collection
@@ -322,7 +323,7 @@ if collection_start
     % collection start means we need to place the tiles somewhere
     % in the middle of the final volume. But we don't know where that is.
     % we guess
-    delta = [230000 145000];
+    delta = [180000 145000];
     disp('translation');
     disp(delta);
     
@@ -436,7 +437,8 @@ parfor nix = 1:numel(chnks)
     fclose(fid);
     if isempty(grid_account)
         % upload TEM files in here
-        resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1');
+        disableValidation = 1;
+        resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1', disableValidation);
         disp(resp_append)
         try
             delete(fn);

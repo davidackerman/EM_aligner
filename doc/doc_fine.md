@@ -12,7 +12,7 @@ Additional assumptions:
 [1] A Renderer collection of roughly aligned (contiguous) sections exists as regularizer (starting value). 
 [2] A full set of one or more point-match collections exists, that encompasses point-matches across and within sections.
 
-## Option 1: Solve fine-alignment from within a Matlab session [Affine only]
+## Option 1: Solve fine-alignment from within a Matlab session
 
 Calculates an affine solution for a volume
 
@@ -66,6 +66,13 @@ opts.min_tiles = 20; % minimum number of tiles that constitute a cluster to be s
 opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
 opts.outlier_lambda = 1e2;  % large numbers result in fewer tiles excluded
 opts.solver = 'backslash';%'pastix';%%'gmres';%'bicgstab'
+
+%%% if degree > 1 these additional settings are expected --- example values provided below
+%opts.transfac = 1e-5;  % translation parameter regidity
+%opts.xlambdafac = 10^(0);% 1st order parameter regidity in x
+%opts.ylambdafac = 10^(0);% 1st order parameter regidity in y
+%opts.xfac = 10^(0);   % 2nd order parameter rigidity in x
+%opts.yfac = 10^(0);   % 2nd order parameter regidity in y
 
 
 % only relevant when solver is pastix

@@ -14,7 +14,7 @@ Additional assumptions:
 
 ## Option 1: Solve fine-alignment from within a Matlab session
 
-Calculates an affine solution for a volume
+Calculates an affine or higher order polynomial (restricted to 2nd at the moment) solution for a volume
 
 
 ------------------------------------------- Example -----------------------------

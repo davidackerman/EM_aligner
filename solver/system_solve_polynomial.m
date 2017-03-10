@@ -362,14 +362,28 @@ tB = ones(ncoeff,1);
 %%% adjust the rigidity of translation dof
 tB(1:12:end) = opts.transfac;  % for x
 tB(7:12:end) = opts.transfac;  % for y
+%%% adjust regidity of low-order parameters along x
+if isfield(opts, 'xlambdafac')
+tB(2:12:end) = opts.xlambdafac;
+tB(3:12:end) = opts.xlambdafac;
+end
+%%% adjust regidity of low-order parameters along y
+if isfield(opts, 'ylambdafac')
+tB(8:12:end) = opts.ylambdafac;
+tB(9:12:end) = opts.ylambdafac;
+end
 %%% adjust regidity of higher-order parameters along x
+if isfield(opts, 'xfac')
 tB(4:12:end) = opts.xfac;
 tB(5:12:end) = opts.xfac;
 tB(6:12:end) = opts.xfac;
+end
 %%% adjust rigidity of higher-order parameters along y
+if isfield(opts, 'yfac')
 tB(10:12:end) = opts.yfac;
 tB(11:12:end) = opts.yfac;
 tB(12:12:end) = opts.yfac;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
 
@@ -520,6 +534,8 @@ if ~isempty(rcout)
     disp(' .... completing stack...');
     resp = set_renderer_stack_state_complete(rcout);
 end
+disp('Ingested:');
+disp(rcout);
 disp('.... done!');
 diary off;
 

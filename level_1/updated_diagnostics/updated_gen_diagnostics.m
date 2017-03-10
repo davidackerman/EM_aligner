@@ -1,4 +1,5 @@
-function [output_struct, all_section_maps] = updated_gen_diagnostics(rcsource, rc, zstart, zend, point_matches, options)
+function [output_struct, all_section_maps] = updated_gen_diagnostics(...
+    rcsource, rc, zstart, zend, point_matches, options)
 %% Generates information about tile deformation and residuals
 % Summarizes tile deformation and point-match residuals per tile and
 % section using rcsource, r, zstart, zend, point matches and options.

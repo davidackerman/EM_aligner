@@ -1,4 +1,4 @@
-function [residuals_matrix] = calculate_cross_section_point_match_residuals(rc, zstart, zend, point_matches, varargin)
+function [residuals_matrix] = calculate_cross_section_point_match_residuals(rc, point_matches, zstart, zend, varargin)
 %% Generate statistics about cross section residuals
 % Calculates cross section residuals for renderer collection rc, using
 % zstart, zend, point matches point matches and varargin. If varargin does

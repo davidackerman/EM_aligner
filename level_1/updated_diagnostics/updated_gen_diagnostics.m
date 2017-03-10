@@ -59,7 +59,7 @@ end
 output_struct2  = calculate_montage_point_match_residuals(rc, point_matches,unique_z, options);
 output_struct.MontageResiduals = output_struct2;
 if zstart ~= zend
-    residuals_matrix = calculate_cross_section_point_match_residuals(rc, zstart, zend, point_matches, unique_z, section_ids_grouped_by_z, options);
+    residuals_matrix = calculate_cross_section_point_match_residuals(rc, point_matches, zstart, zend, unique_z, section_ids_grouped_by_z, options);
     residuals_matrix = residuals_matrix + diag(output_struct.MontageResiduals.median_of_means);
     output_struct.CrossSectionAndMontageResidualsMatrix = residuals_matrix;
 end
@@ -79,27 +79,40 @@ if options.output_data_per_tile && (options.show_deformations || options.show_re
         %%% display histogram of tile areas for full slab
         figure;hist(areas,100);title('Deformation histogram: (ideally zero) for whole slab');axis tight
         xlim([0 1]);
-        area_bounds = [1-options.outlier_deviation_for_ratios,1+options.outlier_deviation_for_ratios];
+        ratio_bounds = [1-options.outlier_deviation_for_ratios,1+options.outlier_deviation_for_ratios];
     end
     for z_index = 1:numel(unique_z)  % loop over sections
         if options.show_deformations && do_area_and_perimeter_calculations
             areas = output_struct.Area.ratios{z_index};
-            areas(areas<=area_bounds(1)) = -Inf;
-            areas(areas>=area_bounds(2)) = Inf;
-            outlier_count_small = sum(areas<=area_bounds(1));
-            outlier_count_large = sum(areas>=area_bounds(2));
-            draw_colored_boxes(rc, unique_z(z_index), all_section_maps{z_index}, areas, area_bounds, [{['Area Ratios for: ' num2str(unique_z(z_index))] }...
-                {sprintf('\\color[rgb]{0 0 0} %d Outliers \\leq %.2f \\color[rgb]{1 0 0} %d Outliers \\geq %.2f',outlier_count_small, area_bounds(1), outlier_count_large, area_bounds(2)) }]);
+            areas(areas<=ratio_bounds(1)) = -Inf;
+            areas(areas>=ratio_bounds(2)) = Inf;
+            outlier_count_small = sum(areas<=ratio_bounds(1));
+            outlier_count_large = sum(areas>=ratio_bounds(2));
+            label_str{1} = [{['Area Ratios for: ' num2str(unique_z(z_index))] }...
+                {sprintf('\\color[rgb]{0 0 0} %d Outliers \\leq %.2f \\color[rgb]{1 0 0} %d Outliers \\geq %.2f',outlier_count_small, ratio_bounds(1), outlier_count_large, ratio_bounds(2)) }];
+            label_str{2} = 'Area Ratio';
+            draw_colored_boxes(rc, unique_z(z_index), all_section_maps{z_index}, areas, ratio_bounds, label_str);
+            
+            perimeters = output_struct.Perimeter.ratios{z_index};
+            perimeters(perimeters<=ratio_bounds(1)) = -Inf;
+            perimeters(perimeters>=ratio_bounds(2)) = Inf;
+            outlier_count_small = sum(perimeters<=ratio_bounds(1));
+            outlier_count_large = sum(perimeters>=ratio_bounds(2));
+            label_str{1} = [{['Perimeter Ratios for: ' num2str(unique_z(z_index))] }...
+                {sprintf('\\color[rgb]{0 0 0} %d Outliers \\leq %.2f \\color[rgb]{1 0 0} %d Outliers \\geq %.2f',outlier_count_small, ratio_bounds(1), outlier_count_large, ratio_bounds(2)) }];
+            label_str{2} = 'Perimeter Ratio';
+            draw_colored_boxes(rc, unique_z(z_index), all_section_maps{z_index}, perimeters, ratio_bounds, label_str);
         end
         
         if options.show_residuals
             residuals = cellfun(@mean,output_struct.MontageResiduals.values{z_index});  % all tile residuals for section zu1(z_index)
             residuals_bounds = [min(residuals), options.outlier_deviation_for_residuals];
             outlier_count_large = sum(residuals>=residuals_bounds(2));
-            only_greater_than = true;                      
-            draw_colored_boxes(rc, unique_z(z_index), all_section_maps{z_index}, residuals, residuals_bounds, [{['Residuals for: ' num2str(unique_z(z_index))]}...
-                {sprintf('\\color[rgb]{0 0 0} %d Unconnected Tiles \\color[rgb]{1 0 0} %d Outliers \\geq %0.2f ',output_struct.MontageResiduals.unconnected_count(z_index), outlier_count_large,residuals_bounds(2))} ],... 
-                only_greater_than); % generate figure for y residuals
+            only_greater_than = true;
+            label_str{1} = [{['Residuals for: ' num2str(unique_z(z_index))]}...
+                {sprintf('\\color[rgb]{0 0 0} %d Unconnected Tiles \\color[rgb]{1 0 0} %d Outliers \\geq %0.2f ',output_struct.MontageResiduals.unconnected_count(z_index), outlier_count_large,residuals_bounds(2))} ];
+            label_str{2} = 'Residuals (Pixels)';
+            draw_colored_boxes(rc, unique_z(z_index), all_section_maps{z_index}, residuals, residuals_bounds, label_str, only_greater_than); % generate figure for y residuals
         end
     end
 end
@@ -133,6 +146,7 @@ if options.show_table, disp(Table); end
 %% summarize deformation for whole stack
 edges = [0:.02:10];
 if options.show_deformations && do_area_and_perimeter_calculations
+    figure();
     if numel(unique_z) == 1
         [non_zero_rows,~] = find(counts'~=0);
         bar(edges+0.01,counts);

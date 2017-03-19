@@ -26,15 +26,15 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 ## Main steps for stitching small-to-moderate size datasets (less than 1M tiles):
 
 ![Alt text](https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg "stitching_schematic (small datasets)")
-- 	[Install Renderer and point-match services] (https://github.com/saalfeldlab/render) and dependencies as indicated above
+- 	[Install Renderer and point-match services](https://github.com/saalfeldlab/render) and dependencies as indicated above
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)
--	[Montage registration] (doc/doc_montage.md) of every section (tiles with same z-coordinate value)	
--	[Rough alignment] (doc/doc_rough.md) of montage collection
+-	[Montage registration](doc/doc_montage.md) of every section (tiles with same z-coordinate value)	
+-	[Rough alignment](doc/doc_rough.md) of montage collection
 -	Fine alignment
 	-	Run point-match generation across layers
 	-	[Run full volume solve] (doc/doc_fine.md) of (rough) collection
--	[Diagnostics] (doc/doc_diagnostics.md) information for any section, set of sections or entire collection.
+-	[Diagnostics](doc/doc_diagnostics.md) information for any section, set of sections or entire collection.
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 
 
@@ -42,7 +42,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 ## Steps relevant to large datasets (more than 1M tiles):
 
 ![Alt text](https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_large_volume.jpg "stitching_schematic (large datasets)")
-- 	[Install Renderer and point-match services] (https://github.com/saalfeldlab/render) and dependencies as indicated above
+- 	[Install Renderer and point-match services](https://github.com/saalfeldlab/render) and dependencies as indicated above
 -	Ingest image metadata:
 	-	See rules and assumptions for tile-spec ingestion (coming soon)
 -	Run montage of every section (same z-coordinate value)
@@ -56,7 +56,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 
 ## Independent tools
--	[Solve montage without point-match generation] (doc/doc_solve_montage.md), for testing and optimizing solver parameters.
+-	[Solve montage without point-match generation](doc/doc_solve_montage.md), for testing and optimizing solver parameters.
 -	Solve slab without point-match generation, for optimizing solver parameters.
 -	Slab beautification: runs the full "small-volume"-pipeline described above on a limited slab with the aim of fixing local issues data issues detected while proofreading the final volume. In that (advanced) mode, the user is encouraged to experiment with different SURF parameters, other feature detectors, point-match filter parameters, or solver parameters. This mode is also used to re-stitch a slab of sections for which meta-information was incorrect or deficient, leading to poor point-matches in that region. At the end, the procedure will insert the re-stitched slab into the larger full collection. Limitation: assumes affine transformations throughout.
 

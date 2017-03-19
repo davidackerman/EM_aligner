@@ -113,9 +113,10 @@ for ix = 1:size(chnks,1)
     end
     try
     if ~isempty(rctarget)
+        if verbose, disp('Ingesting:'); disp(rctarget);end
         ingest_section_into_renderer_database(mL,rctarget, rc, pwd,...
             opts.translate_to_origin, opts.complete, opts.disableValidation);
-        if verbose, disp('Ingesting:'); disp(rctarget);end
+        
     end
     catch err_ingest
         kk_disp_err(err_ingest);

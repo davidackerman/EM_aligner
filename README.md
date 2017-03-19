@@ -33,7 +33,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 -	[Rough alignment](doc/doc_rough.md) of montage collection
 -	Fine alignment
 	-	Run point-match generation across layers
-	-	[Run full volume solve] (doc/doc_fine.md) of (rough) collection
+	-	[Run full volume solve](doc/doc_fine.md) of (rough) collection
 -	[Diagnostics](doc/doc_diagnostics.md) information for any section, set of sections or entire collection.
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 
@@ -67,3 +67,70 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 > resp = delete_renderer_section(rc_destination, z);% optionally delete the section from destination before ingesting
 > resp = ingest_section_into_renderer_database(L, rc_destination, rc_source, dir_temp, 1);
 ``'
+
+
+-	If you need to produce a "translation-only" collection, find this example below:
+```json
+nfirst= 1;
+nlast = 20948;
+% configure source
+rcsource.stack          = 'v1_acquire';
+rcsource.owner          ='hessh';
+rcsource.project        = 'tomoko_Santomea11172016_04_A3_T1';
+rcsource.service_host   = '10.40.3.162:8080';
+rcsource.baseURL        = ['http://' rcsource.service_host '/render-ws/v1'];
+rcsource.verbose        = 1;
+
+% configure translation-only alignment
+rctranslation.stack          = ['TOS_tomoko_Santomea11172016_04_A3_T1_' num2str(nfirst) '_' num2str(nlast) '_translation'];
+rctranslation.owner          ='hessh';
+rctranslation.project        = 'tomoko_Santomea11172016_04_A3_T1';
+rctranslation.service_host   = '10.40.3.162:8080';
+rctranslation.baseURL        = ['http://' rctranslation.service_host '/render-ws/v1'];
+rctranslation.verbose        = 0;
+
+% configure fine alignment
+rcfine.stack          = ['TOS_tomoko_Santomea11172016_04_A3_T1_' num2str(nfirst) '_' num2str(nlast) '_fine'];
+rcfine.owner          ='hessh';
+rcfine.project        = 'tomoko_Santomea11172016_04_A3_T1';
+rcfine.service_host   = '10.40.3.162:8080';
+rcfine.baseURL        = ['http://' rcfine.service_host '/render-ws/v1'];
+rcfine.verbose        = 0;
+pm.server = 'http://10.40.3.162:8080/render-ws/v1';
+pm.owner = 'zlaticm';
+pm.match_collection = 'tomoko_Santomea11172016_04_A3_T1';
+dir_scratch = '/scratch/khairyk';
+kk_clock();
+
+
+
+%% produce a translation-only stack
+
+opts.min_tiles = 1; % minimum number of tiles that constitute a cluster to be solved. Below this, no modification happens
+opts.degree = 0;    % 1 = affine, 2 = second order polynomial, maximum is 3
+opts.outlier_lambda = 1e3;  % large numbers result in fewer tiles excluded
+opts.lambda = 1e5;
+opts.edge_lambda = opts.lambda;
+opts.solver = 'backslash';
+opts.min_points = 5;
+opts.max_points = 50;
+opts.nbrs = 10;
+opts.xs_weight = 1;
+opts.stvec_flag = 0;   % i.e. do not assume rcsource providing the starting values.
+
+opts.use_peg = 0;
+opts.complete = 1;
+opts.disableValidation = 1;
+opts.apply_scaling = 1;
+opts.scale_fac = 1.0;
+opts.translation_only = 1;
+opts.translate_to_origin = 1;
+
+[L]  = load_point_matches(nfirst, nlast,...
+       rcsource, pm, opts.nbrs, opts.min_points, opts.xs_weight);
+               
+[L2] = get_rigid_approximation(L, opts.solver, opts);
+
+ingest_section_into_renderer_database(L2,rctranslation, rcsource, pwd,...
+            opts.translate_to_origin, opts.complete, opts.disableValidation);
+```

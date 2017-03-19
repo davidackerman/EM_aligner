@@ -1,4 +1,4 @@
-##Prerequisites
+## Prerequisites
 We are assuming that the Renderer and point-match services (and associated database) are set up and accessible for example at http://tem-services.int.janelia.org.
 Also, you are using Matlab 2016b and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) Matlab compiler and (optional) Parallel computing. The latest EM_aligner directory and subdirectories are on your Matlab path.
 
@@ -166,8 +166,8 @@ rcfine_filtered.versionNotes = ['lambda: ' num2str(opts.lambda) ' -- transfac: '
 % disp([l_used(:) err(:) def(:)]);
 % plot(log10(l_used), log10(err), 'o-', log10(l_used), log10(def), 'k-');
 
---------------------------------------- END of EXAMPLE -------------------------------
-
+% --------------------------------------- END of EXAMPLE -------------------------------
+```
 
 
 If CATMAID dynamic rendering is set up, you can view your fine alignment using a URL for example similar to this:
@@ -178,7 +178,7 @@ http://tem-services.int.janelia.org:8080/render-ws/view/stacks.html?owner=flyTEM
 ## Option 2: (In progress) Fine alignment strategies. 
 (under construction)
 
-```
+
 
 
 

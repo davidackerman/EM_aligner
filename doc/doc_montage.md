@@ -1,4 +1,4 @@
-##Prerequisites
+## Prerequisites
 We are assuming that the Renderer and point-match services (and associated database) are set up and accessible for example at http://tem-services.int.janelia.org.
 Also, you are using Matlab 2016b and above with toolboxes: Computer Vision Systems (or Video and Blockset), ImageProcessing, Statistics, (optional) Matlab compiler and (optional) Parallel computing. The EM_aligner directory and subdirectories are on your Matlab path.
 
@@ -21,7 +21,6 @@ An example json input file is provided below.
 
 
 ```json
-
 {
     "__comments": {
         "comment_0": "IMPORTANT: Before running check: source_collection, target_collection ...",
@@ -179,8 +178,7 @@ Use this if you already have precalculated point-matches. It perfoms a solve onl
 Montage one or more sections. This will  solve the registration problem using "solver_options", and persist the resulting transformations into the Renderer collection "target_collection". 
 
 
-'''json
-
+```json
 % solver options
 sl.solver_options.degree                = 1;
 sl.solver_options.solver                = 'backslash';
@@ -260,6 +258,6 @@ if sum(failed)
 disp('Failed section list:');
 disp(find(failed));
 end
-               
-'''
+```
+
 

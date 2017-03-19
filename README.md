@@ -61,8 +61,9 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 -	Slab beautification: runs the full "small-volume"-pipeline described above on a limited slab with the aim of fixing local issues data issues detected while proofreading the final volume. In that (advanced) mode, the user is encouraged to experiment with different SURF parameters, other feature detectors, point-match filter parameters, or solver parameters. This mode is also used to re-stitch a slab of sections for which meta-information was incorrect or deficient, leading to poor point-matches in that region. At the end, the procedure will insert the re-stitched slab into the larger full collection. Limitation: assumes affine transformations throughout.
 
 ##Recipes
--	You need toto instantiate a section object, optionally do something with it,  and then ingest into a destination collection. Before ingestion it is sometimes a good idea to make sure no tiles with this same z exist in the destination collection.
+-	You need to instantiate a section object, optionally do something with it,  and then ingest into a destination collection. Before ingestion it is sometimes a good idea to make sure no tiles with this same z exist in the destination collection.
+```json
 > L = Msection(rc_source, z); % read the section with z-value z
 > resp = delete_renderer_section(rc_destination, z);% optionally delete the section from destination before ingesting
 > resp = ingest_section_into_renderer_database(L, rc_destination, rc_source, dir_temp, 1);
-
+``'

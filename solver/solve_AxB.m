@@ -67,7 +67,7 @@ else
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     flag = -999;
     if strcmp(options.solver, 'lsqlin')
-        if options.verbose,disp('------------ Performing backslash x2 = K\Lm solution ');end
+        if options.verbose,disp('------------ Performing lsqlin ');end
         x2 = lsqlin(A, b, B, d);
         
         

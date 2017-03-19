@@ -341,9 +341,9 @@ S1 = cell2mat(S(:));clear S;
 disp('..... done!');
 
 %% save intermediate state 
-disp('Saving state...');
-save temp;
-disp('... done!');
+% disp('Saving state...');
+% save temp;
+% disp('... done!');
 
 %% Step 4: Solve
 disp('** STEP 4:   Solving ....'); diary off;diary on;

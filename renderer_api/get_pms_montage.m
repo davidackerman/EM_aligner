@@ -24,6 +24,6 @@ catch err_fetch_pm
     kk_disp_err(err_fetch_pm)
     pause(1);
     disp('trying again');
-    jj = webread(char(U),options); % try again
+    jj = webread(char(U), wopts); % try again
 end
 

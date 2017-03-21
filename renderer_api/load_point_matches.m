@@ -283,7 +283,6 @@ for ix = 1:numel(ns)
     
 end
 
-
 %% obtain cross-section point-matches
 xPM = {};
 n   = {};
@@ -306,11 +305,13 @@ for ix = 1:numel(zu)   % loop over sections
     if verbose > 0
         disp(zu(ix));
     end
+    if ~isempty(PM(1).M)
     if ~isempty(PM(ix).M)
     M = [M;PM(ix).M];
     adj = [adj;PM(ix).adj];
     W   = [W;PM(ix).W];
     np   = [np;PM(ix).np(:)];
+    end
     end
     for nix = 1:nbr   % loop over neighboring sections
         if  ~(numel(xPM{nix})==1 && isempty(xPM{nix}.M))

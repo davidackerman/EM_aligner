@@ -1,11 +1,11 @@
-function  draw_colored_boxes(rc, z, boxes, data, data_bounds, label_str, only_greater_than)
+function  figure_handle = draw_colored_boxes(rc, z, boxes, data, data_bounds, label_str, only_greater_than)
 % generate figure with colored boxes for diagnostics
 % used by gen_diagnostics.m
 if nargin<6, label_str{1} = 'untitled figure'; end
 if nargin < 7
     only_greater_than = false; % Used if only want outliers greater than mean, for eg. residuals where smaller than the mean is better
 end
-figure;
+figure_handle = figure;
 is_data_nan = isnan(data);
 c = mat2gray(data, data_bounds);
 c(is_data_nan) = NaN;

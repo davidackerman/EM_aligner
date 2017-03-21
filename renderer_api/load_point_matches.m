@@ -153,6 +153,8 @@ PM.adj = [];
 PM.W = {};
 PM.np = [];
 n1 = [];
+PM_adj_all = [];
+count_pm_adj_all = 1;
 for ix = 1:numel(ns)
     %disp(ix);
     count = 1;
@@ -190,7 +192,7 @@ for ix = 1:numel(ns)
             pmCountIndex = count;
             if size(jj(jix).matches.p',1) >= min_points
                 if isKey(map_id, jj(jix).pId) && isKey(map_id, jj(jix).qId)
-                    if isempty(PM(ix).adj) || ~any(ismember(PM(ix).adj, [map_id(jj(jix).pId) map_id(jj(jix).qId)],'rows'))
+                    if isempty(vertcat(PM(:).adj)) || ~any(ismember([map_id(jj(jix).pId) map_id(jj(jix).qId)], PM_adj_all,'rows'))
                         if numel(jj(jix).matches.p(1,:)) > max_points
                             indx = randi(numel(jj(jix).matches.p(1,:))-1, max_points,1);
                             PM(ix).M{count,1}   = [jj(jix).matches.p(1:2,indx)]';
@@ -198,14 +200,17 @@ for ix = 1:numel(ns)
                             PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                             PM(ix).W{count,1}   = jj(jix).matches.w(indx)';         % relative weights of point matches within this group
                             PM(ix).np(count)    = max_points;
+                            PM_adj_all(count_pm_adj_all,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                         else
                             PM(ix).M{count,1}   = [jj(jix).matches.p]';
                             PM(ix).M{count,2}   = [jj(jix).matches.q]';
                             PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                             PM(ix).W{count,1}   = jj(jix).matches.w';         % relative weights of point matches within this group
                             PM(ix).np(count)    = size(jj(jix).matches.p',1);
+                            PM_adj_all(count_pm_adj_all,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                         end
                         count = count + 1;
+                        count_pm_adj_all= count_pm_adj_all+1;
                     end
                 end
             end
@@ -248,7 +253,7 @@ for ix = 1:numel(ns)
             for jix = 1:numel(jj)
                     if size(jj(jix).matches.p',1)>=min_points
                         if isKey(map_id, jj(jix).pId) && isKey(map_id, jj(jix).qId)
-                            if isempty(PM(ix).adj) || ~any(ismember(PM(ix).adj, [map_id(jj(jix).pId) map_id(jj(jix).qId)],'rows'))
+                            if isempty(vertcat(PM(:).adj)) || ~any(ismember([map_id(jj(jix).pId) map_id(jj(jix).qId)], PM_adj_all,'rows'))
                                 if numel(jj(jix).matches.p(1,:))>max_points
                                     indx = randi(numel(jj(jix).matches.p(1,:))-1, max_points,1);
                                     PM(ix).M{count,1}   = [jj(jix).matches.p(1:2,indx)]';
@@ -256,15 +261,18 @@ for ix = 1:numel(ns)
                                     PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                                     PM(ix).W{count,1}     = jj(jix).matches.w(indx)';         % relative weights of point matches within this group
                                     PM(ix).np(count)    = max_points;
+                                    PM_adj_all(count_pm_adj_all,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                                 else
                                     PM(ix).M{count,1}   = [jj(jix).matches.p]';
                                     PM(ix).M{count,2}   = [jj(jix).matches.q]';
                                     PM(ix).adj(count,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                                     PM(ix).W{count,1}     = jj(jix).matches.w';         % relative weights of point matches within this group
                                     PM(ix).np(count)    = size(jj(jix).matches.p',1);
+                                    PM_adj_all(count_pm_adj_all,:) = [map_id(jj(jix).pId) map_id(jj(jix).qId)];
                                 end
                                 
                                 count = count + 1;
+                                count_pm_adj_all = count_pm_adj_all +1;
                             end
                         end
                     end
@@ -308,11 +316,15 @@ for ix = 1:numel(zu)   % loop over sections
         if  ~(numel(xPM{nix})==1 && isempty(xPM{nix}.M))
             if numel(xPM{nix})>=ix
                 if ~isempty(xPM{nix}(ix).M)
+                    unique_rows_of_xPM = false(size(xPM{nix}(ix).adj,1),1);
+                    [~,unique_indices] = unique(xPM{nix}(ix).adj,'rows');
+                    unique_rows_of_xPM(unique_indices) = true;
+                    unique_rows = ~ismember(xPM{nix}(ix).adj, [PM_adj_all; adj], 'rows') & unique_rows_of_xPM;
                     %disp(['Assemble PM: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-                    M = [M;xPM{nix}(ix).M];
-                    adj = [adj;xPM{nix}(ix).adj];
-                    W = [W;xPM{nix}(ix).W];
-                    np = [np;xPM{nix}(ix).np(:)];
+                    M = [M;xPM{nix}(ix).M(unique_rows,:)];
+                    adj = [adj;xPM{nix}(ix).adj(unique_rows,:)];
+                    W = [W;xPM{nix}(ix).W(unique_rows)];
+                    np = [np;xPM{nix}(ix).np(unique_rows)'];
                 end
             end
         end

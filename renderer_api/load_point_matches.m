@@ -364,5 +364,5 @@ end
 % --------- sosi: invesitgate how duplicates could arise in the first place
 [bb, indx] = unique(L.pm.adj,'rows');
 if ~(size(bb,1)==size(L.pm.adj,1))
-    error('Rows in L.pm.adj should be unique');
+    warning('Rows in L.pm.adj should be unique');
 end

@@ -448,6 +448,8 @@ else
     %%%% sosi
     %disp(full([d(:) Lm(:) diag(tB) x2(:) R(:)]));
     %%%%%
+    precision = norm(K*x2-Lm)/norm(Lm);
+    disp(['Precision: ' num2str(precision)]);
     err = norm(A*x2-b);
     disp(['Error norm(Ax-b): ' num2str(err)]);
     Error = err;

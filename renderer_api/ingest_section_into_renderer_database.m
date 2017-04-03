@@ -35,7 +35,8 @@ catch err
     disp('Failed to translate to +ve space');
 end
 %% export to MET (in preparation to be ingested into the Renderer database
-fn = [dir_work '/X_A_' num2str(randi(100000000)) '.txt'];
+% fn = [dir_work '/X_A_' num2str(randi(100000000)) '.txt'];
+fn = [dir_work '/X_A_' generate_uuid '.txt'];
 %disp('Exporting temporary MET file');
 if strcmp(class(mL.tiles(1).tform), 'images.geotrans.PolynomialTransformation2D')
     export_montage_MET_poly(mL, fn);

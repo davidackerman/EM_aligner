@@ -161,7 +161,7 @@ else
             end
         end
     end
-    clear sID
+    % clear sID
     % % perform pm requests
      disp('Loading point-matches from point-match database ....');
     wopts = weboptions;
@@ -183,6 +183,9 @@ else
         adj(ix) = {a};
         W(ix) = {w};
         np(ix) = {n};
+    end
+    if isempty(np)
+            error('No point-matches found');
     end
     clear sID_all
     disp('... concatenating point matches ...');
@@ -360,7 +363,7 @@ else
     %%%% determine regularization parameter if opts.lambda is a range
     if numel(opts.lambda)>1
         deformation_indx = [];
-        error = [];
+        Error = [];
         perim_o = 2*Width + 2*Height;
         for lambdaix = 1:numel(opts.lambda)
             disp(['Solving ' num2str(lambdaix) ' of ' ...

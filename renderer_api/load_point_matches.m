@@ -43,7 +43,7 @@ if nargin < 5, nbr = 4; end  % number of neighbors to check
 if nargin < 6, min_points = 0; end
 if nargin < 7, xs_weight = 1; end
 if nargin < 8, max_points = inf; end
-verbose = 0;
+verbose = 1;
 if isfield(pm(1), 'verbose')
     verbose = pm(1).verbose;
 end
@@ -156,7 +156,9 @@ n1 = [];
 PM_adj_all = [];
 count_pm_adj_all = 1;
 for ix = 1:numel(ns)
-    %disp(ix);
+    if verbose
+        disp(ix);
+    end
     count = 1;
     n1(ix) = 0;
     for six = 1:ns(ix)
@@ -303,7 +305,7 @@ W   = [];
 np = [];
 for ix = 1:numel(zu)   % loop over sections
     if verbose > 0
-        disp(zu(ix));
+        disp(['Building cross point-match set for section ' num2str(ix) ' of ' num2str(numel(zu))]);
     end
     if ~isempty(PM(1).M)
     if ~isempty(PM(ix).M)

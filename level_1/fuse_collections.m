@@ -412,7 +412,7 @@ end
 parfor nix = 1:numel(chnks)
     indx = chnks{nix}; % indx is an array of indices into alltiles.
                        % Those tiles (i.e. alltiles(indx)) will be exported
-    fn = [pwd '/X_A_' num2str(randi(100000000)) '_' num2str(nix) '.txt'];
+    fn = [pwd '/X_A_' num2str(randi(10000000000)) '_' num2str(nix) '.txt'];
     fid = fopen(fn,'w');
     for tix = 1:numel(indx)
         ind = (indx(tix));
@@ -437,7 +437,7 @@ parfor nix = 1:numel(chnks)
     fclose(fid);
     if isempty(grid_account)
         % upload TEM files in here
-        disableValidation = 1;
+        disableValidation = 0;
         resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1', disableValidation);
         disp(resp_append)
         try

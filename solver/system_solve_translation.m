@@ -1,4 +1,4 @@
-function [err,R, Tout] = system_solve(nfirst, nlast, rc, pm, opts, rcout)
+function [err,R, Tout] = system_solve_translation(nfirst, nlast, rc, pm, opts, rcout)
 % Fast solve and ingest of section alignment when regularizer (starting collection)
 % rc and full set of point-matches pm is provided
 % After solving, ingests solved tiles into Renderer collection rcout if non empty
@@ -99,7 +99,7 @@ else
     if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
     if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
-        
+    
     
     err = [];
     R = [];
@@ -163,7 +163,7 @@ else
     end
     % clear sID
     % % perform pm requests
-     disp('Loading point-matches from point-match database ....');
+    disp('Loading point-matches from point-match database ....');
     wopts = weboptions;
     wopts.Timeout = 20;
     M   = {};
@@ -185,7 +185,7 @@ else
         np(ix) = {n};
     end
     if isempty(np)
-            error('No point-matches found');
+        error('No point-matches found');
     end
     clear sID_all
     disp('... concatenating point matches ...');
@@ -298,8 +298,8 @@ else
     fn_split = cell(split,1);
     for ix = 1:split
         fn_split{ix} = [dir_scratch '/split_PM_' num2str(nfirst)...
-                       '_' num2str(nlast) '_'...
-                       num2str(randi(10000000)) '_' num2str(ix) '.mat'];
+            '_' num2str(nlast) '_'...
+            num2str(randi(10000000)) '_' num2str(ix) '.mat'];
         vec = r(ix,1):r(ix,2);
         m = M(vec,:);
         a = adj(vec,:);
@@ -342,131 +342,35 @@ else
     Sb1 = cell2mat(Sb(:));clear Sb;
     disp('..... done!');
     %% save intermediate state
-%     disp('Saving state...');
-%     save temp;
-%     disp('... done!');
+    %     disp('Saving state...');
+    %     save temp;
+    %     disp('... done!');
     %% Step 4: Solve [ beyond this stage relevant parameters: opts.transfac
     %                  and opts.lambda]
     disp('** STEP 4:   Solving ....'); diary off;diary on;
+    disp('Translation only system build');
     % build system and solve it
     A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
-    b = sparse(size(A,1), 1);
     w = cell2mat(w(:));
     Wmx = spdiags(w,0,size(A,1),size(A,1));
     clear w;
-    d = reshape(T', ncoeff,1);
-    %clear T;
-    
-    tB = ones(ncoeff,1);
-    tB(3:3:end) = opts.transfac;
-    tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
-    
-    
-    %%%% determine regularization parameter if opts.lambda is a range
-    if numel(opts.lambda)>1
-        deformation_indx = [];
-        Error = [];
-        perim_o = 2*Width + 2*Height;
-        for lambdaix = 1:numel(opts.lambda)
-            disp(['Solving ' num2str(lambdaix) ' of ' ...
-                num2str(numel(opts.lambda)) ' -- lambda: ' ...
-                num2str(opts.lambda(lambdaix))]);
-            
-            lambda = opts.lambda(lambdaix);
-            K  = A'*Wmx*A + lambda*(tB')*tB;
-            Lm  = A'*Wmx*b + lambda*(tB')*d;
-            [x2, R] = solve_AxB(K,Lm, opts, d);
-            err = norm(A*x2-b); disp(['Error norm(Ax-b): ' num2str(err)]);
-            Error(lambdaix) = err;
-            Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% step 4': calculate deformation
-            % make four corners for this tile
-            x = 0;
-            y = 0;
-            Px = [x; x + Width; x + Width; x];
-            Py = [y; y    ; y + Height; Height];
-            
-            parfor jix = 1:size(Tout,1)
-                
-                %%% transform points
-                if opts.degree==1
-                    T = [reshape(Tout(jix,:),3,2)];
-                    T(3,3) = 1;
-                    P = [Px(:) Py(:) [1 1 1 1]']*T;
-                else
-                    disp(' degree larger than 1 (affine) not implemented yet for fast method');
-                end
-                % check polygon area
-                Ar(jix) = polyarea(P(:,1), P(:,2));
-                Aratio(jix) = Ar(jix)/(Height * Width);
-                %%% polygonperimeter
-                s = 0;
-                s = s + sqrt((P(1,1)-P(2,1)).^2 + (P(1,2)-P(2,2)).^2);
-                s = s + sqrt((P(2,1)-P(3,1)).^2 + (P(2,2)-P(3,2)).^2);
-                s = s + sqrt((P(3,1)-P(4,1)).^2 + (P(3,2)-P(4,2)).^2);
-                s = s + sqrt((P(1,1)-P(4,1)).^2 + (P(1,2)-P(4,2)).^2);
-                S(jix) = s;
-            end
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-            %     sig = std(S);
-            %     mu = mean(S);
-            %     fac = 3;
-            %     indx = [find(Aratio<(mu-fac*sig)) find(Aratio>(mu+fac*sig))];
-            %     Aratio(indx) = [];
-            deformation_indx(lambdaix) = mean(abs(S-perim_o));
-        end
-        deformation_indx = deformation_indx/max(deformation_indx);
-        Error = Error/max(Error);
-        
-        diffd = gradient(deformation_indx);
-        yyaxis left
-        plot(log(opts.lambda), diffd, 'go');title('Gradient of deformation');
-        hold on;
-        plot(log(opts.lambda), diffd, 'b-');
-        yyaxis right
-        plot(log(opts.lambda), Error, 'go');title('normalized error and normalized deformation');
-        hold on;
-        plot(log(opts.lambda), Error, 'k-');
-        figure;
-        plot(log(opts.lambda), deformation_indx, 'r-');
-        
-        %%% decide on lambda and proceed
-        lambda = opts.lambda(find(diffd == max(diffd)));
-    else
-        lambda = opts.lambda;
-    end
-    disp('--------- using lambda:');
-    disp(lambda);
-    disp('-----------------------');
-    
-    if opts.transfac<1
-    %%% translate smallest x and smallest y in d to zero
-    x_coord = d(3:6:end);
-    y_coord = d(6:6:end);
-    d(3:6:end) = d(3:6:end)-min(x_coord);
-    d(6:6:end) = d(6:6:end)-min(y_coord);
-    end
-    
-    K  = A'*Wmx*A + lambda*(tB')*tB;
-    Lm  = A'*Wmx*b + lambda*(tB')*d;
-    [x2, R] = solve_AxB(K,Lm, opts, d);
-    %%%% sosi
-    %disp(full([d(:) Lm(:) diag(tB) x2(:) R(:)]));
-    %%%%%
+    b = sparse(Ib1,ones(length(Ib1),1), double(Sb1),n,1);
+    A(:,1:2) = [];
+    K   = A' * Wmx * A;
+    Lm  = A' * Wmx * b;
+    [x2, R] = solve_AxB(K,Lm, opts, []);
     precision = norm(K*x2-Lm)/norm(Lm);
     disp(['Precision: ' num2str(precision)]);
     err = norm(A*x2-b);
     disp(['Error norm(Ax-b): ' num2str(err)]);
     Error = err;
-    Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
+    x2 = [T(1,[3]); T(1,[6]); x2];
+    Translation_parms = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
+    Tout = T;
+    Tout(:,3) = Translation_parms(:,1);
+    Tout(:,6) = Translation_parms(:,2);
     
-    
-    if opts.use_peg  % delete fictitious tile
-        Tout(end,:) = [];
-        tIds(end) = [];
-        ntiles = ntiles - 1;
-        ncoeff = ncoeff - tdim;
-    end
+
     %%
     clear x2;
     clear K Lm d tb A b Wmx tB
@@ -515,21 +419,21 @@ else
     disp('.... done!');
     diary off;
     
-%     %%% sosi
-%     [Wbox, bbox, url] = get_slab_bounds_renderer(rcout);
-%     scale = 0.1;
-%     dx = 5/scale;
-%     x = Wbox(1) + Wbox(3)/2;
-%     y = Wbox(2);
-%     height = Wbox(4);
-%     disp([x y height dx]);
-%     [Iyz, Io] = get_yz_image_renderer(rcout, x, y, dx, height, scale,...
-%         nfirst, nlast, [2 2 1]);
-%     h =  size(Iyz,1);%20000;
-%     w =  size(Iyz,2);
-%     im = Iyz(1:h,:);
-%     I = imresize(im,[h/32 (w)]);
-%     imshow(I);
-%     %%%%
+    %     %%% sosi
+    %     [Wbox, bbox, url] = get_slab_bounds_renderer(rcout);
+    %     scale = 0.1;
+    %     dx = 5/scale;
+    %     x = Wbox(1) + Wbox(3)/2;
+    %     y = Wbox(2);
+    %     height = Wbox(4);
+    %     disp([x y height dx]);
+    %     [Iyz, Io] = get_yz_image_renderer(rcout, x, y, dx, height, scale,...
+    %         nfirst, nlast, [2 2 1]);
+    %     h =  size(Iyz,1);%20000;
+    %     w =  size(Iyz,2);
+    %     im = Iyz(1:h,:);
+    %     I = imresize(im,[h/32 (w)]);
+    %     imshow(I);
+    %     %%%%
     
 end

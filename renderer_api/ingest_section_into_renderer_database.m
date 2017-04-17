@@ -13,6 +13,11 @@ function resp_append = ingest_section_into_renderer_database(mL,rc_target,...
 if nargin<6, complete = 1;end
 if nargin<5, translate_to_positive_space = 1;end
 if nargin<7, disableValidation = 0;end
+try_checking_if_stack_exists = 0;
+while ~stack_exists(rc_base) && try_checking_if_stack_exists<120
+    pause(5);
+    try_checking_if_stack_exists=try_checking_if_stack_exists+1;
+end
 if ~stack_exists(rc_base), error('base collection not found');end
 
 if ~stack_exists(rc_target)

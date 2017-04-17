@@ -14,6 +14,7 @@ function [ output_struct ] = calculate_montage_point_match_residuals(...
 %    min_points      : 10     Minimum number of points for input to load_point_matches
 %    output_data_per_tile : true  Output values and ratios for each tile
 %    dir_scratch : /scratch/ackermand Scratch directory
+%    verbose     : true               Output status
 
 % Output:
 %    output_struct:           Contains all tile-tile mean residuals, median
@@ -41,16 +42,24 @@ elseif length(varargin)==2
     else
         zstart = varargin{1};
         zend = varargin{2};
-        [unique_z, ~, ~, ~, ~] = get_section_ids(rc, zstart, zend);
+        [unique_z, ~, ~, ~, ~] = get_section_ids(rc, zstart, zend+1);
+        z_too_large = (unique_z>=zend+1);
+        unique_z(z_too_large) = [];
     end
 elseif length(varargin)==3
     if isstruct(varargin{3})
         zstart = varargin{1};
         zend = varargin{2};
         options = varargin{3};
-        [unique_z, ~, ~, ~, ~] = get_section_ids(rc, zstart, zend);
+        [unique_z, ~, ~, ~, ~] = get_section_ids(rc, zstart, zend+1);
+        z_too_large = (unique_z>=zend+1);
+        unique_z(z_too_large) = [];
     end
 end
+
+floor_unique_z = floor(unique_z);
+unique_merged_z = unique(floor_unique_z);
+
 new_dir_scratch=false;
 if ~isfield(options, 'outlier_deviation_for_residuals'), options.outlier_deviation_for_residuals = 10; end
 if ~isfield(options, 'min_points'), options.min_points = 10; end
@@ -60,32 +69,39 @@ if ~isfield(options, 'dir_scratch')
     options.dir_scratch = [pwd '/scratch_' num2str(randi(10000)) '_' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
     warning('Will create temporary scratch directory %s which will be cleaned after', options.dir_scratch);
 end
+if ~isfield(options, 'verbose'), options.verbose = true; end
 
 dir_current = pwd;
 dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
 kk_mkdir(dir_scratch);
 cd(dir_scratch);
 
-if options.output_data_per_tile, all_residuals_vector = cell(numel(unique_z),1); end
-all_residuals_median = zeros(numel(unique_z),1);
-all_residuals_mean = zeros(numel(unique_z),1);
-all_residuals_variance = zeros(numel(unique_z),1);
-all_residuals_outlier_count = zeros(numel(unique_z),1);
-all_residuals_outlier_percent = zeros(numel(unique_z),1);
-all_residuals_outlier_tile_indices = cell(numel(unique_z),1);
-all_residuals_outlier_tile_ids = cell(numel(unique_z),1);
-all_unconnected_count = zeros(numel(unique_z),1);
-all_unconnected_tile_indices = cell(numel(unique_z),1);
-all_unconnected_tile_ids = cell(numel(unique_z),1);
+num_el = length(unique_merged_z);
+if options.output_data_per_tile, all_residuals_vector = cell(num_el,1); end
+
+all_residuals_median = zeros(num_el,1);
+all_residuals_mean = zeros(num_el,1);
+all_residuals_variance = zeros(num_el,1);
+all_tile_ids = cell(num_el,1);
+all_residuals_outlier_count = zeros(num_el,1);
+all_residuals_outlier_percent = zeros(num_el,1);
+all_residuals_outlier_tile_indices = cell(num_el,1);
+all_residuals_outlier_tile_ids = cell(num_el,1);
+all_unconnected_count = zeros(num_el,1);
+all_unconnected_tile_indices = cell(num_el,1);
+all_unconnected_tile_ids = cell(num_el,1);
 
 % Loop over all unique z and print out progress
-fprintf('Montage Residuals Progress:');
-fprintf(['\n' repmat('.',1,numel(unique_z)) '\n\n']);
-parfor z_index = 1:length(unique_z)
+if options.verbose
+    fprintf('Montage Residuals Progress:');
+    fprintf(['\n' repmat('.',1,num_el) '\n\n']);
+end
+parfor z_index = 1:numel(unique_merged_z)
     %% Determine point-matches and residuals for this section
     % First: load point-matches and section into "L" (point-matches are in L's pm struct field)
+    valid_zs = unique_z(floor_unique_z==unique_merged_z(z_index));
     [L]  = ...
-        load_point_matches(unique_z(z_index), unique_z(z_index), rc, point_matches, 0, ...
+        load_point_matches(valid_zs(1), valid_zs(end), rc, point_matches, 0, ...
         options.min_points, 0);
     
     % Second: generate point-match residuals from L.pm by looping through
@@ -108,6 +124,7 @@ parfor z_index = 1:length(unique_z)
     % Separate connected and unconnected tiles
     [~, do_tiles_appear_in_adj] =ismember((1:numel(L.tiles)),unique(L.pm.adj(:)));
     unconnected_tiles = (do_tiles_appear_in_adj == 0);
+    all_tile_ids{z_index} = tile_ids;
     all_unconnected_count(z_index) = sum(unconnected_tiles);
     all_unconnected_tile_ids{z_index} = tile_ids(unconnected_tiles);
     all_unconnected_tile_indices{z_index} = find(unconnected_tiles);
@@ -116,7 +133,7 @@ parfor z_index = 1:length(unique_z)
     only_greater_than = true;
     [all_residuals_median(z_index), all_residuals_mean(z_index), all_residuals_variance(z_index), all_residuals_outlier_count(z_index), all_residuals_outlier_percent(z_index), all_residuals_outlier_tile_indices{z_index}, all_residuals_outlier_tile_ids{z_index}] = ...
         calculate_statistics_and_outliers(cellfun(@mean,tile_residuals), options.outlier_deviation_for_residuals, tile_ids, 'fixed_cutoff', only_greater_than);
-    fprintf('\b|\n');
+    if options.verbose, fprintf('\b|\n'); end
 end
 % Create output struct
 if options.output_data_per_tile
@@ -124,6 +141,7 @@ if options.output_data_per_tile
     output_struct.median_of_means = all_residuals_median;
     output_struct.mean_of_means = all_residuals_mean;
     output_struct.variance_of_means = all_residuals_variance;
+    output_struct.all_tile_ids = all_tile_ids;
     output_struct.outlier_count = all_residuals_outlier_count;
     output_struct.outlier_percent = all_residuals_outlier_percent;
     output_struct.outlier_tile_indices =all_residuals_outlier_tile_indices;

@@ -43,7 +43,7 @@ if nargin < 5, nbr = 4; end  % number of neighbors to check
 if nargin < 6, min_points = 0; end
 if nargin < 7, xs_weight = 1; end
 if nargin < 8, max_points = inf; end
-verbose = 1;
+verbose = 0;
 if isfield(pm(1), 'verbose')
     verbose = pm(1).verbose;
 end
@@ -156,9 +156,7 @@ n1 = [];
 PM_adj_all = [];
 count_pm_adj_all = 1;
 for ix = 1:numel(ns)
-    if verbose
-        disp(ix);
-    end
+    %disp(ix);
     count = 1;
     n1(ix) = 0;
     for six = 1:ns(ix)
@@ -194,7 +192,7 @@ for ix = 1:numel(ns)
             pmCountIndex = count;
             if size(jj(jix).matches.p',1) >= min_points
                 if isKey(map_id, jj(jix).pId) && isKey(map_id, jj(jix).qId)
-                    if isempty(vertcat(PM(:).adj)) || ~any(ismember([map_id(jj(jix).pId) map_id(jj(jix).qId)], PM_adj_all,'rows'))
+ %                   if isempty(vertcat(PM(:).adj)) || ~any(ismember([map_id(jj(jix).pId) map_id(jj(jix).qId)], PM_adj_all,'rows'))
                         if numel(jj(jix).matches.p(1,:)) > max_points
                             indx = randi(numel(jj(jix).matches.p(1,:))-1, max_points,1);
                             PM(ix).M{count,1}   = [jj(jix).matches.p(1:2,indx)]';
@@ -214,7 +212,7 @@ for ix = 1:numel(ns)
                         count = count + 1;
                         count_pm_adj_all= count_pm_adj_all+1;
                     end
-                end
+ %               end
             end
             if verbose > 1
                 logInfo = struct();
@@ -255,7 +253,7 @@ for ix = 1:numel(ns)
             for jix = 1:numel(jj)
                     if size(jj(jix).matches.p',1)>=min_points
                         if isKey(map_id, jj(jix).pId) && isKey(map_id, jj(jix).qId)
-                            if isempty(vertcat(PM(:).adj)) || ~any(ismember([map_id(jj(jix).pId) map_id(jj(jix).qId)], PM_adj_all,'rows'))
+  %                          if isempty(vertcat(PM(:).adj)) || ~any(ismember([map_id(jj(jix).pId) map_id(jj(jix).qId)], PM_adj_all,'rows'))
                                 if numel(jj(jix).matches.p(1,:))>max_points
                                     indx = randi(numel(jj(jix).matches.p(1,:))-1, max_points,1);
                                     PM(ix).M{count,1}   = [jj(jix).matches.p(1:2,indx)]';
@@ -275,7 +273,7 @@ for ix = 1:numel(ns)
                                 
                                 count = count + 1;
                                 count_pm_adj_all = count_pm_adj_all +1;
-                            end
+ %                           end
                         end
                     end
             end
@@ -305,7 +303,7 @@ W   = [];
 np = [];
 for ix = 1:numel(zu)   % loop over sections
     if verbose > 0
-        disp(['Building cross point-match set for section ' num2str(ix) ' of ' num2str(numel(zu))]);
+        disp(zu(ix));
     end
     if ~isempty(PM(1).M)
     if ~isempty(PM(ix).M)
@@ -319,11 +317,19 @@ for ix = 1:numel(zu)   % loop over sections
         if  ~(numel(xPM{nix})==1 && isempty(xPM{nix}.M))
             if numel(xPM{nix})>=ix
                 if ~isempty(xPM{nix}(ix).M)
-                    %disp(['Assemble PM: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-                    M = [M;xPM{nix}(ix).M];
-                    adj = [adj;xPM{nix}(ix).adj];
-                    W = [W;xPM{nix}(ix).W];
-                    np = [np;xPM{nix}(ix).np(:)];
+                   % unique_rows_of_xPM = false(size(xPM{nix}(ix).adj,1),1);
+                   % [~,unique_indices] = unique(xPM{nix}(ix).adj,'rows');
+                   % unique_rows_of_xPM(unique_indices) = true;
+                   % unique_rows = ~ismember(xPM{nix}(ix).adj, [PM_adj_all; adj], 'rows') & unique_rows_of_xPM;
+                   % %disp(['Assemble PM: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+                   % M = [M;xPM{nix}(ix).M(unique_rows,:)];
+                   % adj = [adj;xPM{nix}(ix).adj(unique_rows,:)];
+                   % W = [W;xPM{nix}(ix).W(unique_rows)];
+                   % np = [np;xPM{nix}(ix).np(unique_rows)'];
+                   M = [M;xPM{nix}(ix).M(unique_rows,:)];
+                   adj = [adj;xPM{nix}(ix).adj(unique_rows,:)];
+                   W = [W;xPM{nix}(ix).W(unique_rows)];
+                   np = [np;xPM{nix}(ix).np(unique_rows)'];
                 end
             end
         end
@@ -366,5 +372,5 @@ end
 % --------- sosi: invesitgate how duplicates could arise in the first place
 [bb, indx] = unique(L.pm.adj,'rows');
 if ~(size(bb,1)==size(L.pm.adj,1))
-    warning('Rows in L.pm.adj should be unique');
+    error('Rows in L.pm.adj should be unique');
 end

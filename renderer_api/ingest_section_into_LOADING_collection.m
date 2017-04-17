@@ -15,8 +15,8 @@ if nargin<6, disableValidation = 0;end
 if nargin<5, translate_to_positive_space = 1;end
 
 try_checking_if_stack_exists = 0;
-while ~stack_exists(rc_base) && try_checking_if_stack_exists<2
-    pause(30);
+while ~stack_exists(rc_base) && try_checking_if_stack_exists<120
+    pause(5);
     try_checking_if_stack_exists=try_checking_if_stack_exists+1;
 end
 if ~stack_exists(rc_base), error('base collection not found');end

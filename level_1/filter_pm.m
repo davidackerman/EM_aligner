@@ -4,8 +4,8 @@ warning off;
 if nargin < 2
     opts.NumRandomSamplingsMethod = 'Desired confidence';
     opts.MaximumRandomSamples = 3000;
-    opts.DesiredConfidence = 99.5;
-    opts.PixelDistanceThreshold = 0.01;
+    opts.DesiredConfidence = 99.9;
+    opts.PixelDistanceThreshold = 0.1;
 end
 
 verbose = 0;

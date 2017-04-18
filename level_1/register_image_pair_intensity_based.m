@@ -55,12 +55,13 @@ end
 %  whos im1 im2;
 
 %% step 1: get them close using dft
-if pad_x||pad_y
+%if pad_x||pad_y
+%    disp('Performing dft regiatration first');
 [rough_shift movingReg] = dftregistration(fft2(im1),fft2(im2),100); % imout takes im2(moving) to im1(fixed)
-else
-    rough_shift =  zeros(1,4);
-    movingReg = im2;
-end
+%else
+%    rough_shift =  zeros(1,4);
+%    movingReg = im2;
+%end
 %%%%%%%% sosi
 % figure;imshowpair(im1,im2, 'blend');
 % figure;imshowpair(im1,movingReg, 'blend');

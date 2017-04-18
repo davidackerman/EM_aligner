@@ -10,7 +10,12 @@ else
 % read json input
 sl = loadjson(fileread(fn));
 end
-
+if iscell(sl.source_point_match_collection) %Then contains multiple pms
+    for i =1:numel(sl.source_point_match_collection)
+        temp_source_point_match_collection(i) = sl.source_point_match_collection{i};
+    end
+    sl.source_point_match_collection = temp_source_point_match_collection;
+end
 
 if sl.verbose,
     kk_clock();
@@ -19,7 +24,9 @@ if sl.verbose,
     disp('Using solver options:');disp(sl.solver_options);
     disp('Using source collection:');disp(sl.source_collection);
     disp('Using target collection:');disp(sl.target_collection);
-    disp('Using point-match collection:');disp(sl.source_point_match_collection);
+    for i = 1:numel(sl.source_point_match_collection)
+        disp('Using point-match collection:');disp(sl.source_point_match_collection(i));
+    end
 end
 %% overrides and checks
 sl.section_number = sl.z_value; % same thing but messed up variable names later

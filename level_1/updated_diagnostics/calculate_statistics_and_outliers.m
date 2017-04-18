@@ -10,7 +10,11 @@ if strcmp(determination_method, 'fixed_cutoff')
     if only_greater_than
         data_outlier_indices = find(data>=cutoff); % Cutoff is the accepted fixed deviation magnitude, here being used for ratios so subtract 1 
     else
-        data_outlier_indices = find(abs(data-1)>=cutoff);
+        if numel(cutoff) == 1
+            data_outlier_indices = find(abs(data-1)>=cutoff);
+        else
+            data_outlier_indices = find(data<=cutoff(1) | data>=cutoff(2));
+        end
     end
     data_outlier_tile_ids = tile_ids(data_outlier_indices);
 elseif strcmp(determination_method, 'std')

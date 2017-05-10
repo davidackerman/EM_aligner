@@ -60,13 +60,13 @@ catch err_cmd_exec
     error(['Error executing: ' strcmd]);
 end
 
-if strfind(resp, 'caught exception'),
+if strfind(resp, 'caught exception')
     disp(resp);
     warning('append_renderer_stack: server reported an error');
 end
 
 
-if verbose,
+if verbose
     
     disp(strcmd);
     kk_clock();

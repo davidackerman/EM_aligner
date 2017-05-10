@@ -299,7 +299,7 @@ else
     for ix = 1:split
         fn_split{ix} = [dir_scratch '/split_PM_' num2str(nfirst)...
                        '_' num2str(nlast) '_'...
-                       num2str(randi(10000000)) '_' num2str(ix) '.mat'];
+                       num2str(randi(10000000000)) '_' num2str(ix) '.mat'];
         vec = r(ix,1):r(ix,2);
         m = M(vec,:);
         a = adj(vec,:);

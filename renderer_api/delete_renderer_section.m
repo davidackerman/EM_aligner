@@ -38,10 +38,7 @@ if verbose,
     disp(resp);
 end
 if complete, set_renderer_stack_state_complete(rc); end
-
-
 %set_renderer_stack_state_complete(rc);
-
 %%
 function check_input(rc)
 if ~isfield(rc, 'baseURL'), disp_usage; error('baseURL not provided');end

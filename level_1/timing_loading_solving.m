@@ -1,7 +1,5 @@
-
-%%
 function [ntiles_o, ntiles_aff, toc_load_z, time_pm_load, time_gen_A,...
-    time_Axb, median_error_affine, sz_A, nnzA, nnzK, xout, tile_err] ...
+    time_Axb, median_error_affine, sz_A, nnzA, nnzK, xout, tile_err, err, precision] ...
     = timing_loading_solving(sl, z)
 nparms = (sl.solver_options.degree + 1) * (sl.solver_options.degree + 2); % twice number of coefficients for a particular polynomial
 
@@ -184,10 +182,18 @@ else
     % r_res = At * xoutt;
     % [Lrc, tpr] = tile_based_point_pair_errors(Lr, At, xoutt);
     %% solve affine
+    disp('Solving affine using solve_affine_explicit_region.m ');
+    disp(sl.solver_options);
     [mL, err1, Res1, A, b, B, d, W, K, Lm, xout, LL2, U2, tB, td,...
         invalid, time_Axb, time_gen_A] = solve_affine_explicit_region(Lr, sl.solver_options);
 %     
 end
+    precision = norm(K*xout-Lm)/norm(Lm);
+    disp(['Precision: ' num2str(precision)]);
+    err = norm(A*xout-b);
+    disp(['Error norm(Ax-b): ' num2str(err)]);  
+    
+    
 nnzK = nnz(K);
 nnzA = nnz(A);
 disp('time constructing linear system');

@@ -112,15 +112,15 @@ else
     [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
     
     % determine W and H: used for determining deformation to decide on good lambda
-    if numel(opts.lambda)>1
-        webopts = weboptions('Timeout', 60);
-        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
-            rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
-        j = webread(urlChar, webopts);
-        jt1 = tile(j(1));
-        Width = jt1.W;
-        Height = jt1.H;
-    end
+%     if numel(opts.lambda)>1
+%         webopts = weboptions('Timeout', 60);
+%         urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+%             rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
+%         j = webread(urlChar, webopts);
+%         jt1 = tile(j(1));
+%         Width = jt1.W;
+%         Height = jt1.H;
+%     end
     
     %% Step 1: load transformations, tile ids
     % load all tiles in this range and pool into Msection object

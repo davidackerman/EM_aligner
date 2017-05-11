@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 function create_section_diagnostic_maps( rc_in, output_struct_in, section_zs, options, section_maps_in )
+=======
+function [ output_args ] = create_section_diagnostic_maps( rc_in, output_struct_in, section_zs, options, section_maps_in )
+>>>>>>> upstream/master
 if numel(rc_in) ~= numel(output_struct_in), error('rc and output_struct need to be the same size'); end
 if nargin<5, section_maps_provided = false; else section_maps_provided = true; end
 if section_maps_provided

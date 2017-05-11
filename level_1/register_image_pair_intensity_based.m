@@ -6,7 +6,8 @@ if nargin<5, method = 'all';end
 
 %% step 0: pad images to be same size
 pad_x = 0;
-pad_y = 0;disp([size(im1) size(im2)]);
+pad_y = 0;
+%disp([size(im1) size(im2)]);
 if size(im1,1)<size(im2,1)
     dsize = size(im2,1)-size(im1,1);
     pad_x = floor(dsize/2);

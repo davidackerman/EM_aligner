@@ -30,7 +30,7 @@ check_input(rc, rc_base, fn, MET_format);
 % str10           = sprintf('JAVA_CLASS="org.janelia.render.client.ImportMETClient";');
 % str11           = sprintf('MET_FILE="%s";', fn);
 % str12           = sprintf('/groups/flyTEM/flyTEM/render/pipeline/bin/run_ws_client.sh ${MEMORY} ${JAVA_CLASS} ${PROJECT_PARAMS} --targetProject ${TARGET_PROJECT} --stack ${SOURCE_STACK} --targetStack ${TARGET_STACK} --targetOwner ${TARGET_OWNER} --metFile ${MET_FILE} --formatVersion ${MET_FORMAT};');
-% strcmd          = [str9 str10 str1_source target_project str2 str3 str4 str11 str6 str12];
+% strcmd          = [str9 str10 str1_source target_project str2 str3 str4 str11 append_renderer_stackstr6 str12];
 
 if ~isfield(rc, 'renderbinPath')
     rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
@@ -60,13 +60,13 @@ catch err_cmd_exec
     error(['Error executing: ' strcmd]);
 end
 
-if strfind(resp, 'caught exception'),
+if strfind(resp, 'caught exception')
     disp(resp);
     warning('append_renderer_stack: server reported an error');
 end
 
 
-if verbose,
+if verbose
     
     disp(strcmd);
     kk_clock();

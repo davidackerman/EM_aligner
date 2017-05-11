@@ -253,7 +253,7 @@ else
     W = PM.W;
     np = PM.np;
     % cd(dir_scratch)
-    % save PM M adj W -v7.3;system_solve
+    % save PM M adj W -v7.3;
     % fn = [dir_scratch '/PM.mat'];
     % PM = matfile(fn);
     

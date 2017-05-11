@@ -1,4 +1,5 @@
 function tile_count = get_tile_count( rc,z )
+% Gets the tile count for a renderer collection rc at zs z
 tile_count = zeros(size(z));
 parfor i=1:numel(z)
     uz = get_section_ids(rc, z(i),z(i));

@@ -103,6 +103,7 @@ parfor z_index = 1:numel(unique_merged_z)
     [L]  = ...
         load_point_matches(valid_zs(1), valid_zs(end), rc, point_matches, 0, ...
         options.min_points, 0);
+    L.pm = filter_pm(L.pm);
     
     % Second: generate point-match residuals from L.pm by looping through
     % all point matches, transforming them and calculating the mean residual

@@ -63,7 +63,7 @@ if do_area_and_perimeter_calculations
 else
     [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend);
     if options.show_residuals || nargout==2
-       all_section_maps = calculate_section_maps(rc, zstart, zend, unique_z); 
+       all_section_maps = calculate_section_maps(rc, zstart, zend, options.verbose); 
     end
 end
 %% Montage and Cross-section residuals

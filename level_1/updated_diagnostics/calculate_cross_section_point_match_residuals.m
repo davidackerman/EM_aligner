@@ -128,6 +128,7 @@ parfor z_index=1:unique_merged_z_number_of_elements
             factor = options.xs_weight/(section_step+1);
             [cross_section_point_matches, adjacency, ~, ~] = load_cross_section_pm(point_matches, section_ids_grouped_by_z_and_section_id{z_index}, section_ids_grouped_by_z_and_section_id{z_index+section_step}, ...
                 map_id, options.min_points, options.max_points, webopts, factor);
+            how to filter here?
             if ~isempty(cross_section_point_matches)
                 % We now calculate the residuals for each tile pair as the
                 % average of all point match residuals between the two

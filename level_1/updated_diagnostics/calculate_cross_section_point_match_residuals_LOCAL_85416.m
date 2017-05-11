@@ -1,7 +1,6 @@
 function [residuals_matrix] = ...
     calculate_cross_section_point_match_residuals(...
     rc, zstart, zend, point_matches, varargin)
-
 %% Generate statistics about cross section residuals
 % Calculates cross section residuals for renderer collection rc, using
 % zstart, zend, point matches point matches and varargin. If varargin does
@@ -18,7 +17,6 @@ function [residuals_matrix] = ...
 %    xs_weight                    : 0.5
 %    dir_scratch                  : '/scratch/ackermand' 
 %    plot_cross_section_residuals : false
-%    verbose                      : true
 % Output:
 %    residuals_matrix
 % Author: David Ackerman
@@ -27,17 +25,11 @@ function [residuals_matrix] = ...
 % Check the input arguments
 options = [];
 if isempty(varargin)
-    [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend+1);
-    z_too_large = (unique_z>=zend+1);
-    unique_z(z_too_large) = [];
-    section_ids_grouped_by_z(z_too_large) = [];
+    [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend);
 elseif length(varargin)==1
     if isstruct(varargin{1})
         options = varargin{1};
-        [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend+1);
-        z_too_large = (unique_z>=zend+1);
-        unique_z(z_too_large) = [];
-        section_ids_grouped_by_z(z_too_large) = [];
+        [unique_z, section_ids_grouped_by_z, ~, ~, ~] = get_section_ids(rc, zstart, zend);
     else
         error('Not enough input arguments: need both unique_z and section_ids_grouped_by_z.');
     end
@@ -56,34 +48,13 @@ elseif length(varargin)==3
     end
 end
 
-% Group zs when necessary
-floor_unique_z = floor(unique_z);
-unique_merged_z = unique(floor_unique_z);
-section_ids_grouped_by_z_and_section_id = section_ids_grouped_by_z;
-for i=1:numel(section_ids_grouped_by_z_and_section_id)
-    for j=i+1:numel(section_ids_grouped_by_z_and_section_id)
-        if floor(unique_z(i)) == floor(unique_z(j)) %Then two zs share the same "z"
-            unique_sections = ~ismember(section_ids_grouped_by_z_and_section_id{j}, section_ids_grouped_by_z_and_section_id{i});
-            section_ids_grouped_by_z_and_section_id{i}(end+1:end+sum(unique_sections)) = section_ids_grouped_by_z_and_section_id{j}(unique_sections);
-            section_ids_grouped_by_z_and_section_id{j}(:) = [];
-        end
-    end
-end
-section_ids_grouped_by_z_and_section_id = section_ids_grouped_by_z_and_section_id(~cellfun('isempty',section_ids_grouped_by_z_and_section_id));
-
 % Configure options
-new_dir_scratch = false;
 if ~isfield(options, 'min_points'), options.min_points = 10; end
 if ~isfield(options, 'max_points'), options.max_points = 100; end
 if ~isfield(options, 'number_of_cross_sections'), options.number_of_cross_sections = 2; end % This is how many sections above/below the current section we will calculate residuals between
 if ~isfield(options, 'xs_weight'), options.xs_weight = 0.5; end
-if ~isfield(options, 'dir_scratch')
-    new_dir_scratch=true;
-    options.dir_scratch = [pwd '/scratch_' num2str(randi(10000)) '_' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
-    warning('Will create temporary scratch directory %s which will be cleaned after', options.dir_scratch);
-end
+if ~isfield(options, 'dir_scratch'), options.dir_scratch = '/scratch/ackermand'; end
 if ~isfield(options, 'plot_cross_section_residuals'), options.plot_cross_section_residuals = false; end
-if ~isfield(options, 'verbose'), options.verbose = true; end
 
 % Create scratch directory and change to it
  dir_current = pwd;
@@ -97,24 +68,20 @@ webopts = weboptions('Timeout', 60);
 % section (Sn) will be stored as, eg.:
 %  Column 1   |   Column 2   |   Column 3   |   Column 4
 % Sn -> Sn+1  |  Sn -> Sn+2  |  Sn+1 -> Sn  |  Sn+2 - > Sn 
-unique_merged_z_number_of_elements = numel(unique_merged_z);
-simplified_residuals_matrix=zeros(unique_merged_z_number_of_elements,options.number_of_cross_sections*2);
+unique_z_number_of_elements = numel(unique_z);
+simplified_residuals_matrix=zeros(unique_z_number_of_elements,options.number_of_cross_sections*2);
 
 % Print out status and loop through all unique zs
-if options.verbose
-    fprintf('Cross Section Residuals Progress:');
-    fprintf(['\n' repmat('.',1,unique_merged_z_number_of_elements) '\n\n']);
-end
-parfor z_index=1:unique_merged_z_number_of_elements
+fprintf('Cross Section Residuals Progress:');
+fprintf(['\n' repmat('.',1,unique_z_number_of_elements) '\n\n']);
+parfor z_index=1:unique_z_number_of_elements
     % Load in transformations and map ids necessary to calculate
     % residuals for current section
-    cross_section_z_max = unique_merged_z(z_index)+options.number_of_cross_sections;
-    
-    [T, map_id, ~, ~] = load_all_transformations(rc, unique_z(floor_unique_z>= unique_merged_z(z_index) & floor_unique_z<=cross_section_z_max), dir_scratch);
+    [T, map_id, ~, ~] = load_all_transformations(rc, unique_z(z_index:min(z_index+options.number_of_cross_sections,unique_z_number_of_elements)), dir_scratch);
     % new_residuals_values will store the residuals as:
     % [ Sn -> Sn+1 ,  Sn -> Sn+2  ,  Sn+1 -> Sn  ,  Sn+2 -> Sn ]
     % Necessary to have this variable because of parfor
-    new_residuals_values=NaN(1,options.number_of_cross_sections*2);
+    new_residuals_values=zeros(1,options.number_of_cross_sections*2);
     % Store the offsets of T separately, and convert the remainder to a
     % cell array for efficiency
     offsets = [T(:,3),T(:,6)];
@@ -125,11 +92,10 @@ parfor z_index=1:unique_merged_z_number_of_elements
     % Loop through all the required sections and calculate cross-sectional
     % residuals
     for section_step = 1:options.number_of_cross_sections
-        if z_index+section_step<=unique_merged_z_number_of_elements && (unique_merged_z(z_index+section_step) - unique_merged_z(z_index) == section_step)
+        if z_index+section_step<=unique_z_number_of_elements
             % Load the cross section point matches and adjacency matrix
-            
             factor = options.xs_weight/(section_step+1);
-            [cross_section_point_matches, adjacency, ~, ~] = load_cross_section_pm(point_matches, section_ids_grouped_by_z_and_section_id{z_index}, section_ids_grouped_by_z_and_section_id{z_index+section_step}, ...
+            [cross_section_point_matches, adjacency, ~, ~] = load_cross_section_pm(point_matches, section_ids_grouped_by_z{z_index}, section_ids_grouped_by_z{z_index+section_step}, ...
                 map_id, options.min_points, options.max_points, webopts, factor);
             if ~isempty(cross_section_point_matches)
                 % We now calculate the residuals for each tile pair as the
@@ -165,14 +131,14 @@ parfor z_index=1:unique_merged_z_number_of_elements
             simplified_residuals_matrix(z_index,:) = new_residuals_values;
         end
     end
-    if options.verbose, fprintf('\b|\n'); end
+    fprintf('\b|\n');
 end
 
 % Create the full residuals matrix
-residuals_matrix = NaN(length(unique_merged_z));
-for z_index = 1:unique_merged_z_number_of_elements
+residuals_matrix = zeros(length(unique_z));
+for z_index = 1:unique_z_number_of_elements
     for section_step = 1:options.number_of_cross_sections
-        if z_index+section_step<=unique_merged_z_number_of_elements
+        if z_index+section_step<=unique_z_number_of_elements
             residuals_matrix(z_index, z_index+section_step) = simplified_residuals_matrix(z_index,section_step);
             residuals_matrix(z_index+section_step, z_index) = simplified_residuals_matrix(z_index,section_step+options.number_of_cross_sections);
         end
@@ -197,9 +163,6 @@ if options.plot_cross_section_residuals
     title(['Cross Section Residuals For ' num2str(zstart) '-' num2str(zend)]); 
 end
 cd(dir_current);
-if new_dir_scratch
-    system(sprintf('rm -rf %s', options.dir_scratch));
-end
 end
 
 

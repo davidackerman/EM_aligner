@@ -32,10 +32,14 @@ check_input(rc);
 % set_renderer_stack_state_complete(rc);
 
 % Use curl
-set_renderer_stack_state_loading(rc);
+was_complete = false;
+if stack_complete(rc)
+    was_complete = true;
+    set_renderer_stack_state_loading(rc);
+end
 number_of_tiles_to_delete = numel(tileIDs);
 resp=cell(number_of_tiles_to_delete,1);
-parfor idx = 1:number_of_tiles_to_delete
+for idx = 1:number_of_tiles_to_delete
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s',...
         rc.baseURL, rc.owner, rc.project, rc.stack,tileIDs{idx});
 
@@ -58,7 +62,9 @@ parfor idx = 1:number_of_tiles_to_delete
         disp(resp{idx});
     end
 end
-set_renderer_stack_state_complete(rc);
+if was_complete
+    set_renderer_stack_state_complete(rc);
+end
 %%
 function check_input(rc)
 if ~isfield(rc, 'baseURL'), disp_usage; error('baseURL not provided');end

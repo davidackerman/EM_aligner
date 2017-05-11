@@ -99,7 +99,7 @@ else
     if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
     if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
-        
+    if ~isfield(opts, 'delete_existing_collection'), opts.delete_existing_collection = 1; end    
     
     err = [];
     R = [];
@@ -253,7 +253,7 @@ else
     W = PM.W;
     np = PM.np;
     % cd(dir_scratch)
-    % save PM M adj W -v7.3;
+    % save PM M adj W -v7.3;system_solve
     % fn = [dir_scratch '/PM.mat'];
     % PM = matfile(fn);
     
@@ -486,7 +486,7 @@ else
         disp('... export to MET (in preparation to be ingested into the Renderer database)...');
         
         v = 'v1';
-        if stack_exists(rcout)
+        if stack_exists(rcout) && opts.delete_existing_collection
             disp('.... removing existing collection');
             resp = delete_renderer_stack(rcout);
         end

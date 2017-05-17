@@ -5,10 +5,14 @@ function resp = copy_renderer_section(z, rcfrom, rcto, dir_temp)
 % check
 check_input(rcto);
 check_input(rcfrom);
+if ~stack_exists(rcto)
+    disp('Target collection not found, creating new collection in state: ''Loading''');
+    resp = create_renderer_stack(rc_target);
+end
 
 % configure
 verbose = 1;
-translate_to_posititve_space = 0;
+translate_to_positive_space = 0;
 complete = 0;
 disableValidation = 0;
 

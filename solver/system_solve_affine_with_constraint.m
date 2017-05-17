@@ -345,8 +345,14 @@ else
 %     disp('Saving state...');
 %     save temp;
 %     disp('... done!');
-    %% Step 4: Solve [ beyond this stage relevant parameters: opts.transfac
-    %                  and opts.lambda]
+    %% Step 4: Solve 
+    %      beyond this stage relevant parameters: 
+    %                  opts.transfac
+    %                  opts.lambda
+    %                  opts.constraint_fac
+    %                  opts.z_constraint
+    %                  opts.constrain_by_z
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     disp('** STEP 4:   Solving ....'); diary off;diary on;
     lambda = opts.lambda;
     disp('--------- using lambda:');
@@ -363,20 +369,44 @@ else
     %clear T;
     
     % build constraints into system
-   lambda = opts.lambda * ones(ncoeff,1);
-   
-   % constrains the stack by sections nfirst and nlast
-   if isfield(opts, 'constrain_z') && ~isempty(opts.constrain_z)
-       c = opts.constraint_fac;
-       num_nfirst = sum(z_val==nfirst);
-       num_nlast  = sum(z_val==nlast);
-       lambda(1:6*num_nfirst) = c;
-       lambda(end-6*num_nlast-1:end) = c;
-   end
-   
+   lambda = opts.lambda * ones(ncoeff,1);  % defines the general default constraint
+   % modulate lambda accoding to opts.transfac
    if opts.transfac~=1
       lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
    end
+   
+   % constrains tiles in the stack by using full sections 
+   if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
+       if isempty(opts.z_constraint) % constrains tiles by sections nfirst and nlast
+           if isfield(opts, 'constrain_z') && ~isempty(opts.constrain_z)
+               c = opts.constraint_fac;
+               num_nfirst = sum(z_val==nfirst);
+               num_nlast  = sum(z_val==nlast);
+               lambda(1:tdim*num_nfirst) = c;
+               lambda(end-tdim*num_nlast-1:end) = c;
+           end
+       else % constrains tiles belonging to sections defined in opts.z_constraint
+           for zix = 1:size(opts.z_constraint,1)
+               idx = find(z_val==opts.z_constraint(zix,1)); % finds indices of tiles with this z value
+               if ~isempty(idx)
+                   indxstart =  (idx(1) -1) * tdim + 1;
+                   indxend   = idx(end) * tdim;
+                   vec = indxstart:indxend;
+                   lambda(vec) = opts.z_constraint(zix,2);
+                   
+                   % constrain translation for this section
+                   if size(opts.z_constraint,2)>2    % then we also have translation regularizer
+                      vec = indxstart+3:3:indxend;
+                      lambda(vec) = opts.z_constraint(zix,3);
+                   end
+                   
+               end
+           end
+       end
+   end
+   
+   
+
    
    lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
 
@@ -414,23 +444,23 @@ else
         disp('** STEP 5:   Ingesting data .....');
         
         
-%         disp(' ..... translate to +ve space');
-%         delta = 0;
-%         dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-%         dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-%         for ix = 1:size(Tout,1)
-%             Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
-%         end
+        disp(' ..... translate to +ve space');
+        delta = 0;
+        dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+        dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
+        for ix = 1:size(Tout,1)
+            Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+        end
         
         
         
         disp('... export to MET (in preparation to be ingested into the Renderer database)...');
         
         v = 'v1';
-        if stack_exists(rcout)
-            disp('.... removing existing collection');
-            resp = delete_renderer_stack(rcout);
-        end
+%         if stack_exists(rcout)
+%             disp('.... removing existing collection');
+%             resp = delete_renderer_stack(rcout);
+%         end
         if ~stack_exists(rcout)
             disp('.... target collection not found, creating new collection in state: ''Loading''');
             resp = create_renderer_stack(rcout);

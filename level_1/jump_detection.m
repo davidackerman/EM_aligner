@@ -20,11 +20,13 @@ function [D, I] = jump_detection(rc, nfirst, nlast, delta, scale, c)
 
 % if no centers are provided, calculate based on center box.
 if nargin<6 || isempty(c)
+    disp('Using center:');
     [Wbox_stack, box, url, minZ, maxZ] = get_slab_bounds_renderer(rc);
     [Wbox, box, url] = get_section_bounds_renderer(rc, floor(nfirst + (nlast-nfirst)/2));
     % Wbox is [x y width height] of the section L as specified in rc
     c(1) = Wbox_stack(1) + (Wbox(1) + Wbox(3)/2);
     c(2) = Wbox_stack(2) + (Wbox(2) + Wbox(4)/2);
+    disp(c);
 end
 
 
@@ -49,7 +51,7 @@ for cix = 1:size(c,1)
     disp('Rendering box data.....');
     %parfor_progress(numel(zrange));
     parfor ix = 1:numel(zrange)
-        disp(ix);
+        %disp(ix);
         [im, v, url, resp_str] = get_image_box_renderer(rc, zrange(ix), box_, scale, 'kk');
         I(:,:,ix) = im;
         %  parfor_progress;

@@ -24,6 +24,9 @@ if ~stack_exists(rc_target)
     disp('Target collection not found, creating new collection in state: ''Loading''');
     resp = create_renderer_stack(rc_target);
 end
+if stack_read_only(rc_target)
+    error('Cannot modify READ ONLY stack.... aborting');
+end
 if stack_complete(rc_target)
     %disp('Cannot append COMPLETE stack: setting state to LOADING');
     resp = set_renderer_stack_state_loading(rc_target);

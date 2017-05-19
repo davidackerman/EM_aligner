@@ -345,15 +345,21 @@ else
 %     disp('Saving state...');
 %     save temp;
 %     disp('... done!');
-    %% Step 4: Solve [ beyond this stage relevant parameters: opts.transfac
-    %                  and opts.lambda]
+    %% Step 4: Solve 
+    %      beyond this stage relevant parameters: 
+    %                  opts.transfac
+    %                  opts.lambda
+    %                  opts.constraint_fac
+    %                  opts.z_constraint
+    %                  opts.constrain_by_z
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     disp('** STEP 4:   Solving ....'); diary off;diary on;
     lambda = opts.lambda;
     disp('--------- using lambda:');
     disp(lambda);
     disp('-----------------------');
     
-    % build system and solve it
+    % build system
     A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
     b = sparse(size(A,1), 1);
     w = cell2mat(w(:));
@@ -363,27 +369,53 @@ else
     %clear T;
     
     % build constraints into system
-   lambda = opts.lambda * ones(ncoeff,1);
-   
-   % constrains the stack by sections nfirst and nlast
-   if isfield(opts, 'constrain_z') && ~isempty(opts.constrain_z)
-       c = opts.constraint_fac;
-       num_nfirst = sum(z_val==nfirst);
-       num_nlast  = sum(z_val==nlast);
-       lambda(1:6*num_nfirst) = c;
-       lambda(end-6*num_nlast-1:end) = c;
-   end
-   
+   lambda = opts.lambda * ones(ncoeff,1);  % defines the general default constraint
+   % modulate lambda accoding to opts.transfac
    if opts.transfac~=1
       lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
    end
    
+   % constrains tiles in the stack by using full sections 
+   if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
+       if opts.sandwich % constrains tiles by sections nfirst and nlast
+               disp('----------Constraining first and last section specified---------------');
+               if ~isfield(opts, 'constraint_fac')
+                   opts.constraint_fac = 1e15;
+               end
+               c = opts.constraint_fac;
+               num_nfirst = sum(z_val==nfirst);
+               num_nlast  = sum(z_val==nlast);
+               lambda(1:tdim*num_nfirst) = c;
+               lambda(end-tdim*num_nlast+1:end) = c;
+       else % constrains tiles belonging to sections defined in opts.z_constraint
+           for zix = 1:size(opts.z_constraint,1)
+               idx = find(z_val==opts.z_constraint(zix,1)); % finds indices of tiles with this z value
+               if ~isempty(idx)
+                   indxstart =  (idx(1) -1) * tdim + 1;
+                   indxend   = idx(end) * tdim;
+                   vec = indxstart:indxend;
+                   lambda(vec) = opts.z_constraint(zix,2);
+                   
+                   % constrain translation for this section
+                   if size(opts.z_constraint,2)>2    % then we also have translation regularizer
+                      vec = indxstart+3:3:indxend;
+                      lambda(vec) = opts.z_constraint(zix,3);
+                   end
+                   
+               end
+           end
+       end
+   end
    lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
 
     
-%     K  = A'*Wmx*A + lambda*((tB')*tB);
-%     Lm  = A'*Wmx*b + lambda*((tB')*d);
-    
+   if isfield(opts, 'save_matrix') && opts.save_matrix
+       disp('Saving matrices and settings:');
+       disp([pwd '/intermediate_results.mat']);
+       save intermediate_results;
+       disp('Done!');
+   end
+   
     K  = A'*Wmx*A + lambda;
     Lm  = A'*Wmx*b + lambda*d;
     [x2, R] = solve_AxB(K,Lm, opts, d);
@@ -397,6 +429,8 @@ else
     Error = err;
     Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
     
+    % % sosi
+    disp(T(1,:)-Tout(1,:));
     
     if opts.use_peg  % delete fictitious tile
         Tout(end,:) = [];
@@ -413,24 +447,25 @@ else
     if ~isempty(rcout)
         disp('** STEP 5:   Ingesting data .....');
         
-        
-%         disp(' ..... translate to +ve space');
-%         delta = 0;
-%         dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-%         dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-%         for ix = 1:size(Tout,1)
-%             Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
-%         end
-        
-        
+        if ~isfield(opts, 'translate_to_positive_space') || ...
+                opts.translate_to_positive_space==1
+            disp(' ..... translate to +ve space');
+            delta = 0;
+            dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+            dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
+            for ix = 1:size(Tout,1)
+                Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+            end
+            
+        end
         
         disp('... export to MET (in preparation to be ingested into the Renderer database)...');
         
         v = 'v1';
-        if stack_exists(rcout)
-            disp('.... removing existing collection');
-            resp = delete_renderer_stack(rcout);
-        end
+%         if stack_exists(rcout)
+%             disp('.... removing existing collection');
+%             resp = delete_renderer_stack(rcout);
+%         end
         if ~stack_exists(rcout)
             disp('.... target collection not found, creating new collection in state: ''Loading''');
             resp = create_renderer_stack(rcout);

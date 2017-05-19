@@ -12,7 +12,7 @@ check_input(rc);
 if ~isfield(rc, 'renderbinPath')
     rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
 end
-
+if stack_read_only(rc), error('Cannot modify READ ONLY stack'); end
 if stack_complete(rc), set_renderer_stack_state_loading(rc); end
 
 str1 = sprintf('PROJECT_PARAMS="--baseDataUrl %s --owner %s --project %s";', rc.baseURL, rc.owner, rc.project);

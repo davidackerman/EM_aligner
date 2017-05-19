@@ -363,7 +363,7 @@ else
     %clear T;
     
     % build constraints into system
-    %c = opts.constraint_fac;
+    c = opts.constraint_fac;
     num_nfirst = sum(z_val==nfirst);
     num_nlast  = sum(z_val==nlast);
     
@@ -412,13 +412,13 @@ else
         disp('** STEP 5:   Ingesting data .....');
         
         
-%         disp(' ..... translate to +ve space');
-%         delta = 0;
-%         dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-%         dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-%         for ix = 1:size(Tout,1)
-%             Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
-%         end
+        disp(' ..... translate to +ve space');
+        delta = 0;
+        dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+        dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
+        for ix = 1:size(Tout,1)
+            Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+        end
         
         
         

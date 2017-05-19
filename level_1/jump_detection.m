@@ -36,7 +36,7 @@ if nargin<3 || isempty(nlast), nlast = maxZ;end
 if nargin<2 || isempty(nfirst), nfirst = minZ;end
 
 
-
+    D = {};
 % itereate over centers provided by c
 for cix = 1:size(c,1)
     
@@ -60,7 +60,6 @@ for cix = 1:size(c,1)
     I = mat2gray(I);
     
     
-    D = {};
     for ix = 2:size(I,3)
         %     pause(0.3);
         %     imshow(I(:,:,ix));

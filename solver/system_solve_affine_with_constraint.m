@@ -359,7 +359,7 @@ else
     disp(lambda);
     disp('-----------------------');
     
-    % build system and solve it
+    % build system
     A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
     b = sparse(size(A,1), 1);
     w = cell2mat(w(:));
@@ -377,14 +377,13 @@ else
    
    % constrains tiles in the stack by using full sections 
    if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
-       if isempty(opts.z_constraint) % constrains tiles by sections nfirst and nlast
-           if isfield(opts, 'constrain_z') && ~isempty(opts.constrain_z)
+       if opts.sandwich % constrains tiles by sections nfirst and nlast
+               disp('----------Constraining first and last section specified---------------');
                c = opts.constraint_fac;
                num_nfirst = sum(z_val==nfirst);
                num_nlast  = sum(z_val==nlast);
                lambda(1:tdim*num_nfirst) = c;
-               lambda(end-tdim*num_nlast-1:end) = c;
-           end
+               lambda(end-tdim*num_nlast+1:end) = c;
        else % constrains tiles belonging to sections defined in opts.z_constraint
            for zix = 1:size(opts.z_constraint,1)
                idx = find(z_val==opts.z_constraint(zix,1)); % finds indices of tiles with this z value
@@ -404,15 +403,8 @@ else
            end
        end
    end
-   
-   
-
-   
    lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
 
-    
-%     K  = A'*Wmx*A + lambda*((tB')*tB);
-%     Lm  = A'*Wmx*b + lambda*((tB')*d);
     
     K  = A'*Wmx*A + lambda;
     Lm  = A'*Wmx*b + lambda*d;
@@ -427,6 +419,8 @@ else
     Error = err;
     Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
     
+    % % sosi
+    disp(T(1,:)-Tout(1,:));
     
     if opts.use_peg  % delete fictitious tile
         Tout(end,:) = [];
@@ -443,16 +437,17 @@ else
     if ~isempty(rcout)
         disp('** STEP 5:   Ingesting data .....');
         
-        
-        disp(' ..... translate to +ve space');
-        delta = 0;
-        dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-        dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-        for ix = 1:size(Tout,1)
-            Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+        if ~isfield(opts, 'translate_to_positive_space') || ...
+                opts.translate_to_positive_space==1
+            disp(' ..... translate to +ve space');
+            delta = 0;
+            dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+            dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
+            for ix = 1:size(Tout,1)
+                Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+            end
+            
         end
-        
-        
         
         disp('... export to MET (in preparation to be ingested into the Renderer database)...');
         

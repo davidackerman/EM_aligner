@@ -51,6 +51,6 @@ catch err_reading_image
     im = imread(fn, 'jpeg');
 end
 im = rgb2gray(im);
-im =flipdim(im' ,2);           %# horizontal flip
+im = flipdim(im' ,2);           % horizontal flip
 im = imrotate(im,90);
 delete(fn);

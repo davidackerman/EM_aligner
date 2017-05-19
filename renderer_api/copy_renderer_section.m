@@ -17,9 +17,13 @@ complete = 0;
 disableValidation = 0;
 
 parfor zix = 1:numel(z)
-    if verbose, disp(['copying section' num2str(z(zix)) ' from ' rcfrom.stack ' to ' rcto.stack]);end
+    if verbose, disp(['copying section ' num2str(z(zix)) ' from ' rcfrom.stack ' to ' rcto.stack]);end
+    
     L = Msection(rcfrom, z(zix)); % read the section with z-value z
-    resp = ingest_section_into_renderer_database(L, rcto, rcfrom, dir_temp, ...
+    
+    delete_renderer_section(rcto, z(zix), 0);
+    
+    ingest_section_into_renderer_database(L, rcto, rcfrom, dir_temp, ...
         translate_to_positive_space, complete, disableValidation);
 end
 

@@ -67,10 +67,11 @@ end
 %[mu,sig] = normfit(S); % estimates mean and standard deviation
 
 sig = std(S);
-mu = mean(S);
+mu = median(S);
 
 
 indx = [find(S<(mu-lambda*sig)) find(S>(mu+lambda*sig))];
+indx = [indx find(A<(median(A)-lambda*std(A))) find(A>(median(A)+lambda*std(A)))];
 for ix = 1:numel(indx)
     disp(['Outlier tile found: ' num2str(indx(ix)) ' .... setting state to -3.']);
     

@@ -379,6 +379,9 @@ else
    if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
        if opts.sandwich % constrains tiles by sections nfirst and nlast
                disp('----------Constraining first and last section specified---------------');
+               if ~isfield(opts, 'constraint_fac')
+                   opts.constraint_fac = 1e15;
+               end
                c = opts.constraint_fac;
                num_nfirst = sum(z_val==nfirst);
                num_nlast  = sum(z_val==nlast);
@@ -406,6 +409,13 @@ else
    lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
 
     
+   if isfield(opts, 'save_matrix') && opts.save_matrix
+       disp('Saving matrices and settings:');
+       disp([pwd '/intermediate_results.mat']);
+       save intermediate_results;
+       disp('Done!');
+   end
+   
     K  = A'*Wmx*A + lambda;
     Lm  = A'*Wmx*b + lambda*d;
     [x2, R] = solve_AxB(K,Lm, opts, d);

@@ -375,6 +375,15 @@ else
       lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
    end
    
+   
+      if isfield(opts, 'save_matrix') && opts.save_matrix
+       disp('Saving matrices and settings:');
+       disp([pwd '/intermediate_results.mat']);
+       save intermediate_results;
+       disp('Done!');
+      end
+   
+      
    % constrains tiles in the stack by using full sections 
    if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
        if opts.sandwich % constrains tiles by sections nfirst and nlast
@@ -409,12 +418,7 @@ else
    lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
 
     
-   if isfield(opts, 'save_matrix') && opts.save_matrix
-       disp('Saving matrices and settings:');
-       disp([pwd '/intermediate_results.mat']);
-       save intermediate_results;
-       disp('Done!');
-   end
+
    
     K  = A'*Wmx*A + lambda;
     Lm  = A'*Wmx*b + lambda*d;

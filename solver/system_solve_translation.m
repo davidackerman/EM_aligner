@@ -345,8 +345,8 @@ else
     %     disp('Saving state...');
     %     save temp;
     %     disp('... done!');
-    %% Step 4: Solve [ beyond this stage relevant parameters: opts.transfac
-    %                  and opts.lambda]
+    %% Step 4: Solve
+    
     disp('** STEP 4:   Solving ....'); diary off;diary on;
     disp('Translation only system build');
     % build system and solve it
@@ -365,7 +365,7 @@ else
     disp(['Error norm(Ax-b): ' num2str(err)]);
     Error = err;
     x2 = [T(1,[3]); T(1,[6]); x2];
-    Translation_parms = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
+    Translation_parms = reshape(x2, tdim, ncoeff/tdim)';% remember the transformations
     Tout = T;
     Tout(:,3) = Translation_parms(:,1);
     Tout(:,6) = Translation_parms(:,2);

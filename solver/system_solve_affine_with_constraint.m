@@ -91,7 +91,6 @@ function [err,R, Tout] = system_solve_affine_with_constraint(nfirst, nlast, rc, 
 if opts.degree>1
     [err,R, Tout] = system_solve_polynomial(nfirst, nlast, rc, pm, opts, rcout);
 else
-    
     %% prepare quantities
     if ~isfield(opts, 'transfac'), opts.transfac = 1.0;end
     if ~isfield(opts, 'nchunks_ingest'), opts.nchunks_ingest = 32;end
@@ -100,21 +99,8 @@ else
     if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
     if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
+        
     
-    
-    transfacs = sort(opts.transfac, 'descend');
-    lambdas = opts.lambda;
-    
-    count = 1;
-    transfac_and_lambda = zeros(numel(transfacs)*numel(lambdas),2);
-    for i=1:numel(transfacs)
-        for j=1:numel(lambdas)
-            rcout_array(count) = rcout;
-            rcout_array(count).stack = [rcout.stack '_' sprintf('%02d',count)];
-            transfac_and_lambda(count,:) = [transfacs(i), lambdas(j)];
-            count=count+1;
-        end
-    end
     err = [];
     R = [];
     xout = [];
@@ -125,16 +111,16 @@ else
     % obtain actual section zvalues in given range their ids and also of possible reacquires
     [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
     
-% % %     % determine W and H: used for determining deformation to decide on good lambda
-% % %     if numel(opts.lambda)>1
-% % %         webopts = weboptions('Timeout', 60);
-% % %         urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
-% % %             rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
-% % %         j = webread(urlChar, webopts);
-% % %         jt1 = tile(j(1));
-% % %         Width = jt1.W;
-% % %         Height = jt1.H;
-% % %     end
+    % determine W and H: used for determining deformation to decide on good lambda
+    if numel(opts.lambda)>1
+        webopts = weboptions('Timeout', 60);
+        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+            rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
+        j = webread(urlChar, webopts);
+        jt1 = tile(j(1));
+        Width = jt1.W;
+        Height = jt1.H;
+    end
     
     %% Step 1: load transformations, tile ids
     % load all tiles in this range and pool into Msection object
@@ -177,7 +163,7 @@ else
     end
     % clear sID
     % % perform pm requests
-    disp('Loading point-matches from point-match database ....');
+     disp('Loading point-matches from point-match database ....');
     wopts = weboptions;
     wopts.Timeout = 20;
     M   = {};
@@ -199,7 +185,7 @@ else
         np(ix) = {n};
     end
     if isempty(np)
-        error('No point-matches found');
+            error('No point-matches found');
     end
     clear sID_all
     disp('... concatenating point matches ...');
@@ -273,6 +259,16 @@ else
     
     disp(' ..... done!');diary off;diary on;
     %% Step 3: generate row slabs of matrix A
+    %%%%% Experimental: set xy to zero (after having added fictitious tile is using peg.
+    if opts.transfac<1.0  % then set x and y to 0,0 for each tile
+        % it is assumed in this case that translation has more freedom than other parameters
+        % typical case: keep everything rigid (high lambda) and really low opts.transfac
+        disp(['--- Warning: Setting all x and y to zero for starting vector']);
+        T(:,3) = 0;
+        T(:,6) = 0;
+    end
+    %%%%%%%%%%%%%%%%%%
+    
     disp('** STEP 3:    Generating system matrix .... ');
     split = opts.distribute_A;
     
@@ -302,8 +298,8 @@ else
     fn_split = cell(split,1);
     for ix = 1:split
         fn_split{ix} = [dir_scratch '/split_PM_' num2str(nfirst)...
-            '_' num2str(nlast) '_'...
-            num2str(randi(10000000000)) '_' num2str(ix) '.mat'];
+                       '_' num2str(nlast) '_'...
+                       num2str(randi(10000000000)) '_' num2str(ix) '.mat'];
         vec = r(ix,1):r(ix,2);
         m = M(vec,:);
         a = adj(vec,:);
@@ -346,11 +342,11 @@ else
     Sb1 = cell2mat(Sb(:));clear Sb;
     disp('..... done!');
     %% save intermediate state
-    %     disp('Saving state...');
-    %     save temp;
-    %     disp('... done!');
-    %% Step 4: Solve
-    %      beyond this stage relevant parameters:
+%     disp('Saving state...');
+%     save temp;
+%     disp('... done!');
+    %% Step 4: Solve 
+    %      beyond this stage relevant parameters: 
     %                  opts.transfac
     %                  opts.lambda
     %                  opts.constraint_fac
@@ -358,6 +354,10 @@ else
     %                  opts.constrain_by_z
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     disp('** STEP 4:   Solving ....'); diary off;diary on;
+    lambda = opts.lambda;
+    disp('--------- using lambda:');
+    disp(lambda);
+    disp('-----------------------');
     
     % build system
     A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
@@ -365,173 +365,151 @@ else
     w = cell2mat(w(:));
     Wmx = spdiags(w,0,size(A,1),size(A,1));
     clear w;
-    already_set_T_xy_to_zero = false;
     d = reshape(T', ncoeff,1);
-    for current_parameter_count=1:numel(rcout_array)
-        rcout = rcout_array(current_parameter_count);
-        opts.transfac = transfac_and_lambda(current_parameter_count,1);
-        opts.lambda = transfac_and_lambda(current_parameter_count,2);
-        opts.edge_lambda = opts.lambda;
-        rcout.versionNotes = gen_versionNotes(opts);
-        lambda = opts.lambda;
-        disp('--------- using lambda:');
-        disp(lambda);
-        disp('-----------------------');
-        %%%%% Experimental: set xy to zero (after having added fictitious tile is using peg.
-        if already_set_T_xy_to_zero == false
-            if opts.transfac<1.0  % then set x and y to 0,0 for each tile
-                % it is assumed in this case that translation has more freedom than other parameters
-                % typical case: keep everything rigid (high lambda) and really low opts.transfac
-                disp(['--- Warning: Setting all x and y to zero for starting vector']);
-                T(:,3) = 0;
-                T(:,6) = 0;
-                already_set_T_xy_to_zero = true;
-                %%%%%%%%%%%%%%%%%%
-                d = reshape(T', ncoeff,1);
-            end
-        end
-        %clear T;
-        
-        % build constraints into system
-        lambda = opts.lambda * ones(ncoeff,1);  % defines the general default constraint
-        % modulate lambda accoding to opts.transfac
-        if opts.transfac~=1
-            lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
-        end
-        
-        % constrains tiles in the stack by using full sections
-        if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
-            if opts.sandwich % constrains tiles by sections nfirst and nlast
-                disp('----------Constraining first and last section specified---------------');
-                if ~isfield(opts, 'constraint_fac')
-                    opts.constraint_fac = 1e15;
-                end
-                c = opts.constraint_fac;
-                num_nfirst = sum(z_val==nfirst);
-                num_nlast  = sum(z_val==nlast);
-                lambda(1:tdim*num_nfirst) = c;
-                lambda(end-tdim*num_nlast+1:end) = c;
-            else % constrains tiles belonging to sections defined in opts.z_constraint
-                for zix = 1:size(opts.z_constraint,1)
-                    idx = find(z_val==opts.z_constraint(zix,1)); % finds indices of tiles with this z value
-                    if ~isempty(idx)
-                        indxstart =  (idx(1) -1) * tdim + 1;
-                        indxend   = idx(end) * tdim;
-                        vec = indxstart:indxend;
-                        lambda(vec) = opts.z_constraint(zix,2);
-                        
-                        % constrain translation for this section
-                        if size(opts.z_constraint,2)>2    % then we also have translation regularizer
-                            vec = indxstart+3:3:indxend;
-                            lambda(vec) = opts.z_constraint(zix,3);
-                        end
-                        
-                    end
-                end
-            end
-        end
-        lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
-        
-        
-        if isfield(opts, 'save_matrix') && opts.save_matrix
-            disp('Saving matrices and settings:');
-            disp([pwd '/intermediate_results.mat']);
-            save intermediate_results;
-            disp('Done!');
-        end
-        
-        K  = A'*Wmx*A + lambda;
-        Lm  = A'*Wmx*b + lambda*d;
-        [x2, R] = solve_AxB(K,Lm, opts, d);
-        %%%% sosi
-        %disp(full([d(:) Lm(:) diag(tB) x2(:) R(:)]));
-        %%%%%
-        precision = norm(K*x2-Lm)/norm(Lm);
-        disp(['Precision: ' num2str(precision)]);
-        err = norm(A*x2-b);
-        disp(['Error norm(Ax-b): ' num2str(err)]);
-        Error = err;
-        Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
-        
-        % % sosi
-        disp(T(1,:)-Tout(1,:));
-        
-        if opts.use_peg  % delete fictitious tile
-            Tout(end,:) = [];
-            tIds(end) = [];
-            ntiles = ntiles - 1;
-            ncoeff = ncoeff - tdim;
-        end
-        %%
-        if numel(rcout_array)==1 || current_parameter_count == numel(rcout_array)
-            clear x2;
-            clear K Lm d tb A b Wmx tB
-        end
-        disp('.... done!');
-        
-        %% Step 5: ingest into Renderer database
-        if ~isempty(rcout)
-            disp('** STEP 5:   Ingesting data .....');
-            
-            if ~isfield(opts, 'translate_to_positive_space') || ...
-                    opts.translate_to_positive_space==1
-                disp(' ..... translate to +ve space');
-                delta = 0;
-                dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-                dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-                for ix = 1:size(Tout,1)
-                    Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
-                end
-                
-            end
-            
-            disp('... export to MET (in preparation to be ingested into the Renderer database)...');
-            
-            v = 'v1';
-            %         if stack_exists(rcout)
-            %             disp('.... removing existing collection');
-            %             resp = delete_renderer_stack(rcout);
-            %         end
-            if ~stack_exists(rcout)
-                disp('.... target collection not found, creating new collection in state: ''Loading''');
-                resp = create_renderer_stack(rcout);
-            end
-            
-            if ntiles<opts.nchunks_ingest, opts.nchunks_ingest = ntiles;end
-            
-            chks = round(ntiles/opts.nchunks_ingest);
-            cs = 1:chks:ntiles;
-            cs(end) = ntiles;
-            disp(' .... ingesting ....');
-            parfor ix = 1:numel(cs)-1
-                vec = cs(ix):cs(ix+1);
-                export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
-                    tIds(vec), z_val(vec), v, opts.disableValidation);
-            end
-            
-            
-            % % complete stack
-            disp(' .... completing stack...');
-            resp = set_renderer_stack_state_complete(rcout);
-        end
-        disp('.... done!');
-        diary off;
+    %clear T;
+    
+    % build constraints into system
+   lambda = opts.lambda * ones(ncoeff,1);  % defines the general default constraint
+   % modulate lambda accoding to opts.transfac
+   if opts.transfac~=1
+      lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
+   end
+   
+   
+      if isfield(opts, 'save_matrix') && opts.save_matrix
+       disp('Saving matrices and settings:');
+       disp([pwd '/intermediate_results.mat']);
+       save intermediate_results;
+       disp('Done!');
+      end
+   
+      
+   % constrains tiles in the stack by using full sections 
+   if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
+       if opts.sandwich % constrains tiles by sections nfirst and nlast
+               disp('----------Constraining first and last section specified---------------');
+               if ~isfield(opts, 'constraint_fac')
+                   opts.constraint_fac = 1e15;
+               end
+               c = opts.constraint_fac;
+               num_nfirst = sum(z_val==nfirst);
+               num_nlast  = sum(z_val==nlast);
+               lambda(1:tdim*num_nfirst) = c;
+               lambda(end-tdim*num_nlast+1:end) = c;
+       else % constrains tiles belonging to sections defined in opts.z_constraint
+           for zix = 1:size(opts.z_constraint,1)
+               idx = find(z_val==opts.z_constraint(zix,1)); % finds indices of tiles with this z value
+               if ~isempty(idx)
+                   indxstart =  (idx(1) -1) * tdim + 1;
+                   indxend   = idx(end) * tdim;
+                   vec = indxstart:indxend;
+                   lambda(vec) = opts.z_constraint(zix,2);
+                   
+                   % constrain translation for this section
+                   if size(opts.z_constraint,2)>2    % then we also have translation regularizer
+                      vec = indxstart+3:3:indxend;
+                      lambda(vec) = opts.z_constraint(zix,3);
+                   end
+                   
+               end
+           end
+       end
+   end
+   lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
+
+    
+
+   
+    K  = A'*Wmx*A + lambda;
+    Lm  = A'*Wmx*b + lambda*d;
+    [x2, R] = solve_AxB(K,Lm, opts, d);
+    %%%% sosi
+    %disp(full([d(:) Lm(:) diag(tB) x2(:) R(:)]));
+    %%%%%
+    precision = norm(K*x2-Lm)/norm(Lm);
+    disp(['Precision: ' num2str(precision)]);
+    err = norm(A*x2-b);
+    disp(['Error norm(Ax-b): ' num2str(err)]);
+    Error = err;
+    Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
+    
+    % % sosi
+    disp(T(1,:)-Tout(1,:));
+    
+    if opts.use_peg  % delete fictitious tile
+        Tout(end,:) = [];
+        tIds(end) = [];
+        ntiles = ntiles - 1;
+        ncoeff = ncoeff - tdim;
     end
-    %     %%% sosi
-    %     [Wbox, bbox, url] = get_slab_bounds_renderer(rcout);
-    %     scale = 0.1;
-    %     dx = 5/scale;
-    %     x = Wbox(1) + Wbox(3)/2;
-    %     y = Wbox(2);
-    %     height = Wbox(4);
-    %     disp([x y height dx]);
-    %     [Iyz, Io] = get_yz_image_renderer(rcout, x, y, dx, height, scale,...
-    %         nfirst, nlast, [2 2 1]);
-    %     h =  size(Iyz,1);%20000;
-    %     w =  size(Iyz,2);
-    %     im = Iyz(1:h,:);
-    %     I = imresize(im,[h/32 (w)]);
-    %     imshow(I);
-    %     %%%%
+    %%
+    clear x2;
+    clear K Lm d tb A b Wmx tB
+    disp('.... done!');
+    
+    %% Step 5: ingest into Renderer database
+    if ~isempty(rcout)
+        disp('** STEP 5:   Ingesting data .....');
+        
+        if ~isfield(opts, 'translate_to_positive_space') || ...
+                opts.translate_to_positive_space==1
+            disp(' ..... translate to +ve space');
+            delta = 0;
+            dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+            dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
+            for ix = 1:size(Tout,1)
+                Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+            end
+            
+        end
+        
+        disp('... export to MET (in preparation to be ingested into the Renderer database)...');
+        
+        v = 'v1';
+%         if stack_exists(rcout)
+%             disp('.... removing existing collection');
+%             resp = delete_renderer_stack(rcout);
+%         end
+        if ~stack_exists(rcout)
+            disp('.... target collection not found, creating new collection in state: ''Loading''');
+            resp = create_renderer_stack(rcout);
+        end
+        
+        if ntiles<opts.nchunks_ingest, opts.nchunks_ingest = ntiles;end
+        
+        chks = round(ntiles/opts.nchunks_ingest);
+        cs = 1:chks:ntiles;
+        cs(end) = ntiles;
+        disp(' .... ingesting ....');
+        parfor ix = 1:numel(cs)-1
+            vec = cs(ix):cs(ix+1);
+            export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
+                tIds(vec), z_val(vec), v, opts.disableValidation);
+        end
+        
+        
+        % % complete stack
+        disp(' .... completing stack...');
+        resp = set_renderer_stack_state_complete(rcout);
+    end
+    disp('.... done!');
+    diary off;
+    
+%     %%% sosi
+%     [Wbox, bbox, url] = get_slab_bounds_renderer(rcout);
+%     scale = 0.1;
+%     dx = 5/scale;
+%     x = Wbox(1) + Wbox(3)/2;
+%     y = Wbox(2);
+%     height = Wbox(4);
+%     disp([x y height dx]);
+%     [Iyz, Io] = get_yz_image_renderer(rcout, x, y, dx, height, scale,...
+%         nfirst, nlast, [2 2 1]);
+%     h =  size(Iyz,1);%20000;
+%     w =  size(Iyz,2);
+%     im = Iyz(1:h,:);
+%     I = imresize(im,[h/32 (w)]);
+%     imshow(I);
+%     %%%%
     
 end

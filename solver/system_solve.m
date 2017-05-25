@@ -357,88 +357,27 @@ else
     d = reshape(T', ncoeff,1);
     %clear T;
     
-    tB = ones(ncoeff,1);
-    tB(3:3:end) = opts.transfac;
-    tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
-    
-    
-    %%%% determine regularization parameter if opts.lambda is a range
-    if numel(opts.lambda)>1
-        deformation_indx = [];
-        Error = [];
-        perim_o = 2*Width + 2*Height;
-        for lambdaix = 1:numel(opts.lambda)
-            disp(['Solving ' num2str(lambdaix) ' of ' ...
-                num2str(numel(opts.lambda)) ' -- lambda: ' ...
-                num2str(opts.lambda(lambdaix))]);
-            
-            lambda = opts.lambda(lambdaix);
-            K  = A'*Wmx*A + lambda*(tB')*tB;
-            Lm  = A'*Wmx*b + lambda*(tB')*d;
-            [x2, R] = solve_AxB(K,Lm, opts, d);
-            err = norm(A*x2-b); disp(['Error norm(Ax-b): ' num2str(err)]);
-            Error(lambdaix) = err;
-            Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% step 4': calculate deformation
-            % make four corners for this tile
-            x = 0;
-            y = 0;
-            Px = [x; x + Width; x + Width; x];
-            Py = [y; y    ; y + Height; Height];
-            
-            parfor jix = 1:size(Tout,1)
-                
-                %%% transform points
-                if opts.degree==1
-                    T = [reshape(Tout(jix,:),3,2)];
-                    T(3,3) = 1;
-                    P = [Px(:) Py(:) [1 1 1 1]']*T;
-                else
-                    disp(' degree larger than 1 (affine) not implemented yet for fast method');
-                end
-                % check polygon area
-                Ar(jix) = polyarea(P(:,1), P(:,2));
-                Aratio(jix) = Ar(jix)/(Height * Width);
-                %%% polygonperimeter
-                s = 0;
-                s = s + sqrt((P(1,1)-P(2,1)).^2 + (P(1,2)-P(2,2)).^2);
-                s = s + sqrt((P(2,1)-P(3,1)).^2 + (P(2,2)-P(3,2)).^2);
-                s = s + sqrt((P(3,1)-P(4,1)).^2 + (P(3,2)-P(4,2)).^2);
-                s = s + sqrt((P(1,1)-P(4,1)).^2 + (P(1,2)-P(4,2)).^2);
-                S(jix) = s;
-            end
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-            %     sig = std(S);
-            %     mu = mean(S);
-            %     fac = 3;
-            %     indx = [find(Aratio<(mu-fac*sig)) find(Aratio>(mu+fac*sig))];
-            %     Aratio(indx) = [];
-            deformation_indx(lambdaix) = mean(abs(S-perim_o));
-        end
-        deformation_indx = deformation_indx/max(deformation_indx);
-        Error = Error/max(Error);
-        
-        diffd = gradient(deformation_indx);
-        yyaxis left
-        plot(log(opts.lambda), diffd, 'go');title('Gradient of deformation');
-        hold on;
-        plot(log(opts.lambda), diffd, 'b-');
-        yyaxis right
-        plot(log(opts.lambda), Error, 'go');title('normalized error and normalized deformation');
-        hold on;
-        plot(log(opts.lambda), Error, 'k-');
-        figure;
-        plot(log(opts.lambda), deformation_indx, 'r-');
-        
-        %%% decide on lambda and proceed
-        lambda = opts.lambda(find(diffd == max(diffd)));
-    else
-        lambda = opts.lambda;
-    end
+%     tB = ones(ncoeff,1);
+% %     tB(3:3:end) = opts.transfac;
+%     tB = sparse(1:ncoeff, 1:ncoeff, tB, ncoeff, ncoeff);
+    tB = 1;
+
+    lambda = opts.lambda(1);
     disp('--------- using lambda:');
     disp(lambda);
     disp('-----------------------');
     
+    
+    
+    % build constraints into system using lambda
+   lambda = opts.lambda * ones(ncoeff,1);  % defines the general default constraint
+   % modulate lambda accoding to opts.transfac
+   if opts.transfac~=1
+      lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
+   end
+   lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
+
+   
     if opts.transfac<1
     %%% translate smallest x and smallest y in d to zero
     x_coord = d(3:6:end);

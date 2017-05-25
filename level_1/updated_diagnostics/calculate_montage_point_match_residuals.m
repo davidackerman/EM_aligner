@@ -14,6 +14,7 @@ function [ output_struct ] = calculate_montage_point_match_residuals(...
 %    min_points      : 10     Minimum number of points for input to load_point_matches
 %    output_data_per_tile : true  Output values and ratios for each tile
 %    dir_scratch : /scratch/ackermand Scratch directory
+%    filter_point_matches: true
 %    verbose     : true               Output status
 
 % Output:
@@ -69,6 +70,7 @@ if ~isfield(options, 'dir_scratch')
     options.dir_scratch = [pwd '/scratch_' num2str(randi(10000)) '_' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
     warning('Will create temporary scratch directory %s which will be cleaned after', options.dir_scratch);
 end
+if ~isfield(options,'filter_point_matches'), options.filter_point_matches = true; end
 if ~isfield(options, 'verbose'), options.verbose = true; end
 
 dir_current = pwd;
@@ -103,7 +105,14 @@ parfor z_index = 1:numel(unique_merged_z)
     [L]  = ...
         load_point_matches(valid_zs(1), valid_zs(end), rc, point_matches, 0, ...
         options.min_points, 0);
-    L.pm = filter_pm(L.pm);
+    
+    if options.filter_point_matches
+        if isfield(options, 'pmopts')
+            L.pm = filter_pm(L.pm, options.pmopts);
+        else
+            L.pm = filter_pm(L.pm);
+        end
+    end
     
     % Second: generate point-match residuals from L.pm by looping through
     % all point matches, transforming them and calculating the mean residual

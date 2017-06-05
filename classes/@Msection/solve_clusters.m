@@ -29,8 +29,13 @@ if ~isfield(opts, 'small_region'),
 end
 
 if nargin<3, stvec_flag = 0;end  % in that case we do not assume a starting value, and perform rigid fit
-lambda = opts.lambda;
-edge_lambda = opts.edge_lambda;
+if ~isfield(opts, 'lambda')
+    lambda = -999;
+    edge_lambda = -999;
+else
+    lambda = opts.lambda;
+    edge_lambda = opts.edge_lambda;
+end
 
 %% determine how clusters are related to place after registration
 zC = {}; % store uniqe z values spanned by a component
@@ -158,7 +163,7 @@ for cix = 1:numel(L_vec)
             ll2r = L_vec(cix);
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if numel(ll2r.tiles)<=opts.small_region
+        if numel(ll2r.tiles)<=opts.small_region 
             opts.lambda = opts.small_region_lambda;
             opts.edge_lambda = opts.small_region_lambda;
         else

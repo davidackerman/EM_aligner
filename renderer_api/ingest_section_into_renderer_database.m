@@ -35,7 +35,7 @@ end
 
 try
     if translate_to_positive_space
-        disp('Translating to +ve space');
+        %disp('Translating to +ve space');
         %disp('translating to set in +ve space');
         mL = translate_to_origin(mL);
     end

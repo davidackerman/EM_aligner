@@ -44,7 +44,7 @@ lsq_options.apply_scaling   = 1;
 if nargin>1
     lsq_options.solver       = solver;
 end
-translation_only = 0;
+translation_only = 0;  % default
 if nargin<3
     translation_only = 0;
 end
@@ -64,7 +64,7 @@ if ~translation_only
         disp(lsq_options);
         disp('-----------------------------------');
     end
-
+    % perform similarity solution
     [mL,err, R, Ar, br, Br, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
         alignTEM_solver(obj, [], lsq_options);
     
@@ -80,7 +80,7 @@ if ~translation_only
     if lsq_options.apply_scaling
         mtiles = mL.tiles;
         disp('Applying re-scaling');
-        for ix = 1:numel(mL.tiles)
+       for ix = 1:numel(mL.tiles)
             
             %disp([ix mL.tiles(ix).tform.T(1) mL.tiles(ix).tform.T(5)]);
             %imshow(get_warped_image(mL.tiles(ix)));

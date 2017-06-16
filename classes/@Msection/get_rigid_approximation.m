@@ -27,7 +27,7 @@ lsq_options.constraint      = 'similarity';%'explicit';% 'trivial';%
 lsq_options.constraint_only = 1;
 lsq_options.pdegree         = 1;
 lsq_options.lidfix          = 1;
-lsq_options.tfix            = numel(obj.tiles);
+lsq_options.tfix            = 1;%numel(obj.tiles);
 
 lsq_options.verbose         = 0;
 lsq_options.debug           = 0;
@@ -44,7 +44,7 @@ lsq_options.apply_scaling   = 1;
 if nargin>1
     lsq_options.solver       = solver;
 end
-translation_only = 0;
+translation_only = 0;  % default
 if nargin<3
     translation_only = 0;
 end
@@ -64,7 +64,7 @@ if ~translation_only
         disp(lsq_options);
         disp('-----------------------------------');
     end
-
+    % perform similarity solution
     [mL,err, R, Ar, br, Br, d, W, K, Lm, xout, L2, U2, tB, td, invalid_similarity] = ...
         alignTEM_solver(obj, [], lsq_options);
     
@@ -80,7 +80,7 @@ if ~translation_only
     if lsq_options.apply_scaling
         mtiles = mL.tiles;
         disp('Applying re-scaling');
-        for ix = 1:numel(mL.tiles)
+       for ix = 1:numel(mL.tiles)
             
             %disp([ix mL.tiles(ix).tform.T(1) mL.tiles(ix).tform.T(5)]);
             %imshow(get_warped_image(mL.tiles(ix)));
@@ -97,6 +97,10 @@ if ~translation_only
     else
         disp('skipping re-scaling');
     end
+    %%% sosi
+    disp('----------> SOSI get _rigid_approximation: saving mLs');
+    mLs = mL;
+    save mLs mLs Ar br Br d;
     
     %% transform point matches in order to translate
     M = mL.pm.M;
@@ -126,7 +130,7 @@ if ~translation_only
     lsq_options.pdegree         = 0;  %
     lsq_options.constraint_only = 0;
     lsq_options.lidfix          = 1;
-    lsq_options.tfix            = numel(obj.tiles);
+    lsq_options.tfix            = 1;%numel(obj.tiles);
     
     lsq_options.constrain_edges = 0;
     lsq_options.edge_lambda         = 0;

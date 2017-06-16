@@ -24,8 +24,8 @@ if ~isfield(opts, 'disableValidation'), opts.disableValidation = 0;end
 if opts.stvec_flag==0 && opts.conn_comp==0, 
     disp('Setting opts.conn_comp to 1, to enable rigid model calculation');
 end
-    
-cs     = nlast-nfirst + 1;   % adjust the chunck size to encompass the whole range, i.e. no chuncks
+[zu, sID, sectionId, z] = get_section_ids(rc, nfirst, nlast);
+cs     = numel(zu);%nlast-nfirst + 1;   % adjust the chunck size to encompass the whole range, i.e. no chuncks
 sh     = 0;     % this is core overlap. Actual overlap is this number + 2;
 
 %% configure solver using defaults if opts is not provided

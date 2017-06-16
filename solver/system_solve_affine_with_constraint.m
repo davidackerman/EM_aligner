@@ -433,9 +433,6 @@ else
     Error = err;
     Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
     
-    % % sosi
-    disp(T(1,:)-Tout(1,:));
-    
     if opts.use_peg  % delete fictitious tile
         Tout(end,:) = [];
         tIds(end) = [];
@@ -450,18 +447,35 @@ else
     %% Step 5: ingest into Renderer database
     if ~isempty(rcout)
         disp('** STEP 5:   Ingesting data .....');
-        
-        if ~isfield(opts, 'translate_to_positive_space') || ...
-                opts.translate_to_positive_space==1
-            disp(' ..... translate to +ve space');
-            delta = 0;
-            dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
-            dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
-            for ix = 1:size(Tout,1)
-                Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
-            end
-            
-        end
+        disp(' ..... translate to +ve space');
+    %             delta = 0;
+    % determine W and H:
+    webopts = weboptions('Timeout', 60);
+    urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+        rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
+    j = webread(urlChar, webopts);
+    jt1 = tile(j(1));
+    Width = jt1.W;
+    Height = jt1.H;
+    
+    delta = -(5000 + max([Width Height]));
+    dx = min(Tout(:,3)) +  delta;
+    dy = min(Tout(:,6)) +  delta;
+    for ix = 1:size(Tout,1)
+        Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+    end
+
+%         if ~isfield(opts, 'translate_to_positive_space') || ...
+%                 opts.translate_to_positive_space==1
+%             disp(' ..... translate to +ve space');
+%             delta = 0;
+%             dx = min(Tout(:,3)) + sign(Tout(1))* delta;%mL.box(1);
+%             dy = min(Tout(:,6)) + sign(Tout(1))* delta;%mL.box(2);
+%             for ix = 1:size(Tout,1)
+%                 Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
+%             end
+%             
+%         end
         
         disp('... export to MET (in preparation to be ingested into the Renderer database)...');
         

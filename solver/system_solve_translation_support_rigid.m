@@ -1,32 +1,10 @@
-function [err,R, Tout, A, b, map_id, tIds, z_val] = ...
-    system_solve_rigid_approximation(...
-    nfirst, nlast, rc, pm, opts, rcout)
-% Fast solve and ingest of section alignment when regularizer (starting collection)
-% rc and full set of point-matches pm is provided
-% After solving, ingests solved tiles into Renderer collection rcout if non empty
-%
-% INPUTS:
-% nfirst and nlast: z values (inclusive) to specify slab range
-% rc: source stack (usually roughly aligned) that will be used to determine
-%     regularization
-% pm: one or more (array) of point-match structs that defines (multiple)
-%     sources of point-match collections to look for point-matches
-% opts: See example opts below
-% rcout: fine-aligned output collection
-%
-% OUTPUTS:
-%   err: total error of objective system (norm(Ax-b))
-%   R  : residual of regularized system (K*x2-Lm)
-%   Tout: solution vector
-%
-% Note 1 : For fast direct solution of large systems (>250k tiles) please
-%         install and setup PaSTiX and set opts.solver to 'pastix'
-% Note 2 : For iterative solution of large systems set opts.solver to
-%          gmres or bicgstab
-%
+function [err,R, Tout] = system_solve_translation_support_rigid(...
+    nfirst, nlast, rc, pm, opts, rcout, T,map_id, tIds, z_val)
+% support function that performs translation only on a rigid rotation
+% It applies the rotation transformation to point matches prio to translation
+% estimation, then ingests a new collection (a rigid approximation)
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 %% prepare quantities
 if ~isfield(opts, 'transfac'), opts.transfac = 1.0;end
@@ -36,7 +14,7 @@ if ~isfield(opts, 'transfac'), opts.transfac = 1;end
 if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
 if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
 if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
-if ~isfield(opts, 'delete_existing_collection'), opts.delete_existing_collection = 1; end
+
 
 err = [];
 R = [];
@@ -44,26 +22,23 @@ xout = [];
 dir_scratch = [opts.dir_scratch '/temp_' num2str(randi(3000000))];
 kk_mkdir(dir_scratch);
 cd(dir_scratch);
-
+diary on;
 % obtain actual section zvalues in given range their ids and also of possible reacquires
 [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
 
 %% Step 1: load transformations, tile ids
 % load all tiles in this range and pool into Msection object
-disp('Loading transformations and tile/canvas ids from Renderer database.....');
-[T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
-
+%     disp('Loading transformations and tile/canvas ids from Renderer database.....');
+%     [~, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
+%
 
 ntiles = size(T,1);
 disp(['..system has ' num2str(ntiles) ' tiles...']);
 %[L, map_id, tIds] = load_all_tiles(rc,zu);ntiles = numel(L.tiles);
-%     degree = opts.degree;
-%     tdim = (degree + 1) * (degree + 2)/2; % number of coefficients for a particular polynomial
-%     tdim = tdim * 2;        % because we have two dimensions, u and v.
-%
-
-btdim = 4; % similarity
-ncoeff = ntiles*btdim;
+degree = opts.degree;
+tdim = (degree + 1) * (degree + 2)/2; % number of coefficients for a particular polynomial
+tdim = tdim * 2;        % because we have two dimensions, u and v.
+ncoeff = ntiles*tdim;
 disp('....done!');diary off;diary on;
 %% Step 2: Load point-matches
 disp('** STEP 2:  Load point-matches ....');
@@ -135,15 +110,29 @@ if opts.filter_point_matches
     PM = filter_pm(PM, opts.pmopts);
 end
 
-
 M = PM.M;
 adj = PM.adj;
 W = PM.W;
 np = PM.np;
-% cd(dir_scratch)
-% save PM M adj W -v7.3;system_solve
-% fn = [dir_scratch '/PM.mat'];
-% PM = matfile(fn);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% transform points:
+%  transform point matches according to similarity
+% in order to translate in a consistent way
+
+for pix = 1:size(M,1) % loop over point matches
+    %%%%%transform points for the first of the two tiles
+    pm = M{pix,1};
+    t = reshape(T(adj(pix,1),[1 2 4 5]), 2, 2);
+    pmt = pm*t(1:2,1:2);
+    M{pix,1}(:) = pmt;
+    %%%%%%%%%%%transform points for the second of the two tiles
+    pm = M{pix,2};
+    t = reshape(T(adj(pix,2),[1 2 4 5]), 2, 2);
+    pmt = pm*t(1:2,1:2);
+    M{pix,2} = pmt;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 disp(' ..... done!');diary off;diary on;
 %% Step 3: generate row slabs of matrix A
@@ -153,8 +142,8 @@ split = opts.distribute_A;
 
 npm = size(np,1);
 disp(' .... determine row positions of point-pairs (needed for generation of A)...');
-n = 4*sum(np);
-r_sum_vec = [1;cumsum(4*np(1:npm-1))+1];
+n = 2*sum(np);
+r_sum_vec = [1;cumsum(2*np(1:npm-1))+1];
 pm_per_worker = round(npm/split);
 disp([' .... pm_per_worker=' num2str(pm_per_worker)]);
 r = zeros(split,2);
@@ -178,7 +167,7 @@ fn_split = cell(split,1);
 for ix = 1:split
     fn_split{ix} = [dir_scratch '/split_PM_' num2str(nfirst)...
         '_' num2str(nlast) '_'...
-        num2str(randi(10000000000)) '_' num2str(ix) '.mat'];
+        num2str(randi(10000000)) '_' num2str(ix) '.mat'];
     vec = r(ix,1):r(ix,2);
     m = M(vec,:);
     a = adj(vec,:);
@@ -196,9 +185,8 @@ J = {};
 S = {};
 w = {};
 parfor ix = 1:split
-    [I{ix}, J{ix}, S{ix}, wout, Ib{ix},  Sb{ix}] = ...
-        gen_A_b_row_range_similarity(fn_split{ix}, ...
-        np,r_sum_vec, r(ix,1), r(ix,2));
+    [I{ix}, J{ix}, S{ix}, wout, Ib{ix}, Sb{ix}] = gen_A_b_row_range(fn_split{ix}, ...
+        degree, np,r_sum_vec, r(ix,1), r(ix,2));
     wout(wout==0)= [];
     w{ix} = wout;
 end
@@ -225,62 +213,67 @@ disp('..... done!');
 %     disp('Saving state...');
 %     save temp;
 %     disp('... done!');
-%% Step 4: Solve for similarity
+%% Step 4: Solve
+
 disp('** STEP 4:   Solving ....'); diary off;diary on;
+disp('Translation only system build');
 % build system and solve it
-%btdim = 4; % because there is no translation
-A = sparse(I1,J1,S1, n,ntiles*btdim); clear I1 J1 S1;
-b = sparse(Ib1,ones(length(Ib1),1), double(Sb1),n,1);
+A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
 w = cell2mat(w(:));
 Wmx = spdiags(w,0,size(A,1),size(A,1));
 clear w;
-
-% eliminate first 4 columns in A because we are fixing one tile.
-A = A(:, 5:end);
-
-K  = A'*Wmx*A;
-Lm  = A'*Wmx*b;
+b = sparse(Ib1,ones(length(Ib1),1), double(Sb1),n,1);
+A(:,1:2) = [];
+K   = A' * Wmx * A;
+Lm  = A' * Wmx * b;
 [x2, R] = solve_AxB(K,Lm, opts, []);
-
 precision = norm(K*x2-Lm)/norm(Lm);
-disp(['Simlarity Precision: ' num2str(precision)]);
+disp(['Precision: ' num2str(precision)]);
 err = norm(A*x2-b);
-disp(['Similarity Error norm(Ax-b): ' num2str(err)]);
+disp(['Error norm(Ax-b): ' num2str(err)]);
 Error = err;
-Tout = full(reshape(x2, btdim, (ncoeff-4)/btdim)');%
+%%% include the eliminated tile
+x2 = [T(1,[3]); T(1,[6]); x2];
+Translation_parms = reshape(x2, tdim, ncoeff/tdim)';% remember the transformations
+Tout = T;
+Tout(:,3) = Translation_parms(:,1);
+Tout(:,6) = Translation_parms(:,2);
+%     %%% rotate Tout
+%     deg = 180;
+%     x = 0;
+%     y = 0;
+%     parfor tix = 1:size(Tout,1)
+%         Ro = [cosd(deg) -sind(deg) 0; sind(deg) cosd(deg) 0; x y 1];
+%         Tr = reshape(Tout(tix, :), 3, 2);
+%         Tr(3,3) = 1;
+%         Tr = Tr * Ro;
+%         Tr([3 6]) = Tr([3 6]) + [x y];
+%         Tr = reshape(Tr, 1,9);
+%         Tout(tix, :) = Tr(1:6);
+%     end
 
-%% step 4': rescale all tiles to unity
-parfor ix = 1:size(Tout,1)
-    Tf = Tout(ix, :);
-    [U S V] = svd(reshape(Tf, 2, 2));
-    Tf = U * [1 0; 0 1] * V';  % rescale to unity
-    Tout(ix,:) = Tf(:)';
-end
-% add the first tile back and add zeros to complete affine set
-zer = zeros((ncoeff-4)/btdim, 1);
-Tout = [ [-1 0 0 0 -1 0]; ...
-    Tout(:,1) Tout(:,2) zer ...
-    Tout(:,3) Tout(:,4) zer];
+%%
 clear x2;
-%clear K Lm d tb A b Wmx tB
+clear K Lm d tb A b Wmx tB
 disp('.... done!');
-
-
-
-%% step 4'': solve for translation
 
 %% Step 5: ingest into Renderer database
 if ~isempty(rcout)
-    %%% temporary Renderer stack
-    rctemp = rcout;
-    rctemp.stack = [rctemp.stack '_temp_similarity'];
-    
-    %%%%
     disp('** STEP 5:   Ingesting data .....');
     disp(' ..... translate to +ve space');
-    delta = 0;
-    dx = min(Tout(:,3)) + sign(Tout(1))* delta;
-    dy = min(Tout(:,6)) + sign(Tout(1))* delta;
+    %             delta = 0;
+    % determine W and H:
+    webopts = weboptions('Timeout', 60);
+    urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+        rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
+    j = webread(urlChar, webopts);
+    jt1 = tile(j(1));
+    Width = jt1.W;
+    Height = jt1.H;
+    
+    delta = -(5000 + max([Width Height]));
+    dx = min(Tout(:,3)) +  delta;
+    dy = min(Tout(:,6)) +  delta;
     for ix = 1:size(Tout,1)
         Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
     end
@@ -288,13 +281,13 @@ if ~isempty(rcout)
     disp('... export to MET (in preparation to be ingested into the Renderer database)...');
     
     v = 'v1';
-    if stack_exists(rctemp) && opts.delete_existing_collection
+    if stack_exists(rcout)
         disp('.... removing existing collection');
-        resp = delete_renderer_stack(rctemp);
+        resp = delete_renderer_stack(rcout);
     end
-    if ~stack_exists(rctemp)
+    if ~stack_exists(rcout)
         disp('.... target collection not found, creating new collection in state: ''Loading''');
-        resp = create_renderer_stack(rctemp);
+        resp = create_renderer_stack(rcout);
     end
     
     if ntiles<opts.nchunks_ingest, opts.nchunks_ingest = ntiles;end
@@ -305,32 +298,15 @@ if ~isempty(rcout)
     disp(' .... ingesting ....');
     parfor ix = 1:numel(cs)-1
         vec = cs(ix):cs(ix+1);
-        export_to_renderer_database(rctemp, rc, dir_scratch, Tout(vec,:),...
+        export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
             tIds(vec), z_val(vec), v, opts.disableValidation);
     end
     
     
     % % complete stack
     disp(' .... completing stack...');
-    resp = set_renderer_stack_state_complete(rctemp);
+    resp = set_renderer_stack_state_complete(rcout);
 end
 disp('.... done!');
 diary off;
-
-%% step 6: translation
-
-[err,R, Tout] = system_solve_translation_support_rigid(...
-    nfirst, nlast, rctemp,...
-    pm, opts, rcout, Tout, map_id, tIds, z_val);
-delete_renderer_stack(rctemp);
-
-
-
-
-
-
-
-
-
-
 

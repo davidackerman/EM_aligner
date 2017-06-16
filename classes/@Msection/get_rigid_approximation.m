@@ -27,7 +27,7 @@ lsq_options.constraint      = 'similarity';%'explicit';% 'trivial';%
 lsq_options.constraint_only = 1;
 lsq_options.pdegree         = 1;
 lsq_options.lidfix          = 1;
-lsq_options.tfix            = numel(obj.tiles);
+lsq_options.tfix            = 1;%numel(obj.tiles);
 
 lsq_options.verbose         = 0;
 lsq_options.debug           = 0;
@@ -97,6 +97,10 @@ if ~translation_only
     else
         disp('skipping re-scaling');
     end
+    %%% sosi
+    disp('----------> SOSI get _rigid_approximation: saving mLs');
+    mLs = mL;
+    save mLs mLs Ar br Br d;
     
     %% transform point matches in order to translate
     M = mL.pm.M;
@@ -126,7 +130,7 @@ if ~translation_only
     lsq_options.pdegree         = 0;  %
     lsq_options.constraint_only = 0;
     lsq_options.lidfix          = 1;
-    lsq_options.tfix            = numel(obj.tiles);
+    lsq_options.tfix            = 1;%numel(obj.tiles);
     
     lsq_options.constrain_edges = 0;
     lsq_options.edge_lambda         = 0;

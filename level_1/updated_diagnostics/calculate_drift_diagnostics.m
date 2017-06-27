@@ -1,4 +1,5 @@
-function [ output_struct, results_table ] = calculate_drift_diagnostics( rcs, zs, point_matches, options)
+function [ output_struct, results_table ] = calculate_drift_diagnostics( ...
+    rcs, zs, point_matches, options)
 %% Calculates drifts in terms of cross section residuals
 % Calculates the cross section residuals for all collections in rc. If
 % plotting is desired, the cross section residuals are plotted as well as

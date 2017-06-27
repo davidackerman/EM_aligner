@@ -1,5 +1,5 @@
-function [D, I, x1, y1] = detect_jumps_drift_warps(...
-    rc, rc_vec, nfirst, nlast, nprobes, delta, delta_z, scale, x1, y1)
+function [D, I, x1, y1, slabs] = detect_jumps_drift_warps(...
+    rc, rc_vec, nfirst, nlast, nprobes, delta, nslabs, scale, x1, y1)
 % evaluate alignment by detecting drift, jumps or warps at a specified number
 % nspots of spots based on corr2 (in jump_detection.m). this is done for each
 % slab of thickness delta_z sections
@@ -24,8 +24,10 @@ end
 
 
 %% determine slabs
+delta_z = floor((nlast-nfirst)/nslabs);%t
 slabs = nfirst:delta_z:nlast;
 disp(slabs);
+if numel(slabs)<2, error('Please check slab number and z range');end
 D = cell(numel(slabs)-1,1);
 I = cell(numel(slabs)-1,numel(rc_vec)+1);
 for six = 1:numel(slabs)-1

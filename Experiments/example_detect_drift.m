@@ -40,7 +40,7 @@ rc1.verbose        = 1;
 rc_vec(2) = rc1;
 
 %%
-[D, I, x1, y1]= detect_jumps_drift_warps(...
+[D, I, x1, y1, slabs]= detect_jumps_drift_warps(...
     rc, rc_vec, nfirst, nlast, nprobes, delta, delta_z, scale);
 % D is a cell array of dimensions nslabs x 1
 % nslabs is determined as nfirst:delta_z:nlast

@@ -68,7 +68,9 @@ for cix = 1:size(c,1)
             
             im1 = I{cix}(:,:,ix-1);
             im2 = I{cix}(:,:,ix);
-            D{cix}(ix-1,1) = corr2(im1, im2);
+            cres = corr2(im1, im2);
+            if isnan(cres), cres = 0;end
+            D{cix}(ix-1,1)  = cres;
             %figure;cla;imshowpair(im1, im2, 'blend');title([rc.stack ' ' num2str(D{cix}(ix-1))]);axis ij;drawnow;pause(0.3);
         end
     else

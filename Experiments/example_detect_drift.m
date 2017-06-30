@@ -2,12 +2,12 @@ clc;
 clear all;
 kk_clock;
 nfirst = 1;
-nlast  = 1000;   %
+nlast  = 100;   %
 delta = 300;  % box size in pixels for x y
-nslabs = 10;  % number of section slabs
+nslabs = 4;  % number of section slabs
 % --- if using parallel cluster make this number of CPUs
 scale = 0.5;  % box will be scaled down by this amount for faster processing
-nprobes = 10;   % number of probes (boxes) for each slab
+nprobes = 3;   % number of probes (boxes) for each slab
 
 clear rc_vec;
 

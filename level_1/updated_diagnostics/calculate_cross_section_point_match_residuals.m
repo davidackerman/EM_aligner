@@ -119,7 +119,7 @@ parfor z_index=1:unique_merged_z_number_of_elements
     % cell array for efficiency
     offsets = [T(:,3),T(:,6)];
     T(:,[3,6])=[];
-    T=reshape(T, length(T),2,2);
+    T=reshape(T, size(T,1),2,2);
     T=num2cell(T,[2,3]);
     T=cellfun(@squeeze,T,'UniformOutput',false);
     % Loop through all the required sections and calculate cross-sectional

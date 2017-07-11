@@ -1,4 +1,4 @@
-function [err,R, Tout] = system_solve_affine_with_constraint(nfirst, nlast, rc, pm, opts, rcout)
+function [err,R, Tout, Diagnostics] = system_solve_affine_with_constraint(nfirst, nlast, rc, pm, opts, rcout)
 % Fast solve and ingest of section alignment when regularizer (starting collection)
 % rc and full set of point-matches pm is provided
 % After solving, ingests solved tiles into Renderer collection rcout if non empty
@@ -24,70 +24,7 @@ function [err,R, Tout] = system_solve_affine_with_constraint(nfirst, nlast, rc, 
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-% Example usage
-%
-% nfirst = 1;
-% nlast  = 200;
-%
-% % configure rough collection
-% rc.stack          = 'FUSED_ROUGH_01';
-% rc.owner          ='flyTEM';
-% rc.project        = 'test2';
-% rc.service_host   = '10.40.3.162:8080';
-% rc.baseURL        = ['http://' rc.service_host '/render-ws/v1'];
-% rc.verbose        = 1;
-%
-% % configure fine output collection
-% rcout.stack          = ['EXP_FAFBv13_slab_' num2str(nfirst) '_' num2str(nlast) '_fine_pastix'];
-% rcout.owner          ='flyTEM';
-% rcout.project        = 'test2';
-% rcout.service_host   = '10.40.3.162:8080';
-% rcout.baseURL        = ['http://' rcout.service_host '/render-ws/v1'];
-% rcout.verbose        = 1;
-% rcout.versionNotes   = 'testing pastix for massive joint solution and distributed A generation';
-%
-% % configure point-match collection
-% pm.server           = 'http://10.40.3.162:8080/render-ws/v1';
-% pm.owner            = 'flyTEM';
-% pm.match_collection = 'v12_dmesh';
-%
-%
-%
-% % configure solver
-% opts.min_tiles = 20; % minimum number of tiles that constitute a connected component to be solved. Below this, no modification happens
-% opts.degree = 1;    % 1 = affine, 2 = second order polynomial, maximum is 3
-% opts.outlier_lambda = 1e2;  % large numbers result in fewer tiles excluded
-% opts.solver = 'backslash';%'pastix';%%'gmres';%'backslash';'pastix';
-%%%% only relevant if pastix is used as solver
-% opts.pastix.ncpus = 8;
-% opts.pastix.parms_fn = '/nobackup/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
-% opts.pastix.split = 1; % set to either 0 (no split) or 1
-
-% opts.matrix_only = 0;   % 0 = solve , 1 = only generate the matrix
-% opts.distribute_A = 1;  % # shards of A (only relevant if A is too large to keep in memory)
-% opts.dir_scratch = '/scratch/khairyk';
-% opts.min_points = 8;    % disregard pairs that have less than this number of point-matches
-% opts.max_points = 100;  % maximum number of point-matches for each pair (will randomly choose subset if more than this number is returned
-% opts.nbrs = 3;   % section neighbors to include for possible point-match search
-% opts.xs_weight = 0.5;   % weight of cross-layer point-matches relative to within-layer
-% opts.distributed = 0;
-% opts.lambda = 10.^(-5:.5:5);
-% opts.transfac = 1;%1e-5;   % smaller than 1 allows translation parameters to vary more flexibly in final solve
-% opts.nchunks_ingest = 32;  % number of chunks to ingest tiles
-
-% %opts.edge_lambda = 10^(-1);
-% opts.A = [];
-% opts.b = [];
-% opts.W = [];
-% % % configure point-match filter
-% opts.pmopts.NumRandomSamplingsMethod = 'Desired confidence';
-% opts.pmopts.MaximumRandomSamples = 1000;
-% opts.pmopts.DesiredConfidence = 99.5;
-% opts.pmopts.PixelDistanceThreshold = 1;
-% opts.verbose = 1;
-% opts.debug = 0;
+Diagnostics = struct;
 if opts.degree>1
     [err,R, Tout] = system_solve_polynomial(nfirst, nlast, rc, pm, opts, rcout);
 else
@@ -110,7 +47,7 @@ else
     diary on;
     % obtain actual section zvalues in given range their ids and also of possible reacquires
     [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
-    
+    Diagnostics.zu = zu;
     % determine W and H: used for determining deformation to decide on good lambda
     if numel(opts.lambda)>1
         webopts = weboptions('Timeout', 60);
@@ -126,9 +63,8 @@ else
     % load all tiles in this range and pool into Msection object
     disp('Loading transformations and tile/canvas ids from Renderer database.....');
     [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
-    
-    
     ntiles = size(T,1);
+    Diagnostics.ntiles = ntiles;
     disp(['..system has ' num2str(ntiles) ' tiles...']);
     %[L, map_id, tIds] = load_all_tiles(rc,zu);ntiles = numel(L.tiles);
     degree = opts.degree;
@@ -137,6 +73,7 @@ else
     ncoeff = ntiles*tdim;
     disp('....done!');diary off;diary on;
     %% Step 2: Load point-matches
+    timer_load_point_matches = tic;
     disp('** STEP 2:  Load point-matches ....');
     disp(' ... predict sequence of PM requests to match sequence required for matrix A');
     sID_all = {};
@@ -256,19 +193,19 @@ else
     % save PM M adj W -v7.3;
     % fn = [dir_scratch '/PM.mat'];
     % PM = matfile(fn);
-    
+    Diagnostics.timer_load_point_matches = toc(timer_load_point_matches);
     disp(' ..... done!');diary off;diary on;
     %% Step 3: generate row slabs of matrix A
     %%%%% Experimental: set xy to zero (after having added fictitious tile is using peg.
-    if opts.transfac<1.0  % then set x and y to 0,0 for each tile
-        % it is assumed in this case that translation has more freedom than other parameters
-        % typical case: keep everything rigid (high lambda) and really low opts.transfac
-        disp(['--- Warning: Setting all x and y to zero for starting vector']);
-        T(:,3) = 0;
-        T(:,6) = 0;
-    end
+%     if opts.transfac<1.0  % then set x and y to 0,0 for each tile
+%         % it is assumed in this case that translation has more freedom than other parameters
+%         % typical case: keep everything rigid (high lambda) and really low opts.transfac
+%         disp(['--- Warning: Setting all x and y to zero for starting vector']);
+%         T(:,3) = 0;
+%         T(:,6) = 0;
+%     end
     %%%%%%%%%%%%%%%%%%
-    
+    timer_generate_A = tic;
     disp('** STEP 3:    Generating system matrix .... ');
     split = opts.distribute_A;
     
@@ -361,6 +298,7 @@ else
     
     % build system
     A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
+    Diagnostics.timer_generate_A = toc(timer_generate_A);
     b = sparse(size(A,1), 1);
     w = cell2mat(w(:));
     Wmx = spdiags(w,0,size(A,1),size(A,1));
@@ -386,7 +324,7 @@ else
       
    % constrains tiles in the stack by using full sections 
    if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
-       if opts.sandwich % constrains tiles by sections nfirst and nlast
+       if isfield(opts, 'sandwich') && opts.sandwich % constrains tiles by sections nfirst and nlast
                disp('----------Constraining first and last section specified---------------');
                if ~isfield(opts, 'constraint_fac')
                    opts.constraint_fac = 1e15;
@@ -422,7 +360,11 @@ else
    
     K  = A'*Wmx*A + lambda;
     Lm  = A'*Wmx*b + lambda*d;
-    [x2, R] = solve_AxB(K,Lm, opts, d);
+%     timer_solve_A = tic;
+    [x2, R, Diagnostics.timer_solve_A] = solve_AxB(K,Lm, opts, d);
+%     Diagnostics.timer_solve_A = toc(timer_solve_A);
+    Diagnostics.nnz_A = nnz(A);
+    Diagnostics.nnz_K = nnz(K);
     %%%% sosi
     %disp(full([d(:) Lm(:) diag(tB) x2(:) R(:)]));
     %%%%%
@@ -431,6 +373,12 @@ else
     err = norm(A*x2-b);
     disp(['Error norm(Ax-b): ' num2str(err)]);
     Error = err;
+    Diagnostics.precision = precision;
+    Diagnostics.err = err;
+    Diagnostics.dim_A = size(A);
+    Diagnostics.res =  A*x2;
+    [Diagnostics.tile_err] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res, ntiles);
+    
     Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
     
     if opts.use_peg  % delete fictitious tile

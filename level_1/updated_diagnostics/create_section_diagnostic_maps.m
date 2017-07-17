@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 function create_section_diagnostic_maps( rc_in, output_struct_in, section_zs, options, section_maps_in )
-=======
-function [ output_args ] = create_section_diagnostic_maps( rc_in, output_struct_in, section_zs, options, section_maps_in )
->>>>>>> upstream/master
 if numel(rc_in) ~= numel(output_struct_in), error('rc and output_struct need to be the same size'); end
 if nargin<5, section_maps_provided = false; else section_maps_provided = true; end
 if section_maps_provided
@@ -83,7 +79,11 @@ if options.save_comparison_figure
     if ~isfield(options, 'save_comparison_figure_directory'), error('Need save_comparison_figure_directory if saving'); end
     if ~strcmp(options.save_comparison_figure_directory(end),'/'), options.save_comparison_figure_directory(end+1) = '/'; end
     if ~exist(options.save_comparison_figure_directory), mkdir(options.save_comparison_figure_directory); end
-    saveas(gcf,[options.save_comparison_figure_directory '/' rc_in(1).stack '_vs_' rc_in(2).stack '_section_' num2str(section_zs(z_index)) '.tif']);
+    if numel(rc_in) == 2
+        saveas(gcf,[options.save_comparison_figure_directory '/' rc_in(1).stack '_vs_' rc_in(2).stack '_section_' num2str(section_zs(z_index)) '.tif']);
+    else
+        saveas(gcf,[options.save_comparison_figure_directory '/' rc_in(1).stack '_section_' num2str(section_zs(z_index)) '.tif']);     
+    end
 end
 if ~options.visible, close(new_fig); end
 end

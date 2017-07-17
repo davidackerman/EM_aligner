@@ -1,5 +1,5 @@
 function [err,R, Tout] = system_solve_translation_support_rigid(...
-    nfirst, nlast, rc, pm, opts, rcout, T,map_id, tIds, z_val)
+    nfirst, nlast, rc, pm, opts, rcout, T,map_id, tIds, z_val, PM)
 % support function that performs translation only on a rigid rotation
 % It applies the rotation transformation to point matches prio to translation
 % estimation, then ingests a new collection (a rigid approximation)
@@ -41,79 +41,136 @@ tdim = tdim * 2;        % because we have two dimensions, u and v.
 ncoeff = ntiles*tdim;
 disp('....done!');diary off;diary on;
 %% Step 2: Load point-matches
-disp('** STEP 2:  Load point-matches ....');
-disp(' ... predict sequence of PM requests to match sequence required for matrix A');
-sID_all = {};
-fac = [];
-ismontage = [];
-count  = 1;
-for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
-    %disp(['Setting up section: ' sID{ix}]);
-    sID_all{count,1} = sID{ix};
-    sID_all{count,2} = sID{ix};
-    ismontage(count) = 1;
-    fac(count) = 1;
-    count = count + 1;
-    for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
-        if (ix+nix)<=numel(zu)
-            %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-            sID_all{count,1} = sID{ix};
-            sID_all{count,2} = sID{ix+nix};
-            ismontage(count) = 0;
-            fac(count) = opts.xs_weight/(nix+1);
-            count = count + 1;
-        end
-    end
+% disp('** STEP 2:  Load point-matches ....');
+% [M, adj, W, np] = system_solve_helper_load_point_matches(...
+%     zu, opts, pm, map_id, sID);
+% PM.M = M;
+% PM.adj = adj;
+% PM.W = W;
+% PM.np = np;
+% 
+if opts.use_peg
+%     %% generate new point-match entries to connect all tiles -- may not work for massive data yet
+%     tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
+%     if ~isempty(tvalid)
+%         M = cell(numel(tvalid),2);
+%         Weights = cell(numel(tvalid),1);
+%         adj = zeros(numel(tvalid),2);
+%         largetileix = ntiles + 1;   % linear index of fictitious tile
+%         np = zeros(1, numel(tvalid));
+%         % we need to get width and height information about all tvalid tile
+%         % we are assuming all tiles have same width and height here
+%         urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s', ...
+%             rc.baseURL, rc.owner, rc.project, rc.stack, tIds{tvalid(1)});
+%         j = webread(urlChar);
+%         W = j.width;
+%         H = j.height;
+%         for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
+%             tix = tvalid(ix);
+%             bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
+%             aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
+%                 *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
+%             bo = [aa;bb];
+%             tform = [T(tix,1) T(tix,4) 0; T(tix,2) T(tix,5) 0;T(tix,3) T(tix,6) 1];
+%             p = bo*tform;
+%             pt = p(:,1:2);
+%             M{ix,1} = bo(:,[1 2]);
+%             M{ix,2} = pt;
+%             adj(ix,:) = [tix largetileix];
+%             np(ix) = opts.peg_npoints;
+%             Weights{ix} = ones(1,opts.peg_npoints) * opts.peg_weight ;
+%         end
+%         PM.M = [PM.M;M];
+%         PM.adj = [PM.adj;adj];
+%         PM.W = [PM.W;Weights];
+%         PM.np = [PM.np;np'];
+%     end
+    T(end+1,:) = [1 0 0 1 0 0];   % add the fictitious tile
+    tIds(end+1) = {'-8888'};
+    ntiles = ntiles + 1;
+    ncoeff = ncoeff + tdim;
 end
-% clear sID
-% % perform pm requests
-disp('Loading point-matches from point-match database ....');
-wopts = weboptions;
-wopts.Timeout = 20;
-M   = {};
-adj = {};
-W   = {};
-np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
-parfor ix = 1:size(sID_all,1)   % loop over sections
-    %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
-    if ismontage(ix)
-        [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
-            opts.min_points, opts.max_points, wopts);
-    else
-        [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
-            map_id, opts.min_points, opts.max_points, wopts, fac(ix));
-    end
-    M(ix) = {m};
-    adj(ix) = {a};
-    W(ix) = {w};
-    np(ix) = {n};
-end
-if isempty(np)
-    error('No point-matches found');
-end
-clear sID_all
-disp('... concatenating point matches ...');
-% concatenate
-M = vertcat(M{:});
-adj = vertcat(adj{:});
-W   = vertcat(W{:});
-np  = [np{:}]';
 
-PM.M = M;
-PM.adj = adj;
-PM.W = W;
-PM.np = np;
-
-if opts.filter_point_matches
-    disp('Filtering point-matches');
-    %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
-    PM = filter_pm(PM, opts.pmopts);
-end
 
 M = PM.M;
 adj = PM.adj;
 W = PM.W;
 np = PM.np;
+
+
+
+% disp(' ... predict sequence of PM requests to match sequence required for matrix A');
+% sID_all = {};
+% fac = [];
+% ismontage = [];
+% count  = 1;
+% for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
+%     %disp(['Setting up section: ' sID{ix}]);
+%     sID_all{count,1} = sID{ix};
+%     sID_all{count,2} = sID{ix};
+%     ismontage(count) = 1;
+%     fac(count) = 1;
+%     count = count + 1;
+%     for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
+%         if (ix+nix)<=numel(zu)
+%             %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+%             sID_all{count,1} = sID{ix};
+%             sID_all{count,2} = sID{ix+nix};
+%             ismontage(count) = 0;
+%             fac(count) = opts.xs_weight/(nix+1);
+%             count = count + 1;
+%         end
+%     end
+% end
+% % clear sID
+% % % perform pm requests
+% disp('Loading point-matches from point-match database ....');
+% wopts = weboptions;
+% wopts.Timeout = 20;
+% M   = {};
+% adj = {};
+% W   = {};
+% np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
+% parfor ix = 1:size(sID_all,1)   % loop over sections
+%     %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
+%     if ismontage(ix)
+%         [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
+%             opts.min_points, opts.max_points, wopts);
+%     else
+%         [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
+%             map_id, opts.min_points, opts.max_points, wopts, fac(ix));
+%     end
+%     M(ix) = {m};
+%     adj(ix) = {a};
+%     W(ix) = {w};
+%     np(ix) = {n};
+% end
+% if isempty(np)
+%     error('No point-matches found');
+% end
+% clear sID_all
+% disp('... concatenating point matches ...');
+% % concatenate
+% M = vertcat(M{:});
+% adj = vertcat(adj{:});
+% W   = vertcat(W{:});
+% np  = [np{:}]';
+% 
+% PM.M = M;
+% PM.adj = adj;
+% PM.W = W;
+% PM.np = np;
+% 
+% if opts.filter_point_matches
+%     disp('Filtering point-matches');
+%     %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
+%     PM = filter_pm(PM, opts.pmopts);
+% end
+% 
+% M = PM.M;
+% adj = PM.adj;
+% W = PM.W;
+% np = PM.np;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % transform points:
 %  transform point matches according to similarity
@@ -251,7 +308,12 @@ Tout(:,6) = Translation_parms(:,2);
 %         Tr = reshape(Tr, 1,9);
 %         Tout(tix, :) = Tr(1:6);
 %     end
-
+if opts.use_peg  % delete fictitious tile
+    Tout(end,:) = [];
+    tIds(end) = [];
+    ntiles = ntiles - 1;
+    ncoeff = ncoeff - tdim;
+end
 %%
 clear x2;
 clear K Lm d tb A b Wmx tB

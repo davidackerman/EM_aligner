@@ -2,9 +2,10 @@ function [x2, R, time_total] = solve_pastix(A, b,opts)
 %%% use pastix to solve this system
 %%% example opts
 % opts.pastix.ncpus = 8;
-% opts.pastix.home = '/groups/flyTEM/flyTEM/from_tier2/denisovg/pastix_split';
+% opts.pastix.home          =  '/groups/flyTEM/flyTEM/from_tier2/denisovg/pastix_split';
 % opts.pastix.pastix_script = ['/groups/flyTEM/flyTEM/from_tier2/denisovg/pastix_split/align_tiles_mod_KK3.sh'];
-% opts.pastix.data = ['/nrs/flyTEM/khairy/FAFB00v14/matlab_production_scripts/temp_pastix_' num2str(randi(2000))];
+% opts.pastix.run_script    = ['/groups/flyTEM/flyTEM/from_tier2/denisovg/pastix_split/run_align_tiles_mod_KK3.sh'];
+% opts.pastix.data =          ['/nrs/flyTEM/khairy/FAFB00v14/matlab_production_scripts/temp_pastix_' num2str(randi(2000))];
 % opts.pastix.parms_fn = '/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt';
 % opts.pastix.split = 1; % set to 1 always -- this is not the matrix split during matrix building
 
@@ -36,7 +37,7 @@ if opts.pastix.split
     if isfield(opts.pastix, 'data')
         PASTIX_DATA = opts.pastix.data;
         PASTIX_LOG = [opts.pastix.data '/out.txt'];
-        PASTIX_ERR = [opts.pastix.data 'err.txt'];
+        PASTIX_ERR = [opts.pastix.data '/err.txt'];
         
     else
         PASTIX_DATA = '/nrs/flyTEM/khairy/FAFB00v13/matlab_large_matrix_system';
@@ -76,7 +77,7 @@ if opts.pastix.split
     
     % sosi could be parfor, but keep as for-loop for memory reasons
     for i=1:ncpus
-        disp(i);
+%         disp(i);
         col_min = 1 + tdim*(i-1)*tiles_per_worker;
         if i < ncpus
             col_max = col_min   + tdim*tiles_per_worker-1;
@@ -85,17 +86,20 @@ if opts.pastix.split
         end
         Aout = A(:, col_min:col_max);
         bout = b(col_min:col_max);
-        disp(['i=' num2str(i) ' col_min=' num2str(col_min) ' col_max=' num2str(col_max) ...
-            ' size(A)=' num2str(size(A)) ' size(b)=' num2str(size(b))]);
+%         disp(['i=' num2str(i) ' col_min=' num2str(col_min) ' col_max=' num2str(col_max) ...
+%             ' size(A)=' num2str(size(A)) ' size(b)=' num2str(size(b))]);
         output_mat_file = strcat(prefixName,'_', num2str(i), '.mat');
         save_column_range(output_mat_file, Aout,bout);
     end
-    
+    clear Aout bout;
 else
     error('non-split pastix has been deprecated');
 end
 
-%% system command to solve
+%% construct and submit system command to solve
+% Note: opts.pastix.pastix_script contains the qsub command
+%       opts.pastix.run_script contains the actual script that 
+%       envokes the pastix executable
 disp('--------');
 str = sprintf('%s %d %s %s %s %s %s %s %s', opts.pastix.pastix_script, ...
     ncpus, full_path_lin_system_fn,...
@@ -113,9 +117,22 @@ disp([ 'Pastix work directory (data):' PASTIX_DATA]);
 disp([ 'Pastix home directory (home):' PASTIX_HOME]);
 disp([ 'Pastix paramters file:       ' parms_fn]);
 type(parms_fn);
+%%% setting system environment variables:
+% curr_path = getenv('PATH');
+% curr_ld_library_path = getenv('LD_LIBRARY_PATH');
 
+% setenv('I_MPI_FABRICS', 'shm:ofa');
+% setenv('I_MPI_FALLBACK', 'disable');
+% setenv('PASTIX_HOME', PASTIX_HOME);
+% setenv('PASTIX_DATA', PASTIX_DATA);
+% setenv('PATH', ['/usr/local/matlab-2016a/bin;' getenv('PATH')]);
+% lp_str = '/usr/local/matlab-2016a/bin/glnxa64:/usr/local/matlab-2016a/runtime/glnxa64:/usr/local/matlab-2016a/sys/os/glnxa64:/usr/local/matlab-2016a/sys/java/jre/glnxa64/jre/lib/amd64/native_threads:/usr/local/matlab-2016a/sys/java/jre/glnxa64/jre/lib/amd64/server:/usr/local/matlab-2016a/sys/java/jre/glnxa64/jre/lib/amd64:$LD_LIBRARY_PATH';
+% setenv('LD_LIBRARY_PATH', [lp_str ';' getenv('LD_LIBRARY_PATH')]);
+disp('Submitting system command ...');
 [a, resp_str] = system(str);disp(resp_str);
 [a, resp_str] = system('qstat');disp(resp_str);
+% setenv('LD_LIBRARY_PATH', curr_ld_library_path);
+% setenv('PATH', curr_path);
 %% wait for response
 disp('... waiting for solution ...');
 dt = 5;

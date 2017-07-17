@@ -73,76 +73,22 @@ else
     ncoeff = ntiles*tdim;
     disp('....done!');diary off;diary on;
     %% Step 2: Load point-matches
+    kk_clock;
+    diary off;
+    diary on;
+    disp('loading point matches');
     timer_load_point_matches = tic;
-    disp('** STEP 2:  Load point-matches ....');
-    disp(' ... predict sequence of PM requests to match sequence required for matrix A');
-    sID_all = {};
-    fac = [];
-    ismontage = [];
-    count  = 1;
-    for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
-        %disp(['Setting up section: ' sID{ix}]);
-        sID_all{count,1} = sID{ix};
-        sID_all{count,2} = sID{ix};
-        ismontage(count) = 1;
-        fac(count) = 1;
-        count = count + 1;
-        for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
-            if (ix+nix)<=numel(zu)
-                %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-                sID_all{count,1} = sID{ix};
-                sID_all{count,2} = sID{ix+nix};
-                ismontage(count) = 0;
-                fac(count) = opts.xs_weight/(nix+1);
-                count = count + 1;
-            end
-        end
+    if isfield(opts, 'pm_data_file')
+        load(opts.pm_data_file);
+    else
+        
+        [M, adj, W, np] = system_solve_helper_load_point_matches(...
+            zu, opts, pm, map_id, sID);
+        PM.M = M;
+        PM.adj = adj;
+        PM.W = W;
+        PM.np = np;
     end
-    % clear sID
-    % % perform pm requests
-     disp('Loading point-matches from point-match database ....');
-    wopts = weboptions;
-    wopts.Timeout = 20;
-    M   = {};
-    adj = {};
-    W   = {};
-    np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
-    parfor ix = 1:size(sID_all,1)   % loop over sections
-        %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
-        if ismontage(ix)
-            [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
-                opts.min_points, opts.max_points, wopts);
-        else
-            [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
-                map_id, opts.min_points, opts.max_points, wopts, fac(ix));
-        end
-        M(ix) = {m};
-        adj(ix) = {a};
-        W(ix) = {w};
-        np(ix) = {n};
-    end
-    if isempty(np)
-            error('No point-matches found');
-    end
-    clear sID_all
-    disp('... concatenating point matches ...');
-    % concatenate
-    M = vertcat(M{:});
-    adj = vertcat(adj{:});
-    W   = vertcat(W{:});
-    np  = [np{:}]';
-    
-    PM.M = M;
-    PM.adj = adj;
-    PM.W = W;
-    PM.np = np;
-    
-    if opts.filter_point_matches
-        disp('Filtering point-matches');
-        %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
-        PM = filter_pm(PM, opts.pmopts);
-    end
-    
     if opts.use_peg
         %% generate new point-match entries to connect all tiles -- may not work for massive data yet
         tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
@@ -253,7 +199,8 @@ else
     J = {};
     S = {};
     w = {};
-    parfor ix = 1:split
+    % sosi---- should be parfor, but experimenting with large matrices at the moment
+    for ix = 1:split
         [I{ix}, J{ix}, S{ix}, wout, Ib{ix}, Sb{ix}] = gen_A_b_row_range(fn_split{ix}, ...
             degree, np,r_sum_vec, r(ix,1), r(ix,2));
         wout(wout==0)= [];
@@ -279,9 +226,12 @@ else
     Sb1 = cell2mat(Sb(:));clear Sb;
     disp('..... done!');
     %% save intermediate state
-%     disp('Saving state...');
-%     save temp;
-%     disp('... done!');
+    disp('SOSI: Saving state with I1 J1 S1 ... etc.');
+    kk_clock;
+    cd('/nrs/flyTEM/khairy/FAFB00v14/matlab_production_scripts/full_fafb_data')
+    save temp;
+    disp('... done!');
+    kk_clock;
     %% Step 4: Solve 
     %      beyond this stage relevant parameters: 
     %                  opts.transfac
@@ -361,6 +311,10 @@ else
     K  = A'*Wmx*A + lambda;
     Lm  = A'*Wmx*b + lambda*d;
 %     timer_solve_A = tic;
+disp('----- Solving slab -------');
+disp(['First section: ' num2str(zu(1))]);
+disp(['Last section : ' num2str(zu(end))]);
+disp('--------------------------');
     [x2, R, Diagnostics.timer_solve_A] = solve_AxB(K,Lm, opts, d);
 %     Diagnostics.timer_solve_A = toc(timer_solve_A);
     Diagnostics.nnz_A = nnz(A);

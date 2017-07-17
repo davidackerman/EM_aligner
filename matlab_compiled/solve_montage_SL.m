@@ -48,7 +48,7 @@ if sl.solver_options.use_peg
         tic;if sl.verbose, disp('-- Filtering point matches');end
         pmfopts.NumRandomSamplingsMethod = 'Desired confidence';
         pmfopts.MaximumRandomSamples = 1000;
-        pmfopts.DesiredConfidence = 99.9;
+        pmfopts.DesiredConfidence = 99.5;
         pmfopts.PixelDistanceThreshold = 0.1;
         if sl.verbose, 
             disp('using point-match filter:');

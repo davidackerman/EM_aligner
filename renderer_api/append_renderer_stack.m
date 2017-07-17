@@ -13,9 +13,17 @@ function resp = append_renderer_stack(rc, rc_base, fn, MET_format, disableValida
 %
 % Author: Khaled Khairy. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if nargin<6
 verbose = 0;
 end
+
+if rc.verbose
+    verbose = 1;
+else
+    verbose = 0;
+end
+
 if nargin<5, disableValidation = 0;end
 check_input(rc, rc_base, fn, MET_format);
 

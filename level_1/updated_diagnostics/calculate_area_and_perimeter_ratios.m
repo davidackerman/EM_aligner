@@ -5,7 +5,10 @@ function [output_struct, varargout] = calculate_area_and_perimeter_ratios( rcsou
 % options fields and their defaults:
 %    outlier_deviation_for_ratios     : 0.04 , Deviation of tile area or perimeter beyond 
 %                                              which it is considered an outlier (eg., the tile can
-%                                              vary by +/- 4% when outlier_deviation_for_ratios = 0.04)
+%                                              vary by +/- 4% when outlier_deviation_for_ratios = 0.04). 
+%                                              If an array of two values is provided, then the first and
+%                                              second values are taken to be the lower and upper cutoff
+%                                              ratios, respectively.
 %    output_data_per_tile             : true , Output values and ratios for each tile
 %    verbose                          : true , Output status
 % Output:

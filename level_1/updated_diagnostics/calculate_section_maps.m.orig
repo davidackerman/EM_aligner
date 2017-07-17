@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 function  all_section_maps = calculate_section_maps(rc, zstart, zend, verbose)
+=======
+function  all_section_maps = calculate_section_maps(rc, zstart, zend)
+>>>>>>> upstream/master
 %% Generate section maps
 % Calculates tile positions, using source renderer collection rcsource,
 % renderer collection rc, zstart and zend and verbose option.

@@ -80,15 +80,3 @@ for cix = 1:size(c,1)
 end
 
 % figure;plot(D);title(rc.stack);drawnow;
-
-
-
-
-
-
-
-
-
-
-
-

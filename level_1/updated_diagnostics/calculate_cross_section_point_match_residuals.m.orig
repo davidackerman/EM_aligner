@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 function [residuals_matrix] = calculate_cross_section_point_match_residuals(rc, point_matches, zstart, zend, varargin)
+=======
+function [residuals_matrix] = ...
+    calculate_cross_section_point_match_residuals(...
+    rc, zstart, zend, point_matches, varargin)
+>>>>>>> upstream/master
 %% Generate statistics about cross section residuals
 % Calculates cross section residuals for renderer collection rc, using
 % zstart, zend, point matches point matches and varargin. If varargin does
@@ -15,7 +21,6 @@ function [residuals_matrix] = calculate_cross_section_point_match_residuals(rc, 
 %    xs_weight                    : 0.5
 %    dir_scratch                  : '/scratch/ackermand' 
 %    plot_cross_section_residuals : false
-%    filter_point_matches         : true
 %    verbose                      : true
 % Output:
 %    residuals_matrix
@@ -81,9 +86,7 @@ if ~isfield(options, 'dir_scratch')
     warning('Will create temporary scratch directory %s which will be cleaned after', options.dir_scratch);
 end
 if ~isfield(options, 'plot_cross_section_residuals'), options.plot_cross_section_residuals = false; end
-if ~isfield(options, 'filter_point_matches'), options.filter_point_matches = true; end
 if ~isfield(options, 'verbose'), options.verbose = true; end
-
 
 % Create scratch directory and change to it
  dir_current = pwd;
@@ -119,28 +122,20 @@ parfor z_index=1:unique_merged_z_number_of_elements
     % cell array for efficiency
     offsets = [T(:,3),T(:,6)];
     T(:,[3,6])=[];
-    T=reshape(T, size(T,1),2,2);
+    T=reshape(T, length(T),2,2);
     T=num2cell(T,[2,3]);
     T=cellfun(@squeeze,T,'UniformOutput',false);
     % Loop through all the required sections and calculate cross-sectional
     % residuals
     for section_step = 1:options.number_of_cross_sections
         if z_index+section_step<=unique_merged_z_number_of_elements && (unique_merged_z(z_index+section_step) - unique_merged_z(z_index) == section_step)
-            % Load the cross section point matches and adjacency matrix and filter           
+            % Load the cross section point matches and adjacency matrix
+            
             factor = options.xs_weight/(section_step+1);
-            PM=[];
-            [PM.M, PM.adj, PM.W, PM.np] = load_cross_section_pm(point_matches, section_ids_grouped_by_z_and_section_id{z_index}, section_ids_grouped_by_z_and_section_id{z_index+section_step}, ...
+            [cross_section_point_matches, adjacency, ~, ~] = load_cross_section_pm(point_matches, section_ids_grouped_by_z_and_section_id{z_index}, section_ids_grouped_by_z_and_section_id{z_index+section_step}, ...
                 map_id, options.min_points, options.max_points, webopts, factor);
-            if options.filter_point_matches
-                if isfield(options, 'pmopts')
-                    PM = filter_pm(PM, options.pmopts);
-                else
-                    PM = filter_pm(PM);
-                end
-            end
-            %PM.M is cross section point match residuals, PM.adj is
-            %adjacency matrix
-            if ~isempty(PM.M)
+            how to filter here?
+            if ~isempty(cross_section_point_matches)
                 % We now calculate the residuals for each tile pair as the
                 % average of all point match residuals between the two
                 % tiles. Below, we store the information for each pair for,
@@ -148,16 +143,16 @@ parfor z_index=1:unique_merged_z_number_of_elements
                 % in ..._next_section_tiles. ic1 assigns each unique tile
                 % number in Sn an index between 1 and
                 % length(unique(adjacency(:,1)). Likewise for ic2.
-                [~,~,ic1] = unique(PM.adj(:,1),'stable');
+                [~,~,ic1] = unique(adjacency(:,1),'stable');
                 num_unique_current_section_tiles = max(ic1);
-                [~,~,ic2] = unique(PM.adj(:,2),'stable');
+                [~,~,ic2] = unique(adjacency(:,2),'stable');
                 num_unique_next_section_tiles = max(ic2);
                 residuals_current_section_tiles = zeros(num_unique_current_section_tiles,1);
                 counts_current_section_tiles = zeros(num_unique_current_section_tiles,1);
                 residuals_next_section_tiles = zeros(num_unique_next_section_tiles,1);
                 counts_next_section_tiles = zeros(num_unique_next_section_tiles,1);
-                for i=1:size(PM.M,1)
-                    residual = mean(sqrt(sum((PM.M{i,1}*T{PM.adj(i,1)}+offsets(PM.adj(i,1),:) - (PM.M{i,2}*T{PM.adj(i,2)}+offsets(PM.adj(i,2),:))).^2,2)));
+                for i=1:size(cross_section_point_matches,1)
+                    residual = mean(sqrt(sum((cross_section_point_matches{i,1}*T{adjacency(i,1)}+offsets(adjacency(i,1),:) - (cross_section_point_matches{i,2}*T{adjacency(i,2)}+offsets(adjacency(i,2),:))).^2,2)));
                     residuals_current_section_tiles(ic1(i)) = residuals_current_section_tiles(ic1(i)) + residual;
                     residuals_next_section_tiles(ic2(i)) = residuals_next_section_tiles(ic2(i)) + residual;
                     counts_current_section_tiles(ic1(i)) = counts_current_section_tiles(ic1(i))+1;

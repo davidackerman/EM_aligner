@@ -46,8 +46,8 @@ pm(2).match_collection = 'Beautification_cross_sift_00';
 
 % If options is empty, defaults are used. If rcsource is empty, Area and
 % Periemter ratios are not calculated, unless show_deformations is true
-original_output_struct = updated_gen_diagnostics(rcsource, rc_original, zstart, zend, pm);
-beautified_output_struct = updated_gen_diagnostics(rcsource, rc_beautified, zstart, zend, pm, options);
+original_output_struct = updated_gen_diagnostics(rcsource, rc_original, pm, zstart, zend);
+beautified_output_struct = updated_gen_diagnostics(rcsource, rc_beautified, pm, zstart, zend, options);
 
 %% Plot the matrices and ratio of the two
 

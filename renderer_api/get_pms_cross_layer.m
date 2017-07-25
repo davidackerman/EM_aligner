@@ -3,14 +3,12 @@ function jj = get_pms_cross_layer(pm, sID1, sID2, wopts)
 %%%%%%%%
 
 
-
-urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-    pm(1).server, pm(1).owner, pm(1).match_collection, sID1, sID2);
-
 %%%% uncomment if using Matlab 2017a
-
+%
+% urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+%    pm(1).server, pm(1).owner, pm(1).match_collection, sID1, sID2);
 % U = matlab.net.URI(urlChar);
-% 
+%
 % if numel(pm)>1
 %     data_options_str = '?';
 %     for ix = 2:numel(pm)
@@ -23,7 +21,7 @@ urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
 %     QPs = matlab.net.QueryParameter(data_options_str);
 %     U.Query = QPs;
 % end
-% 
+%
 % try
 %     jj = webread(char(U), wopts);
 % catch err_fetch_pm
@@ -49,12 +47,25 @@ urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
 % % %disp([sID{isix} ' ---- ' sID{jsix}]);
 % % %%jj = webread(urlChar, wopts);
 try
-    jj = webread(urlChar, wopts);
+    jj = [];
+    for pix = 1:numel(pm)
+        urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+            pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1, sID2);
+        jj =[jj; webread(urlChar, wopts)];
+    end
 catch err_fetch_pm
     kk_disp_err(err_fetch_pm)
     pause(1);
-    jj = webread(urlChar,wopts); % try again
+    
+        jj = [];
+    for pix = 1:numel(pm)
+        urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+            pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1, sID2);
+        jj =[jj; webread(urlChar, wopts)];
+    end
 end
-
+if numel(pm)>1
+jj = concatenate_point_match_sets(jj);
+end
 %%%%%%%%%%%%%%%
 

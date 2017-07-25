@@ -1,4 +1,4 @@
-function [T, map_id, tIds, section_id] = load_all_transformations(rc, zu, dir_scratch)
+function [T, map_id, tIds, section_id, r, c] = load_all_transformations(rc, zu, dir_scratch)
 % fastest way to load tile transformations from a renderer collection for 
 % z-values specified in vector zu.
 % Requires specification of a scratch directory.
@@ -36,6 +36,8 @@ delete(fn_layout);
 section_id = C{1};
 tIds = C{2};
 T = [C{3}(:) C{4}(:) C{5}(:) C{6}(:) C{7}(:) C{8}(:)];
+r = C{9}(:);
+c = C{10}(:);
 
 parfor ix = 1:numel(tIds)
     count_vec(ix)= {ix};

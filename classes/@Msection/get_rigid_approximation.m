@@ -97,10 +97,10 @@ if ~translation_only
     else
         disp('skipping re-scaling');
     end
-    %%% sosi
-    disp('----------> SOSI get _rigid_approximation: saving mLs');
-    mLs = mL;
-    save mLs mLs Ar br Br d;
+%     %%% sosi
+%     disp('----------> SOSI get _rigid_approximation: saving mLs');
+%     mLs = mL;
+%     save mLs mLs Ar br Br d;
     
     %% transform point matches in order to translate
     M = mL.pm.M;

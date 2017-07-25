@@ -130,14 +130,14 @@ type(parms_fn);
 % setenv('LD_LIBRARY_PATH', [lp_str ';' getenv('LD_LIBRARY_PATH')]);
 disp('Submitting system command ...');
 [a, resp_str] = system(str);disp(resp_str);
-[a, resp_str] = system('qstat');disp(resp_str);
+[a, resp_str] = system('bjobs');disp(resp_str);
 % setenv('LD_LIBRARY_PATH', curr_ld_library_path);
 % setenv('PATH', curr_path);
 %% wait for response
 disp('... waiting for solution ...');
 dt = 5;
 pause(dt);
-[a, resp_str] = system('qstat');disp(resp_str);
+[a, resp_str] = system('bjobs');disp(resp_str);
 solving = 1;
 while(solving)
     fn = dir(PASTIX_DATA);

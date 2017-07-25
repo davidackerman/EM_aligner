@@ -340,13 +340,59 @@ classdef tile
             imshow(F,[]); % Display the result
         end
         function obj = set_info(obj)
-            if obj.H==0,
-                if ~isempty(obj.path)
-                info = imfinfo(obj.path);     % slow
-                obj.H = info.Height;
-                obj.W = info.Width;
-                end
-            end
+            %             if obj.H==0,
+            %                 if ~isempty(obj.path)
+            %                 info = imfinfo(obj.path);     % slow
+            %                 obj.H = info.Height;
+            %                 obj.W = info.Width;
+            %                 end
+            %             end
+            webopts = weboptions('Timeout', 60);
+            urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+                obj.server, obj.owner, obj.project, obj.stack,obj.z);
+            j = webread(urlChar, webopts);
+            jt1 = tile(j(1));
+            obj.W = jt1.W;
+            obj.H = jt1.H;
         end
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

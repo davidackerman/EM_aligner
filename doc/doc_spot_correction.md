@@ -4,11 +4,11 @@ Also, you are using Matlab 2016b and above with toolboxes: Computer Vision Syste
 
 ## Correcting a local issue with one or more full sections: re-solve locally (to correct) and ingest into same collection
 Use this only if you have calculated a better point-match set for sections that need to be corrected, or wish to solve for a local range (one or more) sections within an existing collection but using a different set of parameters.
-"system_solve_affine_with_constraints" can address the common issue with alignment quality that occurs when the point-match set is deficient or solve parameters need to be different for a certiain region.
+"system_solve_affine_with_constraints" can address the common issue with alignment quality that occurs when the point-match set is deficient or solve-parameters need to be different for a certain region.
 
 
-An example to re-solve for sections sandwiched between secionts 480 and 561 witin FAFB:
-In this case, alignment showed drifts in that region. We were able to observe this after materialzing (rendering) the whole collection. To get a better solution a new point-match set was calculated (not shown here). Since we don't want to re-solve the whole collection (which is expensive and would force us to materialize the whole collection again), we use the code below to "patch" the collection by retaining all sections the way they are exactly, and only allowing sections within the specified range to re-align. They are forced to comply with the sandwich sections 480 and 561 (which are so strongly constrained that they don't change at all). A temporary collection is generated (and deleted) in the process.
+An example to re-solve for sections sandwiched between sections 480 and 561 of FAFB:
+In this case, alignment showed drifts in that region. We were able to observe this after materialzing (rendering) the whole collection. To get a better solution, a new point-match set was calculated (not shown here) for that range. Since we don't want to re-solve the whole collection (which is expensive and would force us to materialize the whole collection again), we use the code below to "patch" the collection by retaining all sections the way they are exactly, and only allowing sections within the specified range to re-align. The sandwich sections 480 and 561 (are so strongly constrained that they don't change at all, but sections in between are free to align and deform. A temporary collection is generated (and deleted) in the process.
 
 
 ```json

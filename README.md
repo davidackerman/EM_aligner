@@ -35,6 +35,7 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 	-	Run point-match generation across layers
 	-	[Run full volume solve](doc/doc_fine.md) of (rough) collection
 -	[Diagnostics](doc/doc_diagnostics.md) information for any section, set of sections or entire collection.
+-	[Patching/spot-correction] (doc/doc_spot_correction.md) for local alignment issues.
 -	Post-stitching steps (Render images, intensity correction and CATMAID staging) will not be described here.
 
 

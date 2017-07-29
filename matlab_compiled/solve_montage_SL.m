@@ -46,8 +46,6 @@ if ~isfield(sl.solver_options, 'da'), sl.solver_options.da = 0.05;end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% iteratively solve till we don't have any highly deformed tiles
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 rctarget = sl.target_collection;
 rcsource = sl.source_collection;
 
@@ -129,9 +127,16 @@ if sl.solver_options.use_peg
     %%% --- needs to go into filter_pm_local in system_solve_helper_load_point_matches
     res = zeros(size(L.pm.M,1), 2);
     delix = [];
+    filter_by_bounds = 0;  % under testing: is this necessary and when to turn on -- necessary for section 37 FAFB
+%     try
     L.tiles(1) = L.tiles(1).set_info;
     W = L.tiles(1).W;
     H = L.tiles(1).H;
+%     catch error_tile_info
+%         kk_disp_err(error_tile_info);
+%         filter_by_bounds = 0;
+%     end
+    
     
     f = 3.5;  % larger values mean narrower permissive region
     for pix = 1:size(L.pm.M,1)
@@ -141,15 +146,16 @@ if sl.solver_options.use_peg
         dy = [m1(:,2)-m2(:,2)];
         res(pix,:) = [std(dx) std(dy)];  % std should be small for high quality point-match sets
         
-        % further filter point-match sets that are obviously wrong
-        % [1] point-matches are not allowed within a central rectangle: ratio f of the dimension
-      if any( m1(:,1)<(W-W/f) & m1(:,1)>(W/f) & m1(:,2)<(H-H/f) & m1(:,2)>(H/f))
-          delix = [delix; pix];
-          %disp(['Deleting pair: ' num2str(pix) ' Point-match set self-consistent, but outside bounds.']);
-      end
+        if filter_by_bounds
+            % further filter point-match sets that are obviously out of acceptable bounds
+            % [1] point-matches are not allowed within a central rectangle: ratio f of the dimension
+            if any( m1(:,1)<(W-W/f) & m1(:,1)>(W/f) & m1(:,2)<(H-H/f) & m1(:,2)>(H/f))
+                delix = [delix; pix];
+                %disp(['Deleting pair: ' num2str(pix) ' Point-match set self-consistent, but outside bounds.']);
+            end
+            disp(['Section: ' num2str(L.z) ' -- Removing ' num2str(numel(delix)) ' point-match sets outside bounds']);
+        end
     end
-    disp(['Section: ' num2str(L.z) ' -- Removing ' num2str(numel(delix)) ' point-match sets outside bounds']);
-    
     
     thresh = 8;%0.9;
     disp(max(res));
@@ -161,10 +167,10 @@ if sl.solver_options.use_peg
     disp(['Total current point-match sets: ' num2str(size(L.pm.M,1))]);
     disp(['deleting ' num2str(numel(delix)) ' point-match sets: '])
     disp(delix);
-%     
-%     figure; hist(res(:,1), 30);title('histogram of standard deviations for point-matches -- x');
-%     figure; hist(res(:,2), 30);title('histogram of standard deviations for point-matches -- y');
-%     drawnow;
+    %
+    %     figure; hist(res(:,1), 30);title('histogram of standard deviations for point-matches -- x');
+    %     figure; hist(res(:,2), 30);title('histogram of standard deviations for point-matches -- y');
+    %     drawnow;
     
     L.pm.M(delix,:) = [];
     L.pm.adj(delix,:) = [];

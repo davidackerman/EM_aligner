@@ -4,9 +4,14 @@ function [M, adj, W, np, discard] = system_solve_helper_load_point_matches(...
 % ilter them,
 % and after that select points randomly to limit the size of
 % point-matches block
+% check inputs and set defaults
 if nargin<7  % then we don't use row/col information
     r = [];
     c = [];
+end
+if ~isfield(opts, 'Width')  % if not set, then assume FAFB
+    opts.Width = 2160;
+    opts.Height = 2560;
 end
 spmd
     warning('off', 'vision:obsolete:obsoleteFunctionality');
@@ -63,9 +68,18 @@ for ix = 1:size(sID_all,1)   % loop over sections
     %%% filter set of point-matches for this pair
     if opts.filter_point_matches
         if sum(n)
-            warning off;
-            [m, w, a, n] = filter_pm_local(m, w, a, n, opts.pmopts);
-            warning on;
+            %%% additional consistency filtering is done only on montages
+            %%% that are regular (i.e. don't have re-acquires)
+            if ismontage(ix) && numel(sID_all{ix,1})==1
+                filter_consistency = 1;
+                Width = opts.Width;
+                Height = opts.Height;
+            else
+                filter_consistency = 0;
+                Width = [];
+                Height = [];
+            end
+            [m, w, a, n] = filter_pm_local(m, w, a, n, opts.pmopts, filter_consistency, Width, Height);
         end
     end
     % loop over point-match sets: reduce to max_points if necessary
@@ -118,7 +132,7 @@ discard = setdiff(1:ntiles, unique(adj(:)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
-function [M, W, adj, np] = filter_pm_local(M, W, adj, np, opts)
+function [M, W, adj, np] = filter_pm_local(M, W, adj, np, opts, montage_flag, width, height)
 warning off;
 
 if nargin < 2
@@ -179,5 +193,46 @@ M(del_ix,:) = [];
 W(del_ix) = [];
 adj(del_ix,:) = [];
 np(del_ix) = [];
+
+if montage_flag  % additional filterig for montages is required/can be done
+    [M, W, adj, np] = filter_pm_consistency(M, W, adj, np, 8, width, height);
+end
+function [M, W, adj, np] = filter_pm_consistency(M, W, adj, np, thresh, w, h)
+% for regular montages we need additionally to filter out point-match sets that
+% are not consistent in their x y values
+res = zeros(size(M,1), 2);
+if ~isempty(w) && w>0
+filter_by_bounds = 1;
+else
+    filter_by_bounds = 0;
+end
+delix = [];
+f = 3.5;  % larger values mean narrower permissive region
+for pix = 1:size(M,1)
+    m1 = M{pix,1};
+    m2 = M{pix,2};
+    dx = [m1(:,1)-m2(:,1)];
+    dy = [m1(:,2)-m2(:,2)];
+    res(pix,:) = [std(dx) std(dy)];  % std should be small for high quality point-match sets
+    
+    if filter_by_bounds
+        % further filter point-match sets that are obviously out of acceptable bounds
+        % [1] point-matches are not allowed within a central rectangle: ratio f of the dimension
+        if any( m1(:,1)<(w-w/f) & m1(:,1)>(w/f) & m1(:,2)<(h-h/f) & m1(:,2)>(h/f))
+            delix = [delix; pix];
+%           disp(['Deleting pair: ' num2str(pix) ' Point-match set self-consistent, but outside bounds.']);
+        end
+%         disp(['Section: ' num2str(L.z) ' -- Removing ' num2str(numel(delix)) ' point-match sets outside bounds']);
+    end
+    
+end
+delix = [delix; find(res(:,2)>thresh)];
+delix = [delix; find(res(:,1)>thresh)];
+delix = unique(delix(:));
+M(delix,:) = [];
+adj(delix,:) = [];
+W(delix) = [];
+np(delix) = [];
+
 
 

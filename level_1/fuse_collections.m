@@ -363,7 +363,7 @@ parfor nix = 1:numel(chnks)
         % upload TEM files in here
         disableValidation = 0;
         resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1', disableValidation, 0);
-        disp(resp_append)
+        %disp(resp_append)
         try
             delete(fn);
         catch err_delete,
@@ -398,5 +398,6 @@ end
 toc
 
 %% Complete the stack
-disp('Complete stack')
+disp('Completing stack')
 resp = set_renderer_stack_state_complete(rcout);
+disp('Done ----');

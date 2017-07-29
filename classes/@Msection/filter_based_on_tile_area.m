@@ -16,7 +16,7 @@ if nargin<2
 elseif isstruct(lambda)
     lambda = lambda.lambda;
 end
-disp(['filtering outliers based on perimeter using lambda = ' num2str(lambda)]);
+%disp(['filtering outliers based on perimeter using lambda = ' num2str(lambda)]);
 A = [];
 S = [];
 obj = update_tile_info(obj);		% we don't need adjacency information in this file, but make sure tile info is up to date

@@ -11,7 +11,7 @@ if ~stack_exists(rcto)
 end
 
 % configure
-verbose = 1;
+verbose = 0;
 translate_to_positive_space = 0;
 complete = 0;
 disableValidation = 0;

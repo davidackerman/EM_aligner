@@ -12,7 +12,7 @@ In this case, alignment showed drifts in that region. We were able to observe th
 
 
 ```json
-{
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % configure
 diary on;
@@ -146,26 +146,6 @@ end
 set_renderer_stack_state_complete(rcfixed);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}
 
 ```
 

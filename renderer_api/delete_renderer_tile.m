@@ -54,10 +54,10 @@ for idx = 1:number_of_tiles_to_delete
     
     if strfind(resp{idx}, 'caught exception')
         disp(resp{idx});
-        error('delete_renderer_tile: server-side error reported');
+        warning('delete_renderer_tile: server-side error reported --- tile not found in this collection?');
     end
     
-    if verbose,
+    if verbose
         disp(status);
         disp(resp{idx});
     end

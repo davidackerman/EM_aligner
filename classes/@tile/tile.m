@@ -340,13 +340,67 @@ classdef tile
             imshow(F,[]); % Display the result
         end
         function obj = set_info(obj)
-            if obj.H==0,
-                if ~isempty(obj.path)
-                info = imfinfo(obj.path);     % slow
-                obj.H = info.Height;
-                obj.W = info.Width;
-                end
+            %             if obj.H==0,
+            %                 if ~isempty(obj.path)
+            %                 info = imfinfo(obj.path);     % slow
+            %                 obj.H = info.Height;
+            %                 obj.W = info.Width;
+            %                 end
+            %             end
+            webopts = weboptions('Timeout', 60);
+            urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+                obj.server, obj.owner, obj.project, obj.stack,obj.z);
+            try
+            j = webread(urlChar, webopts);
+            jt1 = tile(j(1));
+            obj.W = jt1.W;
+            obj.H = jt1.H;
+            catch err_cannot_read_tile_spec
+                kk_disp_err(err_cannot_read_tile_spec);
+                disp('Assuming FAFB: W = 2160, H = 2560');
+                %% assume FAFB
+                obj.W = 2160;
+                obj.H = 2560;
             end
         end
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -12,11 +12,15 @@ complete = 0;
 disableValidation = 0;
 
 for zix = 1:numel(z)
+    try
     L = Msection(rc, z(zix)); % read the section with z-value z
     [L] = filter_based_on_tile_area(L, lambda);
     indx = [L.tiles(:).state];
-    L.tiles(find(indx==-3))=[];
+    L.tiles((indx==-3))=[];
     delete_renderer_section(rc, z(zix), 0);
     ingest_section_into_renderer_database(L, rc, rcsource, dir_temp, ...
         translate_to_positive_space, complete, disableValidation);
+    catch err_filter
+        kk_disp_err(err_filter);
+    end
 end

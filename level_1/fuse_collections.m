@@ -205,45 +205,7 @@ L21t = Msection(tiles21t);
 L22t = Msection(tiles22t);
 disp('Done!');
 toc
-%% rescale global
-% if collection_start,
-%     jtiles = [tiles11(:)' tiles21t(:)' tiles22t(:)'];
-%     [zu] = [1:rcmoving.nlast];
-% else
-%     jtiles = [tiles21(:)' tiles22t(:)'];
-%     [zu] = get_section_ids(rcmoving, overlap(1), rcmoving.nlast);
-% end
-%
-% [mA, mAfit] = calculate_mean_tile_areas_by_section_and_fit(jtiles, zu);
-%
-% % apply rescaling to tiles
-% zval = [jtiles(:).z];
-% for zix = 1:numel(zu)
-%     indx = find(zvals==zu(zix));
-%     tt = [1/mAfit(zix) 0 0; 0 1/mAfit(zix) 0; 0 0 1];
-%     if zu(zix)<=overlap(2)
-%         for tix = 1:numel(indx)
-%             tiles21t(indx(tix)).tform.T = tiles21t(indx(tix)).tform.T *tt;
-%         end
-%     else
-%         for tix = 1:numel(indx)
-%             tiles22t(indx(tix)).tform.T = tiles22t(indx(tix)).tform.T *tt;
-%         end
-%     end
-% end
 
-
-%% inspect
-% % apply transformations
-% [x2, y2, tids2, L2] = get_tile_centers(rcfixed, zu2(1));
-% for tix = 1:numel(tiles21)
-%     tiles21t(tix).tform.T = tiles21(tix).tform.T *T;
-% end
-% figure;
-%
-% show_map(L2);drawnow; % first overlap section of fixed
-% hold on;
-% plot(x2, y2, '*b');
 %% interpolate: tiles in L21t need to be modified to comply with interpolation
 %
 tic
@@ -280,7 +242,7 @@ toc
 %%
 disp('Assembling slab composed of transformed (and interpolated) sections ...');
 tic
-if collection_start,
+if collection_start
     
     disp('-- collection start: assembling full set');
     L = Msection([tiles11(:)' tiles21t(:)' tiles22t(:)']);
@@ -293,26 +255,6 @@ toc
 disp('Done!');
 
 
-%% inspect rescaling
-
-%[mA, mAfit] = calculate_mean_tile_areas_by_section_and_fit(L.tiles, zu);
-
-
-%% inspection
-% % close all;
-% %%% compare result overlap(1) with original overlap(1) (in rcfixed)
-% figure;
-% zmL21t = split_z(L21t);
-% show_map(zmL21t(1)); % first overlap section of moving
-% %hold on;
-% %plot(Btx, Bty, '*r');
-%
-% hold on;
-% L12t = Msection(tiles12);
-% ll12t = split_z(L12t);
-% show_map(ll12t(1));drawnow; % first overlap section of fixed
-% hold on;
-% %plot(A(:,1), A(:,2), '*b');
 %% export to collection
 %%% ingest into renderer database as rough collection
 tic
@@ -334,24 +276,6 @@ end
 
 %%
 
-%     % %%%%%%%%%%%%%%%%%%%%% sosi -----> slow %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     disp('-- Splitting into sections to prepare for distributed ingestion');
-%     zmL = split_z(L);
-%     disp('-- Start distributed process to populate new renderer collection');
-%     resp_append = {};
-%     translate_to_positive_space = 0;
-%     complete = 0;
-%     parfor ix = 1:numel(zmL)
-%         %disp(ix);
-%         resp = ingest_section_into_renderer_database(zmL(ix), ...
-%             rcout, rcsource, pwd, translate_to_positive_space, complete);
-%     end
-%     resp = set_renderer_stack_state_complete(rcout);
-%     disp('Done!');
-% 
-%     % %%%%%%%%%%%%%%%%%%%%% just distribute MET file generation and ingestion
-                             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 if ~stack_exists(rcout)
     disp('Target collection not found, creating new collection in state: ''Loading''');
@@ -367,7 +291,7 @@ end
 alltiles = L.tiles;
 chnks = {};
 count = 1;
-nc = 100;
+nc = 10000;
 ntiles = numel(alltiles);
 nix = 1;
 while count<ntiles
@@ -438,8 +362,8 @@ parfor nix = 1:numel(chnks)
     if isempty(grid_account)
         % upload TEM files in here
         disableValidation = 0;
-        resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1', disableValidation);
-        disp(resp_append)
+        resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1', disableValidation, 0);
+        %disp(resp_append)
         try
             delete(fn);
         catch err_delete,
@@ -474,5 +398,6 @@ end
 toc
 
 %% Complete the stack
-disp('Complete stack')
+disp('Completing stack')
 resp = set_renderer_stack_state_complete(rcout);
+disp('Done ----');

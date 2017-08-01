@@ -1,26 +1,23 @@
-function [obj, A, S] = filter_based_on_tile_area(obj, lambda)
-% Marks spurious tiles (highly deformed) with a state of -3, based on
-% deviation from mean of a distribution of tile perimeter.
+function [obj, A, S, indx, delIds] = filter_based_on_tile_area_threshold(obj, da)
+% deletes spurious tiles (highly deformed)  based on
+% deviation from tile area and perimeter ratio from expected.
 % This is a heuristic, since highly deformed tiles tend to be long and thin
-% perimeter is a better indicator than surface area.
-% Input
-% consider merging with detect_spurious_tiles.m
-% Used by "concatenate_tiles.m"
+% perimeter is a better indicator than surface area in some cases.
 %
 %
-% Author: Khaled Khairy. FlyTEM team project. Janelia Research Campus
+% Author: Khaled Khairy. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if nargin<2
-    lambda = 1.0;
-elseif isstruct(lambda)
-    lambda = lambda.lambda;
+    da = 0.05;
 end
-%disp(['filtering outliers based on perimeter using lambda = ' num2str(lambda)]);
+disp(['filtering outliers based on deviation from 1.0 using delta +- of ' num2str(da)]);
 A = [];
 S = [];
+obj.update_tile_info_switch = -1;
 obj = update_tile_info(obj);		% we don't need adjacency information in this file, but make sure tile info is up to date
-
+Ao = obj.tiles(1).W*obj.tiles(1).H;
+So = obj.tiles(1).W * 2 + obj.tiles(1).H * 2;
 % assuming all tiles have the same transformation model
 if strcmp(class(obj.tiles(1).tform), 'affine2d')
     affine = 1;
@@ -51,30 +48,53 @@ parfor ix = 1:numel(tiles)
     else
         P = transformPointsInverse(tiles(ix).tform,[Px Py]);
     end
+    d(ix) = det(tiles(ix).tform.T);
     % check polygon area
-    A(ix) = polyarea(P(:,1), P(:,2));
+    A(ix) = polyarea(P(:,1), P(:,2))/Ao;
     % add polygonperimeter
     s = 0;
     s = s + sqrt((P(1,1)-P(2,1)).^2 + (P(1,2)-P(2,2)).^2);
     s = s + sqrt((P(2,1)-P(3,1)).^2 + (P(2,2)-P(3,2)).^2);
     s = s + sqrt((P(3,1)-P(4,1)).^2 + (P(3,2)-P(4,2)).^2);
     s = s + sqrt((P(1,1)-P(4,1)).^2 + (P(1,2)-P(4,2)).^2);
-    S(ix) = s;
+    S(ix) = s/So;
     % translation
     %trans(ix,:) =[x y]; 
 end
 
-%[mu,sig] = normfit(S); % estimates mean and standard deviation
-
-sig = std(S);
-mu = median(S);
+% indx = find(abs(1-A)>da);
+% indx = [indx find(abs(1-S)>da)];
 
 
-indx = [find(S<(mu-lambda*sig)) find(S>(mu+lambda*sig))];
-indx = [indx find(A<(median(A)-lambda*std(A))) find(A>(median(A)+lambda*std(A)))];
-for ix = 1:numel(indx)
-    %disp(['Outlier tile found: ' num2str(indx(ix)) ' .... setting state to -3.']);
-    
-    obj.tiles(indx(ix)).state = -3;
-end
+indx = find(abs(1-d)>da);
+delIds = {obj.tiles(indx).renderer_id};
+obj.tiles(indx) =[];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

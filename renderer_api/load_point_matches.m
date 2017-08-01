@@ -12,6 +12,7 @@ function [L, tIds, PM, pm_mx, sectionId, z, time_pm_load] = load_point_matches(n
 %        nbr: number of neighboring sections to consider
 %        min_points: minimum number of points between two tiles
 %        xs_weight: weight factor for cross-section point matches
+%        section_information: if provided, is used rather than calling get_section_ids
 % Output: Msection object L with field pm (which is a struct with fields M, adj, W and np), and tileIds
 %         M: is a cell array of size npx2, e.g. a set of point matches is given by M{1,1} for xy of
 %         the first set of points and M{1,2} for xy of the matching points
@@ -375,3 +376,4 @@ end
 if ~(size(bb,1)==size(L.pm.adj,1))
     warning('Rows in L.pm.adj should be unique');
 end
+

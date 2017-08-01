@@ -1,5 +1,5 @@
 function [L, tIds, PM, pm_mx, sectionId, z, time_pm_load] = load_point_matches(nfirst, ...
-    nlast, rc, pm, nbr, min_points, xs_weight, max_points)
+    nlast, rc, pm, nbr, min_points, xs_weight, max_points, section_information)
 % loads point-matches (montage and crosslayer) from one point-match struct or more if pm is an array
 % of point-match structs. Returns Msection object with both tiles and point-matches
 % arranged in a way that point-matches can directly be used to populate a system matrix A
@@ -43,6 +43,7 @@ if nargin < 5, nbr = 4; end  % number of neighbors to check
 if nargin < 6, min_points = 0; end
 if nargin < 7, xs_weight = 1; end
 if nargin < 8, max_points = inf; end
+if nargin < 9, section_information = []; end
 verbose = 1;
 if isfield(pm(1), 'verbose')
     verbose = pm(1).verbose;
@@ -75,7 +76,13 @@ end
 %         count = count + 1;
 %     end
 % end
-[zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
+if isempty(section_information)
+    [zu, sID, sectionId, z, ns] = get_section_ids(rc, nfirst, nlast);
+else
+    zu = section_information.zu;
+    sID = section_information.sID;
+    ns = section_information.ns;
+end
 %% get a list of all tiles for those sections
 if ~isfield(rc, 'verbose'), rc.verbose = 0;end
 options = weboptions;
@@ -307,14 +314,14 @@ for ix = 1:numel(zu)   % loop over sections
     if verbose > 0
         disp(['Building cross point-match set for section ' num2str(ix) ' of ' num2str(numel(zu))]);
     end
-    if ~isempty(PM(1).M)
+   % if ~isempty(PM(1).M)
     if ~isempty(PM(ix).M)
     M = [M;PM(ix).M];
     adj = [adj;PM(ix).adj];
     W   = [W;PM(ix).W];
     np   = [np;PM(ix).np(:)];
     end
-    end
+    %end
     for nix = 1:nbr   % loop over neighboring sections
         if  ~(numel(xPM{nix})==1 && isempty(xPM{nix}.M))
             if numel(xPM{nix})>=ix

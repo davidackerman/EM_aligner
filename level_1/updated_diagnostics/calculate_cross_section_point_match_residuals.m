@@ -1,4 +1,4 @@
-function [residuals_matrix] = calculate_cross_section_point_match_residuals(rc, point_matches, zstart, zend, varargin)
+function [median_residuals_matrix, max_residuals_matrix] = calculate_cross_section_point_match_residuals(rc, point_matches, zstart, zend, varargin)
 %% Generate statistics about cross section residuals
 % Calculates cross section residuals for renderer collection rc, using
 % zstart, zend, point matches point matches and varargin. If varargin does
@@ -98,7 +98,8 @@ webopts = weboptions('Timeout', 60);
 %  Column 1   |   Column 2   |   Column 3   |   Column 4
 % Sn -> Sn+1  |  Sn -> Sn+2  |  Sn+1 -> Sn  |  Sn+2 - > Sn 
 unique_merged_z_number_of_elements = numel(unique_merged_z);
-simplified_residuals_matrix=zeros(unique_merged_z_number_of_elements,options.number_of_cross_sections*2);
+simplified_median_residuals_matrix=zeros(unique_merged_z_number_of_elements,options.number_of_cross_sections*2);
+simplified_max_residuals_matrix=zeros(unique_merged_z_number_of_elements,options.number_of_cross_sections*2);
 
 % Print out status and loop through all unique zs
 if options.verbose
@@ -114,7 +115,8 @@ parfor z_index=1:unique_merged_z_number_of_elements
     % new_residuals_values will store the residuals as:
     % [ Sn -> Sn+1 ,  Sn -> Sn+2  ,  Sn+1 -> Sn  ,  Sn+2 -> Sn ]
     % Necessary to have this variable because of parfor
-    new_residuals_values=NaN(1,options.number_of_cross_sections*2);
+    new_median_residuals_values=NaN(1,options.number_of_cross_sections*2);
+    new_max_residuals_values=NaN(1,options.number_of_cross_sections*2);
     % Store the offsets of T separately, and convert the remainder to a
     % cell array for efficiency
     offsets = [T(:,3),T(:,6)];
@@ -168,22 +170,29 @@ parfor z_index=1:unique_merged_z_number_of_elements
                 % median of the mean residuals; residuals/counts provides
                 % the mean residuals between each tile and all its adjacent
                 % tiles, as stored above
-                new_residuals_values(section_step) = median(residuals_current_section_tiles./counts_current_section_tiles);
-                new_residuals_values(section_step+options.number_of_cross_sections) = median(residuals_next_section_tiles./counts_next_section_tiles);
+                new_median_residuals_values(section_step) = median(residuals_current_section_tiles./counts_current_section_tiles);
+                new_median_residuals_values(section_step+options.number_of_cross_sections) = median(residuals_next_section_tiles./counts_next_section_tiles);
+                new_max_residuals_values(section_step) = max(residuals_current_section_tiles./counts_current_section_tiles);
+                new_max_residuals_values(section_step+options.number_of_cross_sections) = max(residuals_next_section_tiles./counts_next_section_tiles);
             end
-            simplified_residuals_matrix(z_index,:) = new_residuals_values;
+            simplified_median_residuals_matrix(z_index,:) = new_median_residuals_values;
+            simplified_max_residuals_matrix(z_index,:) = new_max_residuals_values;
         end
     end
     if options.verbose, fprintf('\b|\n'); end
 end
 
 % Create the full residuals matrix
-residuals_matrix = NaN(length(unique_merged_z));
+median_residuals_matrix = NaN(length(unique_merged_z));
+max_residuals_matrix = NaN(length(unique_merged_z));
 for z_index = 1:unique_merged_z_number_of_elements
     for section_step = 1:options.number_of_cross_sections
         if z_index+section_step<=unique_merged_z_number_of_elements
-            residuals_matrix(z_index, z_index+section_step) = simplified_residuals_matrix(z_index,section_step);
-            residuals_matrix(z_index+section_step, z_index) = simplified_residuals_matrix(z_index,section_step+options.number_of_cross_sections);
+            median_residuals_matrix(z_index, z_index+section_step) = simplified_median_residuals_matrix(z_index,section_step);
+            median_residuals_matrix(z_index+section_step, z_index) = simplified_median_residuals_matrix(z_index,section_step+options.number_of_cross_sections);
+            
+            max_residuals_matrix(z_index, z_index+section_step) = simplified_max_residuals_matrix(z_index,section_step);
+            max_residuals_matrix(z_index+section_step, z_index) = simplified_max_residuals_matrix(z_index,section_step+options.number_of_cross_sections);
         end
     end
 end
@@ -195,8 +204,8 @@ if options.plot_cross_section_residuals
     figure();
     Outer = get(gca,'OuterPosition');
     set(gca,'OuterPosition',[Outer(1)+0.05 Outer(2) + 0.05 Outer(3)-0.05 Outer(4)-0.05])
-    max_residuals_matrix = max(residuals_matrix(:));
-    imshow(residuals_matrix/max_residuals_matrix);
+    max_residuals_matrix = max(median_residuals_matrix(:));
+    imshow(median_residuals_matrix/max_residuals_matrix);
     label_spacing = max(1,floor(length(all_z)/10));
     set(gca,'XTick',(1:label_spacing:length(all_z)),'XTickLabel',all_z(1:label_spacing:end));
     set(gca,'YTick',(1:label_spacing:length(all_z)),'YTickLabel',all_z(1:label_spacing:end));

@@ -4,9 +4,9 @@ function point_match_optimization(rc, tile_1_id, tile_2_id, SIFT_options, SURF_o
 % SIFT_options and SURF_options. url_options is used to render the tiles.
 % An image is created with both tiles and the point matches between them.
 % The figure's visibility is set to figure_visiblity and it is saved to
-% result_output_directory in a subdirectory titled based on the tile ids.
-% Arrays of values can be used for the SIFT and SURF options fields to
-% allow for testing of multiple parameter sets. eg.
+% result_output_directory in a subdirectory titled based on the stack and
+% tile ids. Arrays of values can be used for the SIFT and SURF options
+% fields to allow for testing of multiple parameter sets. eg.
 % SIFT_options.renderScale = [0.4, 0.5, 0.6];
 %
 % SIFT_options struct fields and their defaults:
@@ -78,7 +78,7 @@ function point_match_optimization(rc, tile_1_id, tile_2_id, SIFT_options, SURF_o
 
 %% Make the output directory and run SIFT and SURF if applicable
 sorted_tile_ids = sort({tile_1_id, tile_2_id});
-result_output_directory = [result_output_directory '/' sorted_tile_ids{1} '_and_' sorted_tile_ids{2}];
+result_output_directory = [result_output_directory '/' rc.stack '/' sorted_tile_ids{1} '_and_' sorted_tile_ids{2}];
 system(['mkdir -p ' result_output_directory]);
 if ~isempty(SIFT_options)
     find_SIFT_point_matches(rc, tile_1_id, tile_2_id, SIFT_options, url_options, result_output_directory, figure_visibility);
@@ -231,7 +231,7 @@ for i = 1:numel(SURF_options.renderScale)
     current_im1 = imresize(im1, SURF_options.renderScale(i));
     current_im2 = imresize(im2, SURF_options.renderScale(i));
     suppress_error = true;
-    [m12_2, m12_1, fh]=find_new_point_matches(current_im1, current_im2, figure_visibility, suppress_error);
+    [m12_2, m12_1, fh]=find_point_matches_with_matlab(current_im1, current_im2, 'SURF', figure_visibility, suppress_error);
     parameter_string = ['renderScale_' num2str(SURF_options.renderScale(i))];
     title_string = [{['renderScale: ' num2str(SURF_options.renderScale(i))]}];
     parameter_string = strrep(parameter_string,'.','p');

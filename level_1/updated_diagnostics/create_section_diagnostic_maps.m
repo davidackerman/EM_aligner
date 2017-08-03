@@ -25,7 +25,6 @@ for z_index=1:numel(section_zs)
         output_struct = output_struct_in(index_to_compare);
         map_options=[];
         current_z = section_zs(z_index);
-        ratio_bounds = [1-options.outlier_deviation_for_ratios,1+options.outlier_deviation_for_ratios];
         if section_maps_provided
             all_section_maps = section_maps_in(index_to_compare);
         else
@@ -36,6 +35,7 @@ for z_index=1:numel(section_zs)
         subplot(number_of_rows,num_to_compare,plot_count);
         
         if isfield(output_struct, 'Area')
+            ratio_bounds = [1-options.outlier_deviation_for_ratios,1+options.outlier_deviation_for_ratios];
             areas = output_struct.Area.ratios{z_index};
             areas(areas<=ratio_bounds(1)) = -Inf;
             areas(areas>=ratio_bounds(2)) = Inf;

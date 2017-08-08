@@ -21,7 +21,7 @@ function [ output_struct ] = calculate_montage_point_match_residuals(...
 %    output_struct:           Contains all tile-tile mean residuals, median
 %                             of mean tile residuals (averaged over all tile-tile pairs), number of
 %                             outliers of the median of mean residuals, outlier tile ids, number of
-%                             unconnected tiles and the ids of unconnected tiles median of mean tile
+%                             unconnected tiles and the ids of unconnected tiles median and max of mean tile
 %                             residuals.
 % Author: Khaled Khairy, David Ackerman
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -141,7 +141,11 @@ parfor z_index = 1:numel(unique_merged_z)
     %% Determine residual outliers
     % Separate connected and unconnected tiles
     [~, do_tiles_appear_in_adj] =ismember((1:numel(L.tiles)),unique(L.pm.adj(:)));
-    unconnected_tiles = (do_tiles_appear_in_adj == 0);
+    if numel(L.tiles)>1 % Make sure that there should be any connected tiles
+        unconnected_tiles = (do_tiles_appear_in_adj == 0);
+    else
+        unconnected_tiles = []; %Then just a single tile
+    end
     all_tile_ids{z_index} = tile_ids;
     all_unconnected_count(z_index) = sum(unconnected_tiles);
     all_unconnected_tile_ids{z_index} = tile_ids(unconnected_tiles);

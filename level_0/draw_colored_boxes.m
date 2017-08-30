@@ -12,7 +12,7 @@ c = mat2gray(data, data_bounds);
 c(is_data_nan) = NaN;
 
 for tix = 1:numel(boxes)
-    P = boxes{tix}{1}/10^4;   % patch for this tile
+    P = boxes{tix}{1};   % patch for this tile
    % P(:,1) = 23-P(:,1);
    % P(:,2) = 14.5-P(:,2);
     if isnan(c(tix))
@@ -33,7 +33,7 @@ end
 title(options.label_str{1});
 daspect([1 1 1]);axis ij; h = colorbar; set(h, 'ylim', [0,1],'ytick',(0:.25:1),'yticklabel',round(100*(data_bounds(1):(data_bounds(2)-data_bounds(1))/4: data_bounds(2)))/100); caxis([0 1]);
 if numel(options.label_str)==2, ylabel(h,options.label_str{2}); end
-xlabel('Pixels (x10^4)');
-ylabel('Pixels (x10^4)');
+xlabel('X Pixels');
+ylabel('Y Pixels');
 box on;
 drawnow;

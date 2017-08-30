@@ -83,6 +83,7 @@ if options.output_data_per_tile, all_residuals_vector = cell(num_el,1); end
 
 all_residuals_median = zeros(num_el,1);
 all_residuals_mean = zeros(num_el,1);
+all_residuals_max = zeros(num_el,1);
 all_residuals_variance = zeros(num_el,1);
 all_tile_ids = cell(num_el,1);
 all_residuals_outlier_count = zeros(num_el,1);
@@ -98,13 +99,20 @@ if options.verbose
     fprintf('Montage Residuals Progress:');
     fprintf(['\n' repmat('.',1,num_el) '\n\n']);
 end
+[zu, sID, ~, ~, ns] = get_section_ids(rc, zstart, zend);
 parfor z_index = 1:numel(unique_merged_z)
     %% Determine point-matches and residuals for this section
     % First: load point-matches and section into "L" (point-matches are in L's pm struct field)
-    valid_zs = unique_z(floor_unique_z==unique_merged_z(z_index));
+    matching_indices = find(floor_unique_z==unique_merged_z(z_index));
+    valid_zs = unique_z(matching_indices);
+    section_information = [];
+    section_information.zu = zu(matching_indices);
+    section_information.sID = sID(matching_indices);
+    section_information.ns = ns(matching_indices);
+
     [L]  = ...
         load_point_matches(valid_zs(1), valid_zs(end), rc, point_matches, 0, ...
-        options.min_points, 0);
+        options.min_points, 0,inf, section_information);
     
     if options.filter_point_matches
         if isfield(options, 'pmopts')
@@ -141,7 +149,7 @@ parfor z_index = 1:numel(unique_merged_z)
     if options.output_data_per_tile, all_residuals_vector{z_index} = tile_residuals; end  % Store tile residuals for this section
     % Calculate median of mean tile residuals, and outliers
     only_greater_than = true;
-    [all_residuals_median(z_index), all_residuals_mean(z_index), all_residuals_variance(z_index), all_residuals_outlier_count(z_index), all_residuals_outlier_percent(z_index), all_residuals_outlier_tile_indices{z_index}, all_residuals_outlier_tile_ids{z_index}] = ...
+    [all_residuals_median(z_index), all_residuals_mean(z_index), all_residuals_max(z_index), all_residuals_variance(z_index), all_residuals_outlier_count(z_index), all_residuals_outlier_percent(z_index), all_residuals_outlier_tile_indices{z_index}, all_residuals_outlier_tile_ids{z_index}] = ...
         calculate_statistics_and_outliers(cellfun(@mean,tile_residuals), options.outlier_deviation_for_residuals, tile_ids, 'fixed_cutoff', only_greater_than);
     if options.verbose, fprintf('\b|\n'); end
 end
@@ -150,6 +158,7 @@ if options.output_data_per_tile
     output_struct.values = all_residuals_vector;
     output_struct.median_of_means = all_residuals_median;
     output_struct.mean_of_means = all_residuals_mean;
+    output_struct.max_of_means = all_residuals_max;
     output_struct.variance_of_means = all_residuals_variance;
     output_struct.all_tile_ids = all_tile_ids;
     output_struct.outlier_count = all_residuals_outlier_count;
@@ -162,6 +171,7 @@ if options.output_data_per_tile
 else
     output_struct.median_of_means = all_residuals_median;
     output_struct.mean_of_means = all_residuals_mean;
+    output_struct.max_of_means = all_residuals_max;
     output_struct.variance_of_means = all_residuals_variance;
     output_struct.outlier_count = all_residuals_outlier_count;
     output_struct.outlier_percent = all_residuals_outlier_percent;

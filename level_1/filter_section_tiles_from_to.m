@@ -1,4 +1,4 @@
-function [err_sections] = filter_section_tiles(rc, rcsource, z, dir_temp, lambda)
+function [err_sections] = filter_section_tiles_from_to(rc_filter_source, rctarget, rcsource, z, dir_temp, lambda)
 % removes all tiles whose area (transformed) / area untransformed,
 % deviates more than lambda. lambda is typically (default) 0.05
 
@@ -15,7 +15,7 @@ if numel(z)>32
     parfor_progress(numel(z));
     parfor zix = 1:numel(z)
         try
-            L = Msection(rc, z(zix)); % read the section with z-value z
+            L = Msection(rc_filter_source, z(zix)); % read the section with z-value z
             %     [L] = filter_based_on_tile_area(L, lambda);
             if isautoloader(rcsource, z(zix))
                 center = 1.15;
@@ -26,8 +26,8 @@ if numel(z)>32
             indx = [L.tiles(:).state];
             L.tiles((indx==-3))=[];
             
-            delete_renderer_section(rc, z(zix), 0);
-            ingest_section_into_renderer_database(L, rc, rcsource, dir_temp, ...
+            delete_renderer_section(rctarget, z(zix), 0);
+            ingest_section_into_renderer_database(L, rctarget, rcsource, dir_temp, ...
                 translate_to_positive_space, complete, disableValidation);
         catch err_filter
             kk_disp_err(err_filter);
@@ -39,7 +39,7 @@ if numel(z)>32
 else
     for zix = 1:numel(z)
         try
-            L = Msection(rc, z(zix)); % read the section with z-value z
+            L = Msection(rc_filter_source, z(zix)); % read the section with z-value z
             %     [L] = filter_based_on_tile_area(L, lambda);
             if isautoloader(rcsource, z(zix))
                 center = 1.12;
@@ -50,8 +50,8 @@ else
             indx = [L.tiles(:).state];
             L.tiles((indx==-3))=[];
             
-            delete_renderer_section(rc, z(zix), 0);
-            ingest_section_into_renderer_database(L, rc, rcsource, dir_temp, ...
+            delete_renderer_section(rctarget, z(zix), 0);
+            ingest_section_into_renderer_database(L, rctarget, rcsource, dir_temp, ...
                 translate_to_positive_space, complete, disableValidation);
         catch err_filter
             kk_disp_err(err_filter);

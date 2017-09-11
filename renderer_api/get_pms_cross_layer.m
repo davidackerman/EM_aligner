@@ -1,7 +1,9 @@
-function jj = get_pms_cross_layer(pm, sID1, sID2, wopts)
+function jj = get_pms_cross_layer(pm, sID1, sID2, wopts, outside_group)
 %% get point-matches between two groups (layers) sID1 and sID2
 %%%%%%%%
-
+if nargin<5
+    outside_group = false;
+end
 
 %%%% uncomment if using Matlab 2017a
 %
@@ -49,23 +51,41 @@ function jj = get_pms_cross_layer(pm, sID1, sID2, wopts)
 try
     jj = [];
     for pix = 1:numel(pm)
-        urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-            pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1, sID2);
+        if outside_group
+            urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup', ...
+                pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1);
+        else
+             urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+                pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1, sID2);
+        end
         jj =[jj; webread(urlChar, wopts)];
     end
 catch err_fetch_pm
     kk_disp_err(err_fetch_pm)
     pause(1);
-    
-        jj = [];
+    jj = [];
     for pix = 1:numel(pm)
-        urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-            pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1, sID2);
+        if outside_group
+            urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup', ...
+                pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1);
+        else
+            urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+                pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1, sID2);
+        end
         jj =[jj; webread(urlChar, wopts)];
     end
 end
+if outside_group
+    if ~isempty(jj)
+        pGroupIds = cellfun(@str2num,{jj.pGroupId});
+        qGroupIds = cellfun(@str2num,{jj.qGroupId});
+        to_remove = (pGroupIds == str2num(sID1) & (qGroupIds<str2num(sID1) | qGroupIds>str2num(sID2))) |...
+            (qGroupIds == str2num(sID1) & (pGroupIds<str2num(sID1) | pGroupIds>str2num(sID2))); %make sure only taking correct pairs
+        jj(to_remove) = []; %Delete those outside range
+    end
+end
 if numel(pm)>1
-jj = concatenate_point_match_sets(jj);
+    jj = concatenate_point_match_sets(jj);
 end
 %%%%%%%%%%%%%%%
 

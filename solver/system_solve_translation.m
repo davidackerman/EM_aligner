@@ -62,8 +62,9 @@ else
     %% Step 1: load transformations, tile ids
     % load all tiles in this range and pool into Msection object
     disp('Loading transformations and tile/canvas ids from Renderer database.....');
-    [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
-    
+        [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, zu, options.dir_scratch);
+
+    %%%[T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
     
     ntiles = size(T,1);
     disp(['..system has ' num2str(ntiles) ' tiles...']);
@@ -75,62 +76,63 @@ else
     %% Step 2: Load point-matches
     disp('** STEP 2:  Load point-matches ....');
     disp(' ... predict sequence of PM requests to match sequence required for matrix A');
-    sID_all = {};
-    fac = [];
-    ismontage = [];
-    count  = 1;
-    for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
-        %disp(['Setting up section: ' sID{ix}]);
-        sID_all{count,1} = sID{ix};
-        sID_all{count,2} = sID{ix};
-        ismontage(count) = 1;
-        fac(count) = 1;
-        count = count + 1;
-        for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
-            if (ix+nix)<=numel(zu)
-                %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-                sID_all{count,1} = sID{ix};
-                sID_all{count,2} = sID{ix+nix};
-                ismontage(count) = 0;
-                fac(count) = opts.xs_weight/(nix+1);
-                count = count + 1;
-            end
-        end
-    end
-    % clear sID
-    % % perform pm requests
-    disp('Loading point-matches from point-match database ....');
-    wopts = weboptions;
-    wopts.Timeout = 20;
-    M   = {};
-    adj = {};
-    W   = {};
-    np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
-    parfor ix = 1:size(sID_all,1)   % loop over sections
-        %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
-        if ismontage(ix)
-            [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
-                opts.min_points, opts.max_points, wopts);
-        else
-            [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
-                map_id, opts.min_points, opts.max_points, wopts, fac(ix));
-        end
-        M(ix) = {m};
-        adj(ix) = {a};
-        W(ix) = {w};
-        np(ix) = {n};
-    end
-    if isempty(np)
-        error('No point-matches found');
-    end
-    clear sID_all
-    disp('... concatenating point matches ...');
-    % concatenate
-    M = vertcat(M{:});
-    adj = vertcat(adj{:});
-    W   = vertcat(W{:});
-    np  = [np{:}]';
-    
+    [M, adj, W, np] = system_solve_helper_load_point_matches(zu, options,pm, map_id, sID, size(T,1), r, c);
+% % %     sID_all = {};
+% % %     fac = [];
+% % %     ismontage = [];
+% % %     count  = 1;
+% % %     for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
+% % %         %disp(['Setting up section: ' sID{ix}]);
+% % %         sID_all{count,1} = sID{ix};
+% % %         sID_all{count,2} = sID{ix};
+% % %         ismontage(count) = 1;
+% % %         fac(count) = 1;
+% % %         count = count + 1;
+% % %         for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
+% % %             if (ix+nix)<=numel(zu)
+% % %                 %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+% % %                 sID_all{count,1} = sID{ix};
+% % %                 sID_all{count,2} = sID{ix+nix};
+% % %                 ismontage(count) = 0;
+% % %                 fac(count) = opts.xs_weight/(nix+1);
+% % %                 count = count + 1;
+% % %             end
+% % %         end
+% % %     end
+% % %     % clear sID
+% % %     % % perform pm requests
+% % %     disp('Loading point-matches from point-match database ....');
+% % %     wopts = weboptions;
+% % %     wopts.Timeout = 20;
+% % %     M   = {};
+% % %     adj = {};
+% % %     W   = {};
+% % %     np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
+% % %     parfor ix = 1:size(sID_all,1)   % loop over sections
+% % %         %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
+% % %         if ismontage(ix)
+% % %             [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
+% % %                 opts.min_points, opts.max_points, wopts);
+% % %         else
+% % %             [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
+% % %                 map_id, opts.min_points, opts.max_points, wopts, fac(ix));
+% % %         end
+% % %         M(ix) = {m};
+% % %         adj(ix) = {a};
+% % %         W(ix) = {w};
+% % %         np(ix) = {n};
+% % %     end
+% % %     if isempty(np)
+% % %         error('No point-matches found');
+% % %     end
+% % %     clear sID_all
+% % %     disp('... concatenating point matches ...');
+% % %     % concatenate
+% % %     M = vertcat(M{:});
+% % %     adj = vertcat(adj{:});
+% % %     W   = vertcat(W{:});
+% % %     np  = [np{:}]';
+% % %     
     PM.M = M;
     PM.adj = adj;
     PM.W = W;

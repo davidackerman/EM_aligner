@@ -67,7 +67,7 @@ ncoeff = ntiles*btdim;
 disp('....done!');diary off;diary on;
 %% Step 2: Load point-matches
 [M, adj, W, np] = system_solve_helper_load_point_matches(...
-    zu, opts, pm, map_id, sID);
+    zu, opts, pm, map_id, sID, ntiles);
 PM.M = M;
 PM.adj = adj;
 PM.W = W;

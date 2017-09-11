@@ -4,6 +4,22 @@ function [M, adj, W, np, discard] = system_solve_helper_load_point_matches(...
 % ilter them,
 % and after that select points randomly to limit the size of
 % point-matches block
+% opts needs the following fields:
+%  opts.Width (optional)
+%  opts.Height (optional)
+%  opts.inverse_dz (optional)
+%  opts.nbrs
+%  opts.min_points
+%  opts.max_points
+%  opts.pmopts
+%  opts.filter_point_matches
+% Example opts.pmopts:
+% % configure point-match filter
+% opts.pmopts.NumRandomSamplingsMethod = 'Desired confidence';
+% opts.pmopts.MaximumRandomSamples = 5000;
+% opts.pmopts.DesiredConfidence = 99.9;
+% opts.pmopts.PixelDistanceThreshold = 1;
+
 % check inputs and set defaults
 if nargin<7  % then we don't use row/col information
     r = [];
@@ -15,9 +31,13 @@ if ~isfield(opts, 'Width')  % if not set, then assume FAFB
     opts.Width = 2160;
     opts.Height = 2560;
 end
+if ~isfield(opts, 'inverse_dz')
+    opts.inverse_dz = 1;
+end
 spmd
     warning('off', 'vision:obsolete:obsoleteFunctionality');
 end
+
 if ~isfield(pm,'verbose')
     for i = 1:numel(pm)
         pm(i).verbose = 1;
@@ -27,6 +47,7 @@ if pm(end).verbose
     disp('** STEP 2:  Load point-matches ....');
     disp(' ... predict sequence of PM requests to match sequence required for matrix A');
 end
+
 sID_all = {};
 if opts.outside_group
     fac = {};
@@ -68,7 +89,11 @@ for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
                 sID_all{count,1} = sID{ix};
                 sID_all{count,2} = sID{ix+nix};
                 ismontage(count) = 0;
-                fac(count) = opts.xs_weight/(nix+1);
+                if opts.inverse_dz
+                    fac(count) = opts.xs_weight/(nix+1);
+                else
+                    fac(count) = opts.xs_weight;
+                end
                 count = count + 1;
             end
         end
@@ -76,9 +101,11 @@ for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
 end
 % clear sID
 % % perform pm requests
+
 if pm(end).verbose
     disp('Loading point-matches from point-match database ....');
 end
+
 wopts = weboptions;
 wopts.Timeout = 20;
 
@@ -163,9 +190,11 @@ if isempty(np)
     error('No point-matches found');
 end
 clear sID_all
+
 if pm(end).verbose
     disp('... concatenating point matches ...');
 end
+
 % concatenate
 M = vertcat(M{:});
 adj = vertcat(adj{:});

@@ -1,4 +1,4 @@
-function [obj, A, S, indx, delIds] = filter_based_on_tile_area_threshold(obj, da)
+function [obj, A, S, indx, delIds] = filter_based_on_tile_area_threshold(obj, da, center)
 % deletes spurious tiles (highly deformed)  based on
 % deviation from tile area and perimeter ratio from expected.
 % This is a heuristic, since highly deformed tiles tend to be long and thin
@@ -11,7 +11,12 @@ function [obj, A, S, indx, delIds] = filter_based_on_tile_area_threshold(obj, da
 if nargin<2
     da = 0.05;
 end
-disp(['filtering outliers based on deviation from 1.0 using delta +- of ' num2str(da)]);
+if nargin<3
+    center = 1.0;  % expected area ratio (determinant of affine)
+end
+
+
+%disp(['filtering outliers based on deviation from 1.0 using delta +- of ' num2str(da)]);
 A = [];
 S = [];
 obj.update_tile_info_switch = -1;
@@ -66,7 +71,7 @@ end
 % indx = [indx find(abs(1-S)>da)];
 
 
-indx = find(abs(1-d)>da);
+indx = find(abs(center-d)>da);
 delIds = {obj.tiles(indx).renderer_id};
 obj.tiles(indx) =[];
 

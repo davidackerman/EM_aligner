@@ -120,84 +120,6 @@ adj = PM.adj;
 W = PM.W;
 np = PM.np;
 
-% disp('** STEP 2:  Load point-matches ....');
-% disp(' ... predict sequence of PM requests to match sequence required for matrix A');
-% sID_all = {};
-% fac = [];
-% ismontage = [];
-% count  = 1;
-% for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
-%     %disp(['Setting up section: ' sID{ix}]);
-%     sID_all{count,1} = sID{ix};
-%     sID_all{count,2} = sID{ix};
-%     ismontage(count) = 1;
-%     fac(count) = 1;
-%     count = count + 1;
-%     for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
-%         if (ix+nix)<=numel(zu)
-%             %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-%             sID_all{count,1} = sID{ix};
-%             sID_all{count,2} = sID{ix+nix};
-%             ismontage(count) = 0;
-%             fac(count) = opts.xs_weight/(nix+1);
-%             count = count + 1;
-%         end
-%     end
-% end
-% % clear sID
-% % % perform pm requests
-% disp('Loading point-matches from point-match database ....');
-% wopts = weboptions;
-% wopts.Timeout = 20;
-% M   = {};
-% adj = {};
-% W   = {};
-% np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
-% parfor ix = 1:size(sID_all,1)   % loop over sections
-%     %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
-%     if ismontage(ix)
-%         [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
-%             opts.min_points, opts.max_points, wopts);
-%     else
-%         [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
-%             map_id, opts.min_points, opts.max_points, wopts, fac(ix));
-%     end
-%     M(ix) = {m};
-%     adj(ix) = {a};
-%     W(ix) = {w};
-%     np(ix) = {n};
-% end
-% if isempty(np)
-%     error('No point-matches found');
-% end
-% clear sID_all
-% disp('... concatenating point matches ...');
-% % concatenate
-% M = vertcat(M{:});
-% adj = vertcat(adj{:});
-% W   = vertcat(W{:});
-% np  = [np{:}]';
-% 
-% PM.M = M;
-% PM.adj = adj;
-% PM.W = W;
-% PM.np = np;
-% 
-% if opts.filter_point_matches
-%     disp('Filtering point-matches');
-%     %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
-%     PM = filter_pm(PM, opts.pmopts);
-% end
-
-
-% M = PM.M;
-% adj = PM.adj;
-% W = PM.W;
-% np = PM.np;
-% cd(dir_scratch)
-% save PM M adj W -v7.3;system_solve
-% fn = [dir_scratch '/PM.mat'];
-% PM = matfile(fn);
 
 disp(' ..... done!');diary off;diary on;
 %% Step 3: generate row slabs of matrix A
@@ -275,10 +197,7 @@ S1 = cell2mat(S(:));clear S;
 Ib1 = cell2mat(Ib(:));clear Ib;
 Sb1 = cell2mat(Sb(:));clear Sb;
 disp('..... done!');
-%% save intermediate state
-%     disp('Saving state...');
-%     save temp;
-%     disp('... done!');
+
 %% Step 4: Solve for similarity
 disp('** STEP 4:   Solving ....'); diary off;diary on;
 % build system and solve it

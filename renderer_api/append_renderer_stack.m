@@ -56,7 +56,7 @@ end
 
 if strfind(resp, 'caught exception')
     disp(resp);
-    warning('append_renderer_stack: server reported an error');
+    warning('----------*********append_renderer_stack: server reported an error');
 end
 
 

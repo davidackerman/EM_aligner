@@ -1,4 +1,4 @@
-function resp = delete_renderer_tile(rc, tileIDs)
+function resp = delete_renderer_tile(rc, tileIDs, set_to_complete)
 % remove tileIDs from stack
 % tileIDs is an array of the tileIDs to be deleted
 % rc is a struct with fields (baseURL, owner, project, stack)
@@ -11,7 +11,9 @@ function resp = delete_renderer_tile(rc, tileIDs)
 if ~(iscellstr(tileIDs) || iscell(tileIDs))
     tileIDs = cellstr(tileIDs);
 end
-
+if nargin<3
+    set_to_complete = 1;
+end
 verbose = 0;
 check_input(rc);
 
@@ -62,7 +64,7 @@ for idx = 1:number_of_tiles_to_delete
         disp(resp{idx});
     end
 end
-if was_complete
+if set_to_complete
     set_renderer_stack_state_complete(rc);
 end
 %%

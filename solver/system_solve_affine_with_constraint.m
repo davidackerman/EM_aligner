@@ -9,13 +9,110 @@ function [err,R, Tout, Diagnostics] = system_solve_affine_with_constraint(nfirst
 %     regularization
 % pm: one or more (array) of point-match structs that defines (multiple)
 %     sources of point-match collections to look for point-matches
-% opts: See example opts below
+%
+% opts: options struct, example values and comments below:
+% 
+%     opts.transfac = 1e-15;                  % translation constraint (regulrization). Small values leave translation free to be optimized for
+%     opts.lambda = 10^(1);                   % general regularization parameter
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     % IMPORTANT --- PLEASE READ THE ENTIRE CONSTRAINTS STRATEGY:
+%     % If you want to use one regularizer to constrain all tiles to their original transformations
+%     % in collection rc (the source collection), then set opts.constrain_by_z to zero.
+%     % when opts.constrain_by_z is set to one, then you want to have different constraints for
+%     % different z sections. You still need to set opts.lambda as your "general" regularization parameter
+%     % which will be used for all tiles in sections for which no other rule is specified.
+%     % 
+%     % When opts.constrain_by_z is set to one, you can:
+%     % [a]  "sandwitch" your solution between
+%     % two fixed sections (in which case you set opts.sandwitch equal to 1). In this scenario the solver fixes
+%     % the sandwitching sections (nfirst and nlast) by using their "very high" constraint provided
+%     % opts.constraint_fac. This essentially fixes those two sections and uses (the generally
+%     % softer) regularization in opts.lambda for all tiles in the other sections.
+%     % Use-cases: [1]  when re-solving a local section (or small set of sections) within a larger volume, without
+%     % wanting to disturb the rest of the volume, or [2] when tissue structure biases point-matches
+%     % in such a way that the affine solution introduces unwanted artificial rotation. In this
+%     % latter case you want to solve using translation only and use this translation collection as
+%     % the "rc" source collection here.
+%     % 
+%     % [b] or you want to control precisely what the regularization will be for each section. Then
+%     % set opts.sandwitch to zero. Now the function expects a parameter opts.z_constraint, wich is
+%     % an array of dimensions n x 2 (or 3), where n is the number of sections with special lambda values.
+%     % (All tiles in other sections will simply use opts.lambda as regularization parameter).
+%     % 
+%     % for each of the n rows, each row needs three entries:
+%     %   Entry 1: z value for this section 
+%     %   Entry 2: lambda for tiles in this section
+%     %   Entry 3 (optional): lambda for translation parameters of tiles in this section. This value
+%     %                       overrides opts.transfac for this section.
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%     opts.constrain_by_z = 1;                % use special constraints (sandwitch or each z individually)
+%     opts.sandwich = 0;                      % when set to 1 constrains first z (nfirst) and last z (nlast) by opts.constraint_fac. Note: must set opts.constrain_by_z to 1.
+%     opts.constraint_fac = 1e15;             % regularization constraint for first and last z when opts.sandwich equals 1. Should be very high.
+%     opts.z_constraint =[505 1e-4; 506 1e-4];% if opts.constain_by_z equals 1 and opts.sandwich
+%                                             % equals zero, then list z-values and lambda
+%                                             % regularization for each section whose tiles should
+%                                             % have a lambda value different than opts.lambda.
+%                                             % If also translation constraint should be different
+%                                             % then list [z lambda tanslation_lambda] for each
+%                                             % section so affected.
+%     opts.degree = 1;                        % 1 = affine. Should be left equal to 1 for this function
+%     opts.solver = 'backslash';              % solver type to use: backslash, gmres, bicgstab, pastix (if installed)
+%     opts.nbrs = 4;                          % number of neighboring sections to consider point-matches for
+%     opts.nbrs_step = 1;                     % experimental. Keep equal to 1. Skips neighboring  sections if > 1
+%     opts.xs_weight = 0.1;                   % weight of cross-section point-matches / weight of montage point-matches
+%     opts.inverse_dz = 1;                    % experimental. Keep equal to 1. 0 == use full weight across neighboring sections
+%     opts.min_points = 3;                    % minimum number of point-matches needed to consider a tile-pair connected.
+%     opts.max_points = inf;                  % maximum number of point-matches allowed per tile-pair. Use inf to take all point-matches into consideration.
+%     opts.filter_point_matches = 1;          % set to 1 to filter point-matches per tile-pair using opts.pmopts struct (shown below)
+%     opts.matrix_only = 0;                   % set to 0 generally. Set to one to debug the matrix. 0 = solve , 1 = only generate the matrix
+%     opts.distribute_A = 1;                  % # shards of A. Keep 1 unless using pastix
+%     opts.dir_scratch = '/scratch/khairyk';  % scratch directory needed for point-match loading and ingestion.
+%     opts.disableValidation = 0;             % when set to 1, disables validation of tile-level bounding box performed by the Renderer service.
+%     opts.translate_to_positive_space = 0;   % should the solution slab be translated to +ve space before ingestion?
+%     opts.use_peg = 0;                       % generally used when solving for a montage 
+%                                             % or any situation where we have mutiple disconnected (point-match) 
+%                                             % clusters of tiles. Sets up a ficticious tile with connections 
+%                                             % (point-matches) to every tile, so that the matrix
+%                                             % system can be solved.
+%     opts.peg_npoints = 5;                   % if opts.use_peg is set to 1, then opts.peg_points specifies
+%                                             % the number of point-matches between each tile and the fictitions one.
+%     opts.peg_weight = 1e-4;                 % keep this number small. point-match weights to
+%                                             % fictitious tile should not dominate the solution.
+%     
+%     % configure point-match filter when opts.filter_point_matches is set to 1.
+%     % Uses Matlab's RANSAC filter (see Matlab documentation)
+%     opts.pmopts.NumRandomSamplingsMethod = 'Desired confidence';
+%     opts.pmopts.MaximumRandomSamples = 8000;
+%     opts.pmopts.DesiredConfidence = 99.9;
+%     opts.pmopts.PixelDistanceThreshold = 0.1;
+%     opts.verbose = 0;
+%     opts.debug = 0;
+%     opts.Width = 2160;   % (optional)used by system_solve_helper_load_point_matches
+%                          % sets general tile width and heigh. This is needed to exclude bad within-layer-point-matches
+%                          % for regular layers (i.e. not reacquires), as sometimes consistent (but wrong) point-matches can occur that
+%                          % are in the "middle" of tiles, i.e. do not correspond to the overlap region.
+%                          % this happens usually due to matching structure in the resin.
+%     opts.Height = 2560;  % if width and height are not set, it will assume FAFB values
+% ------------------------
+%    
 % rcout: fine-aligned output collection
 %
 % OUTPUTS:
 %   err: total error of objective system (norm(Ax-b))
 %   R  : residual of regularized system (K*x2-Lm)
 %   Tout: solution vector
+%   Diagnostics: a struct with important diagnostic information about the solution
+%   Diagnostics.timer_solve_A : time needed to solve linear system (K x Lm is what actually gets solved)
+%   Diagnostics.dim_A: dimensions of A (size(A)
+%   Diagnostics.nnz_A: number of non-zeros in original matrix A (that does not get solved)
+%   Diagnostics.nnz_K: number of non-zeros in sparse matrix K, which gets solved
+%   Diagnostics.precision: precision of matrix solution: norm(K*x-Lm)/norm(Lm)
+%   Diagnostics.err: norm of residual of the orginal system A x b (not K x Lm), given by norm(A*x-b).
+%                    This is the actual magnitude of point-match residuals and an important measure of
+%                    how well point-matches actually match given the solution.
+%  Diagnostics.tile_err: point-match error summed over each tile.
+%   
 %
 % Note 1 : For fast direct solution of large systems (>250k tiles) please
 %         install and setup PaSTiX and set opts.solver to 'pastix'
@@ -276,8 +373,8 @@ end
 if isfield(opts, 'constrain_by_z') && opts.constrain_by_z
     if isfield(opts, 'sandwich') && opts.sandwich % constrains tiles by sections nfirst and nlast
         disp('----------Constraining first and last section specified---------------');
-        if ~isfield(opts, 'constraint_fac')
-            opts.constraint_fac = 1e15;
+        if ~isfield(opts, 'constraint_fac') % check if set
+            opts.constraint_fac = 1e15;     % use default if not set
         end
         c = opts.constraint_fac;
         num_nfirst = sum(z_val==nfirst);
@@ -308,11 +405,19 @@ lambda = sparse(1:ncoeff, 1:ncoeff, lambda, ncoeff, ncoeff);
 K  = A'*Wmx*A + lambda;
 Lm  = A'*Wmx*b + lambda*d;
 %     timer_solve_A = tic;
+
 disp('----- Solving slab -------');
 disp(['First section: ' num2str(zu(1))]);
 disp(['Last section : ' num2str(zu(end))]);
 disp('--------------------------');
-[x2, R, Diagnostics.timer_solve_A] = solve_AxB(K,Lm, opts, d);   % SOLVE
+
+
+
+% SOLVE
+[x2, R, Diagnostics.timer_solve_A] = solve_AxB(K,Lm, opts, d);   
+
+
+
 %     Diagnostics.timer_solve_A = toc(timer_solve_A);
 Diagnostics.nnz_A = nnz(A);
 Diagnostics.nnz_K = nnz(K);

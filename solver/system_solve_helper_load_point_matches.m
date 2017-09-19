@@ -76,7 +76,7 @@ for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
             sID_all{count,2} = sID{second_index}; %what to do about reacquires
             ismontage(count) = 0;
             z_range = ix+1:second_index;
-            current_sID_range = cellfun(@(sIDs)sIDs{:}, sID(z_range),'uniformOutput', false);
+            current_sID_range = cellfun(@(sIDs)(sIDs{:}), sID(z_range),'uniformOutput', false);
             current_keys = strcat([sID1{1} '_'], current_sID_range);
             current_values = opts.xs_weight./(z_range -ix + 1);
             fac{count} = containers.Map(current_keys,current_values);
@@ -222,7 +222,7 @@ verbose = 0;
 %% filter point matches using RANSAC
 %warning('off', 'vision:obsolete:obsoleteFunctionality');
 geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
-geoTransformEst.Method = 'Least Median of Squares';%'Random Sample Consensus (RANSAC)'; %
+geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';%'Random Sample Consensus (RANSAC)'; %
 geoTransformEst.Transform = 'Nonreflective similarity';%'Affine'; % Valid values: 'Affine',
 geoTransformEst.NumRandomSamplingsMethod = opts.NumRandomSamplingsMethod;% 'Desired confidence';
 geoTransformEst.MaximumRandomSamples = opts.MaximumRandomSamples;%3000;

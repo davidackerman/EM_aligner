@@ -40,6 +40,8 @@ elseif length(varargin)==2
     if isstruct(varargin{2})
         unique_z = varargin{1};
         options = varargin{2};
+        zstart = unique_z(1);
+        zend = unique_z(end);
     else
         zstart = varargin{1};
         zend = varargin{2};
@@ -90,6 +92,10 @@ if options.output_data_per_tile, all_residuals_vector = cell(num_el,1); end
 all_residuals_median = zeros(num_el,1);
 all_residuals_mean = zeros(num_el,1);
 all_residuals_max = zeros(num_el,1);
+all_residuals_pair_max = zeros(num_el,1);
+all_tile_ids_residuals_pair_max = cell(num_el,1);
+all_pm_max = zeros(num_el,1);
+all_tile_ids_pm_max = cell(num_el,1);
 all_residuals_variance = zeros(num_el,1);
 all_tile_ids = cell(num_el,1);
 all_residuals_outlier_count = zeros(num_el,1);
@@ -135,6 +141,8 @@ parfor z_index = 1:numel(unique_merged_z)
     % all point matches, transforming them and calculating the mean residual
     % for each tile pair
     tile_residuals = cell(numel(tIds),1);
+    current_section_pair_max = -1;
+    current_section_pm_max = -1;
     for point_match_index = 1:size(M,1)
         adjacent_tile_1 = adj(point_match_index,1);
         adjacent_tile_2 = adj(point_match_index,2);
@@ -142,10 +150,22 @@ parfor z_index = 1:numel(unique_merged_z)
         point_matches_tile_2 = M{point_match_index,2};
         point_matches_tile_1 = [point_matches_tile_1 ones(size(point_matches_tile_1,1),1)]*[reshape(T(adjacent_tile_1,:),3,2), [0;0;1]];  % Apply transformation
         point_matches_tile_2 = [point_matches_tile_2 ones(size(point_matches_tile_2,1),1)]*[reshape(T(adjacent_tile_2,:),3,2), [0;0;1]];  % Apply transformation
-        residual = mean(sqrt((point_matches_tile_1(:,1)-point_matches_tile_2(:,1)).*(point_matches_tile_1(:,1)-point_matches_tile_2(:,1))  + (point_matches_tile_1(:,2)-point_matches_tile_2(:,2)).* (point_matches_tile_1(:,2)-point_matches_tile_2(:,2))));    %%%% sum of squared residuals
+        all_residuals = sqrt((point_matches_tile_1(:,1)-point_matches_tile_2(:,1)).*(point_matches_tile_1(:,1)-point_matches_tile_2(:,1))  + (point_matches_tile_1(:,2)-point_matches_tile_2(:,2)).* (point_matches_tile_1(:,2)-point_matches_tile_2(:,2)));       
+        residual = mean(all_residuals); 
+        current_pm_max = max(all_residuals);
         tile_residuals{adjacent_tile_1} = [tile_residuals{adjacent_tile_1} residual];  % Aggregate residuals for adjacent tile 1
         tile_residuals{adjacent_tile_2} = [tile_residuals{adjacent_tile_2} residual];  % Aggregate residuals for adjacent tile 2
+        if residual>current_section_pair_max
+            current_section_pair_max=residual;
+            all_tile_ids_residuals_pair_max{z_index} = {tIds(adjacent_tile_1), tIds(adjacent_tile_2)};
+        end
+        if current_pm_max>current_section_pm_max
+            current_section_pm_max=current_pm_max;
+            all_tile_ids_pm_max{z_index} = {tIds(adjacent_tile_1), tIds(adjacent_tile_2)};
+        end
     end
+    all_residuals_pair_max(z_index) = current_section_pair_max;
+    all_pm_max(z_index) = current_section_pm_max;
     %% Determine residual outliers
     % Separate connected and unconnected tiles
     %tile_ids = {L.tiles.renderer_id};
@@ -173,6 +193,10 @@ if options.output_data_per_tile
     output_struct.mean_of_means = all_residuals_mean;
     output_struct.max_of_means = all_residuals_max;
     output_struct.variance_of_means = all_residuals_variance;
+    output_struct.max_of_pairs = all_residuals_pair_max;
+    output_struct.tile_ids_of_pairs = all_tile_ids_residuals_pair_max;
+    output_struct.max_of_pm = all_pm_max;
+    output_struct.tile_ids_of_pm = all_tile_ids_pm_max;
     output_struct.all_tile_ids = all_tile_ids;
     output_struct.outlier_count = all_residuals_outlier_count;
     output_struct.outlier_percent = all_residuals_outlier_percent;
@@ -186,6 +210,10 @@ else
     output_struct.mean_of_means = all_residuals_mean;
     output_struct.max_of_means = all_residuals_max;
     output_struct.variance_of_means = all_residuals_variance;
+    output_struct.max_of_pairs = all_residuals_pair_max;
+    output_struct.tile_ids_of_pairs = all_tile_ids_residuals_pair_max;
+    output_struct.max_of_pm = all_pm_max;
+    output_struct.tile_ids_of_pm = all_tile_ids_pm_max;
     output_struct.outlier_count = all_residuals_outlier_count;
     output_struct.outlier_percent = all_residuals_outlier_percent;
     output_struct.outlier_tile_ids = all_residuals_outlier_tile_ids;

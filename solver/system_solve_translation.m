@@ -62,7 +62,7 @@ else
     %% Step 1: load transformations, tile ids
     % load all tiles in this range and pool into Msection object
     disp('Loading transformations and tile/canvas ids from Renderer database.....');
-        [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, zu, options.dir_scratch);
+        [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, zu, opts.dir_scratch);
 
     %%%[T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
     
@@ -76,7 +76,7 @@ else
     %% Step 2: Load point-matches
     disp('** STEP 2:  Load point-matches ....');
     disp(' ... predict sequence of PM requests to match sequence required for matrix A');
-    [M, adj, W, np] = system_solve_helper_load_point_matches(zu, options,pm, map_id, sID, size(T,1), r, c);
+    [M, adj, W, np] = system_solve_helper_load_point_matches(zu, opts,pm, map_id, sID, size(T,1), r, c);
 % % %     sID_all = {};
 % % %     fac = [];
 % % %     ismontage = [];

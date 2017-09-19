@@ -170,7 +170,7 @@ verbose = 0;
 %% filter point matches using RANSAC
 %warning('off', 'vision:obsolete:obsoleteFunctionality');
 geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
-geoTransformEst.Method = 'Least Median of Squares';%'Random Sample Consensus (RANSAC)'; %
+geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';'Least Median of Squares';% %
 geoTransformEst.Transform = 'Nonreflective similarity';%'Affine'; % Valid values: 'Affine',
 geoTransformEst.NumRandomSamplingsMethod = opts.NumRandomSamplingsMethod;% 'Desired confidence';
 geoTransformEst.MaximumRandomSamples = opts.MaximumRandomSamples;%3000;

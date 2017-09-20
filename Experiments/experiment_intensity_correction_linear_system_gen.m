@@ -1,5 +1,5 @@
 %% construct linear system for intensity correction and solve
-degree = 0;
+degree = 1;
 M = Lo.pm.M;
 adj = Lo.pm.adj;
 %% set up linear system
@@ -64,19 +64,19 @@ A = [];
 % % pair 1,2
 A = [p12 -q12];
 % 
-% % % % pair 1,3
-% A(size(p12,1)+1:size(p12,1) + size(p13,1), v1) = p13;
-% A(size(p12,1)+1:size(p12,1) + size(p13,1), v3) = -q13;
-% 
-% % % % pair 2,4
-% % sa = size(A,1);
-% % A(sa+1: sa+size(p24,1), v2) = p24;
-% % A(sa+1: sa+size(p24,1), v4) = -q24;
-% % 
-% % % % % pair 3,4
-% sa = size(A,1);
-% A(sa+1: sa+size(p34,1), v3) = p34;
-% A(sa+1: sa+size(p34,1), v4) = -q34;
+% % pair 1,3
+A(size(p12,1)+1:size(p12,1) + size(p13,1), v1) = p13;
+A(size(p12,1)+1:size(p12,1) + size(p13,1), v3) = -q13;
+
+% % pair 2,4
+sa = size(A,1);
+A(sa+1: sa+size(p24,1), v2) = p24;
+A(sa+1: sa+size(p24,1), v4) = -q24;
+
+% % % pair 3,4
+sa = size(A,1);
+A(sa+1: sa+size(p34,1), v3) = p34;
+A(sa+1: sa+size(p34,1), v4) = -q34;
 
 
 b = zeros(size(A,1),1);
@@ -91,11 +91,11 @@ v13 = Gs13_1(:)-Gs13_2(:);
 v24 = Gs24_1(:)-Gs24_2(:);
 v34 = Gs34_1(:)-Gs34_2(:);
 
-% b =   double([v12;v13;v24;v34]);
+b =   double([v12;v13;v24;v34]);
 % b =   double([-v12;-v13]);b(size(A,1)) = 0;
 % 
-b = double([v12; v13; v34]);
-b = double([v12]);
+% b = double([v12; v13; v34]);
+% b = double([v12]);
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % for the case with no prior, we fix tile 1
 % % A = A(:,tdim+1:end);

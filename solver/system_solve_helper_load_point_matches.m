@@ -308,6 +308,3 @@ M(delix,:) = [];
 adj(delix,:) = [];
 W(delix) = [];
 np(delix) = [];
-
-
-

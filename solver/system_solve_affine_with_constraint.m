@@ -111,8 +111,8 @@ function [err,R, Tout, Diagnostics] = system_solve_affine_with_constraint(nfirst
 %   Diagnostics.err: norm of residual of the orginal system A x b (not K x Lm), given by norm(A*x-b).
 %                    This is the actual magnitude of point-match residuals and an important measure of
 %                    how well point-matches actually match given the solution.
-%  Diagnostics.tile_err: point-match error summed over each tile.
-%   
+%  Diagnostics.tile_err: point-match error mean over each tile.
+%   Diagnostics.rms: root-mean-squared error for point-match over each tile.
 %
 % Note 1 : For fast direct solution of large systems (>250k tiles) please
 %         install and setup PaSTiX and set opts.solver to 'pastix'
@@ -168,64 +168,67 @@ tdim = tdim * 2;        % because we have two dimensions, u and v.
 ncoeff = ntiles*tdim;
 disp('....done!');diary off;diary on;
 %% Step 2: Load point-matches
-kk_clock;
-diary off;
-diary on;
-disp('loading point matches');
-timer_load_point_matches = tic;
-if isfield(opts, 'pm_data_file')
-    load(opts.pm_data_file);
+if isfield(opts, 'PM')
+    PM = opts.PM;
 else
-    
-    [M, adj, W, np, discard] = system_solve_helper_load_point_matches(...
-        zu, opts, pm, map_id, sID, size(T,1));
-    PM.M = M;
-    PM.adj = adj;
-    PM.W = W;
-    PM.np = np;
-end
-if opts.use_peg
-    %% generate new point-match entries to connect all tiles -- may not work for massive data yet
-    tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
-    if ~isempty(tvalid)
-        M = cell(numel(tvalid),2);
-        Weights = cell(numel(tvalid),1);
-        adj = zeros(numel(tvalid),2);
-        largetileix = ntiles + 1;   % linear index of fictitious tile
-        np = zeros(1, numel(tvalid));
-        % we need to get width and height information about all tvalid tile
-        % we are assuming all tiles have same width and height here
-        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s', ...
-            rc.baseURL, rc.owner, rc.project, rc.stack, tIds{tvalid(1)});
-        j = webread(urlChar);
-        W = j.width;
-        H = j.height;
-        for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
-            tix = tvalid(ix);
-            bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
-            aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
-                *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
-            bo = [aa;bb];
-            tform = [T(tix,1) T(tix,4) 0; T(tix,2) T(tix,5) 0;T(tix,3) T(tix,6) 1];
-            p = bo*tform;
-            pt = p(:,1:2);
-            M{ix,1} = bo(:,[1 2]);
-            M{ix,2} = pt;
-            adj(ix,:) = [tix largetileix];
-            np(ix) = opts.peg_npoints;
-            Weights{ix} = ones(1,opts.peg_npoints) * opts.peg_weight ;
-        end
-        PM.M = [PM.M;M];
-        PM.adj = [PM.adj;adj];
-        PM.W = [PM.W;Weights];
-        PM.np = [PM.np;np'];
+    kk_clock;
+    diary off;
+    diary on;
+    disp('loading point matches');
+    timer_load_point_matches = tic;
+    if isfield(opts, 'pm_data_file')
+        load(opts.pm_data_file);
+    else
+        
+        [M, adj, W, np, discard] = system_solve_helper_load_point_matches(...
+            zu, opts, pm, map_id, sID, size(T,1));
+        PM.M = M;
+        PM.adj = adj;
+        PM.W = W;
+        PM.np = np;
     end
-    T(end+1,:) = [1 0 0 1 0 0];   % add the fictitious tile
-    tIds(end+1) = {'-8888'};
-    ntiles = ntiles + 1;
-    ncoeff = ncoeff + tdim;
+    if opts.use_peg
+        %% generate new point-match entries to connect all tiles -- may not work for massive data yet
+        tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
+        if ~isempty(tvalid)
+            M = cell(numel(tvalid),2);
+            Weights = cell(numel(tvalid),1);
+            adj = zeros(numel(tvalid),2);
+            largetileix = ntiles + 1;   % linear index of fictitious tile
+            np = zeros(1, numel(tvalid));
+            % we need to get width and height information about all tvalid tile
+            % we are assuming all tiles have same width and height here
+            urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s', ...
+                rc.baseURL, rc.owner, rc.project, rc.stack, tIds{tvalid(1)});
+            j = webread(urlChar);
+            W = j.width;
+            H = j.height;
+            for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
+                tix = tvalid(ix);
+                bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
+                aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
+                    *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
+                bo = [aa;bb];
+                tform = [T(tix,1) T(tix,4) 0; T(tix,2) T(tix,5) 0;T(tix,3) T(tix,6) 1];
+                p = bo*tform;
+                pt = p(:,1:2);
+                M{ix,1} = bo(:,[1 2]);
+                M{ix,2} = pt;
+                adj(ix,:) = [tix largetileix];
+                np(ix) = opts.peg_npoints;
+                Weights{ix} = ones(1,opts.peg_npoints) * opts.peg_weight ;
+            end
+            PM.M = [PM.M;M];
+            PM.adj = [PM.adj;adj];
+            PM.W = [PM.W;Weights];
+            PM.np = [PM.np;np'];
+        end
+        T(end+1,:) = [1 0 0 1 0 0];   % add the fictitious tile
+        tIds(end+1) = {'-8888'};
+        ntiles = ntiles + 1;
+        ncoeff = ncoeff + tdim;
+    end
 end
-
 M = PM.M;
 adj = PM.adj;
 W = PM.W;
@@ -234,7 +237,6 @@ np = PM.np;
 % save PM M adj W -v7.3;
 % fn = [dir_scratch '/PM.mat'];
 % PM = matfile(fn);
-Diagnostics.timer_load_point_matches = toc(timer_load_point_matches);
 disp(' ..... done!');diary off;diary on;
 %% Step 3: generate row slabs of matrix A
 %%%%% Experimental: set xy to zero (after having added fictitious tile is using peg.
@@ -433,7 +435,7 @@ Diagnostics.precision = precision;
 Diagnostics.err = err;
 Diagnostics.dim_A = size(A);
 Diagnostics.res =  A*x2;
-[Diagnostics.tile_err] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res, ntiles);
+[Diagnostics.tile_err, Diagnostics.rms] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res, ntiles);
 
 Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations
 

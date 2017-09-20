@@ -1,4 +1,4 @@
-function [err,R, Tout] = system_solve_translation(nfirst, nlast, rc, pm, opts, rcout)
+function [err,R, Tout, PM, Diagnostics] = system_solve_translation(nfirst, nlast, rc, pm, opts, rcout)
 % Fast solve and ingest of section alignment when regularizer (starting collection)
 % rc and full set of point-matches pm is provided
 % After solving, ingests solved tiles into Renderer collection rcout if non empty
@@ -74,128 +74,197 @@ else
     ncoeff = ntiles*tdim;
     disp('....done!');diary off;diary on;
     %% Step 2: Load point-matches
-    disp('** STEP 2:  Load point-matches ....');
-    disp(' ... predict sequence of PM requests to match sequence required for matrix A');
-    [M, adj, W, np] = system_solve_helper_load_point_matches(zu, opts,pm, map_id, sID, size(T,1), r, c);
-% % %     sID_all = {};
-% % %     fac = [];
-% % %     ismontage = [];
-% % %     count  = 1;
-% % %     for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
-% % %         %disp(['Setting up section: ' sID{ix}]);
-% % %         sID_all{count,1} = sID{ix};
-% % %         sID_all{count,2} = sID{ix};
-% % %         ismontage(count) = 1;
-% % %         fac(count) = 1;
-% % %         count = count + 1;
-% % %         for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
-% % %             if (ix+nix)<=numel(zu)
-% % %                 %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-% % %                 sID_all{count,1} = sID{ix};
-% % %                 sID_all{count,2} = sID{ix+nix};
-% % %                 ismontage(count) = 0;
-% % %                 fac(count) = opts.xs_weight/(nix+1);
-% % %                 count = count + 1;
-% % %             end
-% % %         end
-% % %     end
-% % %     % clear sID
-% % %     % % perform pm requests
-% % %     disp('Loading point-matches from point-match database ....');
-% % %     wopts = weboptions;
-% % %     wopts.Timeout = 20;
-% % %     M   = {};
-% % %     adj = {};
-% % %     W   = {};
-% % %     np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
-% % %     parfor ix = 1:size(sID_all,1)   % loop over sections
-% % %         %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
-% % %         if ismontage(ix)
-% % %             [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
-% % %                 opts.min_points, opts.max_points, wopts);
-% % %         else
-% % %             [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
-% % %                 map_id, opts.min_points, opts.max_points, wopts, fac(ix));
-% % %         end
-% % %         M(ix) = {m};
-% % %         adj(ix) = {a};
-% % %         W(ix) = {w};
-% % %         np(ix) = {n};
-% % %     end
-% % %     if isempty(np)
-% % %         error('No point-matches found');
-% % %     end
-% % %     clear sID_all
-% % %     disp('... concatenating point matches ...');
-% % %     % concatenate
-% % %     M = vertcat(M{:});
-% % %     adj = vertcat(adj{:});
-% % %     W   = vertcat(W{:});
-% % %     np  = [np{:}]';
-% % %     
+k_clock;
+diary off;
+diary on;
+disp('loading point matches');
+timer_load_point_matches = tic;
+if isfield(opts, 'pm_data_file')
+    load(opts.pm_data_file);
+else
+    
+    [M, adj, W, np, discard] = system_solve_helper_load_point_matches(...
+        zu, opts, pm, map_id, sID, size(T,1));
     PM.M = M;
     PM.adj = adj;
     PM.W = W;
     PM.np = np;
-    
-    if opts.filter_point_matches
-        disp('Filtering point-matches');
-        %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
-        PM = filter_pm(PM, opts.pmopts);
-    end
-    
-    if opts.use_peg
-        %% generate new point-match entries to connect all tiles -- may not work for massive data yet
-        tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
-        if ~isempty(tvalid)
-            M = cell(numel(tvalid),2);
-            Weights = cell(numel(tvalid),1);
-            adj = zeros(numel(tvalid),2);
-            largetileix = ntiles + 1;   % linear index of fictitious tile
-            np = zeros(1, numel(tvalid));
-            % we need to get width and height information about all tvalid tile
-            % we are assuming all tiles have same width and height here
-            urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s', ...
-                rc.baseURL, rc.owner, rc.project, rc.stack, tIds{tvalid(1)});
-            j = webread(urlChar);
-            W = j.width;
-            H = j.height;
-            for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
-                tix = tvalid(ix);
-                bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
-                aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
-                    *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
-                bo = [aa;bb];
-                tform = [T(tix,1) T(tix,4) 0; T(tix,2) T(tix,5) 0;T(tix,3) T(tix,6) 1];
-                p = bo*tform;
-                pt = p(:,1:2);
-                M{ix,1} = bo(:,[1 2]);
-                M{ix,2} = pt;
-                adj(ix,:) = [tix largetileix];
-                np(ix) = opts.peg_npoints;
-                Weights{ix} = ones(1,opts.peg_npoints) * opts.peg_weight ;
-            end
-            PM.M = [PM.M;M];
-            PM.adj = [PM.adj;adj];
-            PM.W = [PM.W;Weights];
-            PM.np = [PM.np;np'];
+end
+if opts.use_peg
+    %% generate new point-match entries to connect all tiles -- may not work for massive data yet
+    tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
+    if ~isempty(tvalid)
+        M = cell(numel(tvalid),2);
+        Weights = cell(numel(tvalid),1);
+        adj = zeros(numel(tvalid),2);
+        largetileix = ntiles + 1;   % linear index of fictitious tile
+        np = zeros(1, numel(tvalid));
+        % we need to get width and height information about all tvalid tile
+        % we are assuming all tiles have same width and height here
+        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s', ...
+            rc.baseURL, rc.owner, rc.project, rc.stack, tIds{tvalid(1)});
+        j = webread(urlChar);
+        W = j.width;
+        H = j.height;
+        for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
+            tix = tvalid(ix);
+            bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
+            aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
+                *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
+            bo = [aa;bb];
+            tform = [T(tix,1) T(tix,4) 0; T(tix,2) T(tix,5) 0;T(tix,3) T(tix,6) 1];
+            p = bo*tform;
+            pt = p(:,1:2);
+            M{ix,1} = bo(:,[1 2]);
+            M{ix,2} = pt;
+            adj(ix,:) = [tix largetileix];
+            np(ix) = opts.peg_npoints;
+            Weights{ix} = ones(1,opts.peg_npoints) * opts.peg_weight ;
         end
-        T(end+1,:) = [1 0 0 1 0 0];   % add the fictitious tile
-        tIds(end+1) = {'-8888'};
-        ntiles = ntiles + 1;
-        ncoeff = ncoeff + tdim;
+        PM.M = [PM.M;M];
+        PM.adj = [PM.adj;adj];
+        PM.W = [PM.W;Weights];
+        PM.np = [PM.np;np'];
     end
-    
-    M = PM.M;
-    adj = PM.adj;
-    W = PM.W;
-    np = PM.np;
-    % cd(dir_scratch)
-    % save PM M adj W -v7.3;
-    % fn = [dir_scratch '/PM.mat'];
-    % PM = matfile(fn);
-    
-    disp(' ..... done!');diary off;diary on;
+    T(end+1,:) = [1 0 0 1 0 0];   % add the fictitious tile
+    tIds(end+1) = {'-8888'};
+    ntiles = ntiles + 1;
+    ncoeff = ncoeff + tdim;
+end
+
+M = PM.M;
+adj = PM.adj;
+W = PM.W;
+np = PM.np;
+% cd(dir_scratch)
+% save PM M adj W -v7.3;
+% fn = [dir_scratch '/PM.mat'];
+% PM = matfile(fn);
+Diagnostics.timer_load_point_matches = toc(timer_load_point_matches);
+disp(' ..... done!');diary off;diary on;
+
+%%%%%%%%%%% Deprecated
+%%     disp('** STEP 2:  Load point-matches ....');
+% %     disp(' ... predict sequence of PM requests to match sequence required for matrix A');
+% %     sID_all = {};
+% %     fac = [];
+% %     ismontage = [];
+% %     count  = 1;
+% %     for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
+% %         %disp(['Setting up section: ' sID{ix}]);
+% %         sID_all{count,1} = sID{ix};
+% %         sID_all{count,2} = sID{ix};
+% %         ismontage(count) = 1;
+% %         fac(count) = 1;
+% %         count = count + 1;
+% %         for nix = 1:opts.nbrs_step:opts.nbrs   % loop over neighboring sections with step of opts.nbrs_step
+% %             if (ix+nix)<=numel(zu)
+% %                 %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+% %                 sID_all{count,1} = sID{ix};
+% %                 sID_all{count,2} = sID{ix+nix};
+% %                 ismontage(count) = 0;
+% %                 fac(count) = opts.xs_weight/(nix+1);
+% %                 count = count + 1;
+% %             end
+% %         end
+% %     end
+% %     % clear sID
+% %     % % perform pm requests
+% %     disp('Loading point-matches from point-match database ....');
+% %     wopts = weboptions;
+% %     wopts.Timeout = 20;
+% %     M   = {};
+% %     adj = {};
+% %     W   = {};
+% %     np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
+% %     parfor ix = 1:size(sID_all,1)   % loop over sections
+% %         %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
+% %         if ismontage(ix)
+% %             [m, a, w, n] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
+% %                 opts.min_points, opts.max_points, wopts);
+% %         else
+% %             [m, a, w, n] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
+% %                 map_id, opts.min_points, opts.max_points, wopts, fac(ix));
+% %         end
+% %         M(ix) = {m};
+% %         adj(ix) = {a};
+% %         W(ix) = {w};
+% %         np(ix) = {n};
+% %     end
+% %     if isempty(np)
+% %         error('No point-matches found');
+% %     end
+% %     clear sID_all
+% %     disp('... concatenating point matches ...');
+% %     % concatenate
+% %     M = vertcat(M{:});
+% %     adj = vertcat(adj{:});
+% %     W   = vertcat(W{:});
+% %     np  = [np{:}]';
+% %     
+% %     PM.M = M;
+% %     PM.adj = adj;
+% %     PM.W = W;
+% %     PM.np = np;
+% %     
+% %     if opts.filter_point_matches
+% %         disp('Filtering point-matches');
+% %         %warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
+% %         PM = filter_pm(PM, opts.pmopts);
+% %     end
+% %     
+% %     if opts.use_peg
+% %         %% generate new point-match entries to connect all tiles -- may not work for massive data yet
+% %         tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
+% %         if ~isempty(tvalid)
+% %             M = cell(numel(tvalid),2);
+% %             Weights = cell(numel(tvalid),1);
+% %             adj = zeros(numel(tvalid),2);
+% %             largetileix = ntiles + 1;   % linear index of fictitious tile
+% %             np = zeros(1, numel(tvalid));
+% %             % we need to get width and height information about all tvalid tile
+% %             % we are assuming all tiles have same width and height here
+% %             urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/tile/%s', ...
+% %                 rc.baseURL, rc.owner, rc.project, rc.stack, tIds{tvalid(1)});
+% %             j = webread(urlChar);
+% %             W = j.width;
+% %             H = j.height;
+% %             for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
+% %                 tix = tvalid(ix);
+% %                 bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
+% %                 aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
+% %                     *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
+% %                 bo = [aa;bb];
+% %                 tform = [T(tix,1) T(tix,4) 0; T(tix,2) T(tix,5) 0;T(tix,3) T(tix,6) 1];
+% %                 p = bo*tform;
+% %                 pt = p(:,1:2);
+% %                 M{ix,1} = bo(:,[1 2]);
+% %                 M{ix,2} = pt;
+% %                 adj(ix,:) = [tix largetileix];
+% %                 np(ix) = opts.peg_npoints;
+% %                 Weights{ix} = ones(1,opts.peg_npoints) * opts.peg_weight ;
+% %             end
+% %             PM.M = [PM.M;M];
+% %             PM.adj = [PM.adj;adj];
+% %             PM.W = [PM.W;Weights];
+% %             PM.np = [PM.np;np'];
+% %         end
+% %         T(end+1,:) = [1 0 0 1 0 0];   % add the fictitious tile
+% %         tIds(end+1) = {'-8888'};
+% %         ntiles = ntiles + 1;
+% %         ncoeff = ncoeff + tdim;
+% %     end
+% %     
+% %     M = PM.M;
+% %     adj = PM.adj;
+% %     W = PM.W;
+% %     np = PM.np;
+% %     % cd(dir_scratch)
+% %     % save PM M adj W -v7.3;
+% %     % fn = [dir_scratch '/PM.mat'];
+% %     % PM = matfile(fn);
+% %     
+% %     disp(' ..... done!');diary off;diary on;
     %% Step 3: generate row slabs of matrix A
     %%%%% Experimental: set xy to zero (after having added fictitious tile is using peg.
     if opts.transfac<1.0  % then set x and y to 0,0 for each tile
@@ -211,11 +280,11 @@ else
     split = opts.distribute_A;
     
     npm = size(np,1);
-    disp(' .... determine row positions of point-pairs (needed for generation of A)...');
+    %disp(' .... determine row positions of point-pairs (needed for generation of A)...');
     n = 2*sum(np);
     r_sum_vec = [1;cumsum(2*np(1:npm-1))+1];
     pm_per_worker = round(npm/split);
-    disp([' .... pm_per_worker=' num2str(pm_per_worker)]);
+    %disp([' .... pm_per_worker=' num2str(pm_per_worker)]);
     r = zeros(split,2);
     for ix=1:split
         pm_min = 1 + (ix-1)*pm_per_worker;
@@ -232,7 +301,7 @@ else
     split = size(r,1);
     
     
-    disp(' .... export temporary files split_PM_*.mat...');%-----------------------
+    %disp(' .... export temporary files split_PM_*.mat...');%-----------------------
     fn_split = cell(split,1);
     for ix = 1:split
         fn_split{ix} = [dir_scratch '/split_PM_' num2str(nfirst)...
@@ -248,7 +317,7 @@ else
     diary off;diary on;
     
     
-    disp(' .... generate matrix slabs');%-----------------------
+    %disp(' .... generate matrix slabs');%-----------------------
     degree = opts.degree;
     I = {};
     J = {};
@@ -272,7 +341,7 @@ else
     
     
     % % collect matrix slabs into one matrix A
-    disp('.... collect: generate the sparse matrix from I, J and S');
+    %disp('.... collect: generate the sparse matrix from I, J and S');
     I1 = cell2mat(I(:));clear I;
     J1 = cell2mat(J(:));clear J;
     S1 = cell2mat(S(:));clear S;
@@ -286,7 +355,7 @@ else
     %% Step 4: Solve
     
     disp('** STEP 4:   Solving ....'); diary off;diary on;
-    disp('Translation only system build');
+    %disp('Translation only system build');
     % build system and solve it
     A = sparse(I1,J1,S1, n,ntiles*tdim); clear I1 J1 S1;
     w = cell2mat(w(:));
@@ -302,6 +371,25 @@ else
     err = norm(A*x2-b);
     disp(['Error norm(Ax-b): ' num2str(err)]);
     Error = err;
+    
+    
+
+Diagnostics.nnz_A = nnz(A);
+Diagnostics.nnz_K = nnz(K);
+Diagnostics.precision = precision;
+Diagnostics.err = err;
+Diagnostics.dim_A = size(A);
+% estimate error per tile before solution (i.e. use transformation parameters from rc --- the source collection)
+Diagnostics.res_o = [ 0;0;A*T(9:3:end)'-b];
+[Diagnostics.tile_err_o, Diagnostics.rms_o] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res_o, ntiles);
+
+% estimate error after solution (i.e. use x2)
+Diagnostics.res =  [0 ; 0; A*x2-b];
+[Diagnostics.tile_err, Diagnostics.rms] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res, ntiles);
+
+
+
+
     x2 = [T(1,[3]); T(1,[6]); x2];
     Translation_parms = reshape(x2, tdim, ncoeff/tdim)';% remember the transformations
     Tout = T;
@@ -313,75 +401,8 @@ else
     clear x2;
     clear K Lm d tb A b Wmx tB
     disp('.... done!');
-    
-    %% Step 5: ingest into Renderer database
-    if ~isempty(rcout)
-        disp('** STEP 5:   Ingesting data .....');
-disp(' ..... translate to +ve space');
-    %             delta = 0;
-    % determine W and H:
-    webopts = weboptions('Timeout', 60);
-    urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
-        rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
-    j = webread(urlChar, webopts);
-    jt1 = tile(j(1));
-    Width = jt1.W;
-    Height = jt1.H;
-    
-    delta = -(5000 + max([Width Height]));
-    dx = min(Tout(:,3)) +  delta;
-    dy = min(Tout(:,6)) +  delta;
-    for ix = 1:size(Tout,1)
-        Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
-    end
-        
-        disp('... export to MET (in preparation to be ingested into the Renderer database)...');
-        
-        v = 'v1';
-        if stack_exists(rcout)
-            disp('.... removing existing collection');
-            resp = delete_renderer_stack(rcout);
-        end
-        if ~stack_exists(rcout)
-            disp('.... target collection not found, creating new collection in state: ''Loading''');
-            resp = create_renderer_stack(rcout);
-        end
-        
-        if ntiles<opts.nchunks_ingest, opts.nchunks_ingest = ntiles;end
-        
-        chks = round(ntiles/opts.nchunks_ingest);
-        cs = 1:chks:ntiles;
-        cs(end) = ntiles;
-        disp(' .... ingesting ....');
-        parfor ix = 1:numel(cs)-1
-            vec = cs(ix):cs(ix+1);
-            export_to_renderer_database(rcout, rc, dir_scratch, Tout(vec,:),...
-                tIds(vec), z_val(vec), v, opts.disableValidation);
-        end
-        
-        
-        % % complete stack
-        disp(' .... completing stack...');
-        resp = set_renderer_stack_state_complete(rcout);
-    end
-    disp('.... done!');
-    diary off;
-    
-    %     %%% sosi
-    %     [Wbox, bbox, url] = get_slab_bounds_renderer(rcout);
-    %     scale = 0.1;
-    %     dx = 5/scale;
-    %     x = Wbox(1) + Wbox(3)/2;
-    %     y = Wbox(2);
-    %     height = Wbox(4);
-    %     disp([x y height dx]);
-    %     [Iyz, Io] = get_yz_image_renderer(rcout, x, y, dx, height, scale,...
-    %         nfirst, nlast, [2 2 1]);
-    %     h =  size(Iyz,1);%20000;
-    %     w =  size(Iyz,2);
-    %     im = Iyz(1:h,:);
-    %     I = imresize(im,[h/32 (w)]);
-    %     imshow(I);
-    %     %%%%
+    %% ingest into Renderer
+system_solve_helper_ingest_into_renderer_database(rc, rcout, ...
+    Tout, tIds, z_val, opts, zu);
     
 end

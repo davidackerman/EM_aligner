@@ -49,7 +49,7 @@ IMo = mat2gray(IMo);
 
 %% sosi
 % figure;showMatchedFeatures(IMo(:,:,1), IMo(:,:,2),Lo.pm.M{2,1}, Lo.pm.M{2,2}, 'montage');
-%% obtain gray values after scaling
+%% obtain gray values at generated point-match locations (after scaling-gray values)
 range = [mn mx];
 [Lo, GS] = get_gray_values(Lo, range);
 %% solve: generates solution vector xsol
@@ -65,7 +65,7 @@ experiment_intensity_correction_linear_system_gen;
 sb1 = Wbox(4)+1;
 sb2 = Wbox(3)+1;
 IM = {};
-for ix = 1:2%numel(Lo.tiles)
+for ix = 1:numel(Lo.tiles)
     I = zeros( sb1, sb2);
     im = get_image(Lo.tiles(ix));
 %     indx_zeros = im<0.0001;
@@ -86,7 +86,7 @@ for ix = 1:2%numel(Lo.tiles)
          vec(4) .* imx.*imx + vec(5).*imx.*imy + vec(6).*imy.*imy;
     end
     im = imsubtract(im,imb);
-    im(indx_zeros) = 0;
+    %im(indx_zeros) = 0;
     %%%%
     
     r1 = L.tiles(ix).minX-Wbox(2)+1;

@@ -62,8 +62,9 @@ else
     %% Step 1: load transformations, tile ids
     % load all tiles in this range and pool into Msection object
     disp('Loading transformations and tile/canvas ids from Renderer database.....');
-    [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
-    
+        [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, zu, opts.dir_scratch);
+
+    %%%[T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
     
     ntiles = size(T,1);
     disp(['..system has ' num2str(ntiles) ' tiles...']);
@@ -73,7 +74,7 @@ else
     ncoeff = ntiles*tdim;
     disp('....done!');diary off;diary on;
     %% Step 2: Load point-matches
-    kk_clock;
+k_clock;
 diary off;
 diary on;
 disp('loading point matches');

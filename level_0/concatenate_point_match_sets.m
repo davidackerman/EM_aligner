@@ -41,5 +41,4 @@ if isstruct(jj)
     end
 else
     warning('concatenate_point_match_sets: check point-match json information');
-    
 end

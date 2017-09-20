@@ -83,7 +83,14 @@ end
 if ~isfield(options, 'plot_cross_section_residuals'), options.plot_cross_section_residuals = false; end
 if ~isfield(options, 'filter_point_matches'), options.filter_point_matches = true; end
 if ~isfield(options, 'verbose'), options.verbose = true; end
-
+if ~isfield(options, 'pmopts')
+    options.pmopts.NumRandomSamplingsMethod = 'Desired confidence';
+    options.pmopts.MaximumRandomSamples = 3000;
+    options.pmopts.DesiredConfidence = 99.5;
+    options.pmopts.PixelDistanceThreshold = 1;
+end
+if ~isfield(options, 'do_cross_only') || ~options.do_cross_only, options.do_cross_only = true; end 
+if ~isfield(options, 'nbrs') || options.nbrs~=1, options.nbrs = 1; end % only want to consider one other section at a time
 
 % Create scratch directory and change to it
  dir_current = pwd;
@@ -111,7 +118,7 @@ parfor z_index=1:unique_merged_z_number_of_elements
     % residuals for current section
     cross_section_z_max = unique_merged_z(z_index)+options.number_of_cross_sections;
     
-    [T, map_id, ~, ~] = load_all_transformations(rc, unique_z(floor_unique_z>= unique_merged_z(z_index) & floor_unique_z<=cross_section_z_max), dir_scratch);
+     [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, unique_z(floor_unique_z>= unique_merged_z(z_index) & floor_unique_z<=cross_section_z_max), dir_scratch);
     % new_residuals_values will store the residuals as:
     % [ Sn -> Sn+1 ,  Sn -> Sn+2  ,  Sn+1 -> Sn  ,  Sn+2 -> Sn ]
     % Necessary to have this variable because of parfor
@@ -130,14 +137,18 @@ parfor z_index=1:unique_merged_z_number_of_elements
         if z_index+section_step<=unique_merged_z_number_of_elements && (unique_merged_z(z_index+section_step) - unique_merged_z(z_index) == section_step)
             % Load the cross section point matches and adjacency matrix and filter           
             factor = options.xs_weight/(section_step+1);
+            zs = [unique_merged_z(z_index), unique_merged_z(z_index+section_step)];
+            sIDs = [section_ids_grouped_by_z_and_section_id(z_index), section_ids_grouped_by_z_and_section_id(z_index+section_step)];
             PM=[];
-            [PM.M, PM.adj, PM.W, PM.np] = load_cross_section_pm(point_matches, section_ids_grouped_by_z_and_section_id{z_index}, section_ids_grouped_by_z_and_section_id{z_index+section_step}, ...
+            [PM.M, PM.adj, PM.W, PM.np] = system_solve_helper_load_point_matches(zs, options, point_matches, map_id, sIDs, size(T,1), r, c);
+            PMold = [];
+            [PMold.M, PMold.adj, PMold.W, PMold.np] = load_cross_section_pm(point_matches, section_ids_grouped_by_z_and_section_id{z_index}, section_ids_grouped_by_z_and_section_id{z_index+section_step}, ...
                 map_id, options.min_points, options.max_points, webopts, factor);
             if options.filter_point_matches
                 if isfield(options, 'pmopts')
-                    PM = filter_pm(PM, options.pmopts);
+                    PMold = filter_pm(PMold, options.pmopts);
                 else
-                    PM = filter_pm(PM);
+                    PMold = filter_pm(PMold);
                 end
             end
             %PM.M is cross section point match residuals, PM.adj is

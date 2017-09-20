@@ -90,8 +90,8 @@ end
 %% Helper Functions
 %% Perform all steps of SIFT from getting the tile urls to saving the final image
 function find_SIFT_point_matches(rc, tile_1_id, tile_2_id, SIFT_options, url_options, result_output_directory, figure_visibility)
-tile_1_url = get_tile_url(rc, tile_1_id, url_options, false);
-tile_2_url = get_tile_url(rc, tile_2_id, url_options, false);
+tile_1_url = get_tile_image_url(rc, tile_1_id, url_options, false);
+tile_2_url = get_tile_image_url(rc, tile_2_id, url_options, false);
 
 % To parallelize it, need to figure out how many total parameter sets need
 % to be tested since each field may have multiple values
@@ -178,21 +178,6 @@ parfor i = 1:total_number_of_combinations
     end
 end
 end
-%% Get the tile url
-function tile_url = get_tile_url(rc, tileId, url_options, get_jpg)
-cmd = sprintf('/groups/flyTEM/flyTEM/render/bin/get_tile_url.sh --baseDataUrl %s --owner %s --project %s --stack %s --tileId %s', rc.baseUrl, rc.owner, rc.project, rc.stack, tileId);
-% Using these if statements allows the default values to be used when
-% necessary
-if isfield(url_options, 'normalizeForMatching'), cmd = [cmd ' --normalizeForMatching ' url_options.normalizeForMatching]; end
-if isfield(url_options, 'renderWithFilter'), cmd = [cmd ' --renderWithFilter ' url_options.render_with_filter]; end
-if isfield(url_options, 'renderWithoutMask'), cmd = [cmd ' --renderWithoutMask ' url_options.renderWithoutMask]; end
-if isfield(url_options, 'fullScaleWidth'), cmd = [cmd ' --fullScaleWidth ' url_options.fullScaleWidth]; end
-if isfield(url_options, 'fullScaleHeight'), cmd = [cmd ' --fullScaleHeight ' url_options.fullScaleHeight]; end
-[~,tile_url] = system(cmd);
-tile_url = regexprep(tile_url,'\r\n|\n|\r',''); % remove carriage return
-% If want the actual jpg (eg. for imread from webpage):
-if get_jpg, tile_url = strrep(tile_url, 'render-parameters', 'jpeg-image'); end
-end
 
 %% Perform SIFT on two tiles
 function debug_canvas_pair_matches(SIFT_options, tile_1_url, tile_2_url)
@@ -223,8 +208,8 @@ end
 function find_SURF_point_matches(rc, tile_1_id, tile_2_id, SURF_options,  url_options, result_output_directory, figure_visibility)
 % get images at 100%, then only have to read them once, and scale in the
 % loop
-tile_1_url = get_tile_url(rc, tile_1_id, url_options, true);
-tile_2_url = get_tile_url(rc, tile_2_id, url_options, true);
+tile_1_url = get_tile_image_url(rc, tile_1_id, url_options, true);
+tile_2_url = get_tile_image_url(rc, tile_2_id, url_options, true);
 im1 = rgb2gray(imread(tile_1_url, 'jpg'));
 im2 = rgb2gray(imread(tile_2_url, 'jpg'));
 for i = 1:numel(SURF_options.renderScale)

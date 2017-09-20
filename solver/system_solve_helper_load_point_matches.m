@@ -25,6 +25,8 @@ if nargin<7  % then we don't use row/col information
     r = [];
     c = [];
 end
+if ~isfield(opts,'do_cross_only'), opts.do_cross_only = false; end
+if ~isfield(opts, 'outside_group'), opts.outside_group = false; end
 if ~isfield(opts, 'Width')  % if not set, then assume FAFB
     opts.Width = 2160;
     opts.Height = 2560;
@@ -36,10 +38,22 @@ spmd
     warning('off', 'vision:obsolete:obsoleteFunctionality');
 end
 
-% disp('** STEP 2:  Load point-matches ....');
-% disp(' ... predict sequence of PM requests to match sequence required for matrix A');
+if ~isfield(pm,'verbose')
+    for i = 1:numel(pm)
+        pm(i).verbose = 1;
+    end
+end
+if pm(end).verbose
+    disp('** STEP 2:  Load point-matches ....');
+    disp(' ... predict sequence of PM requests to match sequence required for matrix A');
+end
+
 sID_all = {};
-fac = [];
+if opts.outside_group
+    fac = {};
+else
+    fac = [];
+end
 ismontage = [];
 count  = 1;
 for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
@@ -47,26 +61,51 @@ for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
     sID_all{count,1} = sID{ix};
     sID_all{count,2} = sID{ix};
     ismontage(count) = 1;
-    fac(count) = 1;
+    if opts.outside_group 
+        fac{count} = 1;
+    else
+        fac(count) = 1;
+    end
     count = count + 1;
-    for nix = 1:opts.nbrs
-        if (ix+nix)<=numel(zu)
-            %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-            sID_all{count,1} = sID{ix};
-            sID_all{count,2} = sID{ix+nix};
+    if opts.outside_group
+        %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+        second_index = min(ix+opts.nbrs, numel(zu));
+        sID1 = sID{ix};
+        if ix~=second_index
+            sID_all{count,1} = sID1;
+            sID_all{count,2} = sID{second_index}; %what to do about reacquires
             ismontage(count) = 0;
-            if opts.inverse_dz
-            fac(count) = opts.xs_weight/(nix+1);
-            else
-                fac(count) = opts.xs_weight;
-            end
+            z_range = ix+1:second_index;
+            current_sID_range = cellfun(@(sIDs)(sIDs{:}), sID(z_range),'uniformOutput', false);
+            current_keys = strcat([sID1{1} '_'], current_sID_range);
+            current_values = opts.xs_weight./(z_range -ix + 1);
+            fac{count} = containers.Map(current_keys,current_values);
             count = count + 1;
+        end
+    else
+        for nix = 1:opts.nbrs
+            if (ix+nix)<=numel(zu)
+                %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+                sID_all{count,1} = sID{ix};
+                sID_all{count,2} = sID{ix+nix};
+                ismontage(count) = 0;
+                if opts.inverse_dz
+                    fac(count) = opts.xs_weight/(nix+1);
+                else
+                    fac(count) = opts.xs_weight;
+                end
+                count = count + 1;
+            end
         end
     end
 end
 % clear sID
 % % perform pm requests
-% disp('Loading point-matches from point-match database ....');
+
+if pm(end).verbose
+    disp('Loading point-matches from point-match database ....');
+end
+
 wopts = weboptions;
 wopts.Timeout = 20;
 
@@ -74,17 +113,26 @@ M   = {};
 adj = {};
 W   = {};
 np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
-for ix = 1:size(sID_all,1)   % loop over sections
+parfor ix = 1:size(sID_all,1)   % loop over sections
     %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
     % when loading point matches, load all available point
     % then filter them, and after that select points randomly to limit the size of
     % point-matches block
     if ismontage(ix)
-        [m, a, w, n, xnp] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
-            opts.min_points, inf, wopts, r, c);
+        if opts.do_cross_only
+            m = []; a = []; w = []; n = []; xnp = [];
+        else
+            [m, a, w, n, xnp] = load_montage_pm(pm, sID_all{ix,1}, map_id,...
+                opts.min_points, inf, wopts, r, c);
+        end
     else
-        [m, a, w, n, xnp] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
-            map_id, opts.min_points, inf, wopts, fac(ix));
+        if opts.outside_group
+            [m, a, w, n, xnp] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
+                map_id, opts.min_points, inf, wopts, fac{ix}, 0, opts.outside_group);
+        else
+            [m, a, w, n, xnp] = load_cross_section_pm(pm, sID_all{ix,1}, sID_all{ix,2}, ...
+                map_id, opts.min_points, inf, wopts, fac(ix));
+        end
     end
     
     
@@ -142,7 +190,11 @@ if isempty(np)
     error('No point-matches found');
 end
 clear sID_all
-% disp('... concatenating point matches ...');
+
+if pm(end).verbose
+    disp('... concatenating point matches ...');
+end
+
 % concatenate
 M = vertcat(M{:});
 adj = vertcat(adj{:});
@@ -170,7 +222,7 @@ verbose = 0;
 %% filter point matches using RANSAC
 %warning('off', 'vision:obsolete:obsoleteFunctionality');
 geoTransformEst = vision.GeometricTransformEstimator; % defaults to RANSAC
-geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';'Least Median of Squares';% %
+geoTransformEst.Method = 'Random Sample Consensus (RANSAC)';%'Least Median of Squares';%'Random Sample Consensus (RANSAC)'; %
 geoTransformEst.Transform = 'Nonreflective similarity';%'Affine'; % Valid values: 'Affine',
 geoTransformEst.NumRandomSamplingsMethod = opts.NumRandomSamplingsMethod;% 'Desired confidence';
 geoTransformEst.MaximumRandomSamples = opts.MaximumRandomSamples;%3000;

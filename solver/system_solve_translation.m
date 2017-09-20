@@ -73,7 +73,7 @@ else
     ncoeff = ntiles*tdim;
     disp('....done!');diary off;diary on;
     %% Step 2: Load point-matches
-    kk_clock;
+kk_clock;
 diary off;
 diary on;
 disp('loading point matches');

@@ -36,7 +36,7 @@ else
     if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
     if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
-    
+    if ~isfield(opts, 'check_for_disconnected_tiles'), check_for_disconnected_tiles = 1; end
     
     err = [];
     R = [];
@@ -88,6 +88,20 @@ else
     PM.adj = adj;
     PM.W = W;
     PM.np = np;
+end
+[ ~, ~, clusters] = calculate_connectivity_from_pm_stuct(PM, numel(tIds));
+if opts.check_for_disconnected_tiles
+    if numel(unique(clusters))>1
+        [counts,cluster_number] = histcounts(clusters,unique(clusters));
+        [~,index_of_max] = max(counts);
+        unconnected_indices = find(clusters~=cluster_number(index_of_max));
+        number_of_unconnected = sum(clusters~=cluster_number(index_of_max));
+        for i=1:number_of_unconnected
+            fprintf([tIds{unconnected_indices(i)} ' \n']);
+        end
+        error(sprintf('Error in point matches: %d unconnected tiles (see above)\n', number_of_unconnected));
+        tIds(clusters~=cluster_number(index_of_max));
+    end
 end
 if opts.use_peg
     %% generate new point-match entries to connect all tiles -- may not work for massive data yet

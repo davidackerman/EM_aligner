@@ -403,7 +403,8 @@ Diagnostics.res =  [0 ; 0; A*x2-b];
 
 
 
-    x2 = [T(1,[3]); T(1,[6]); x2];
+%     x2 = [T(1,[3]); T(1,[6]); x2];
+    x2 = [0;0;x2];
     Translation_parms = reshape(x2, tdim, ncoeff/tdim)';% remember the transformations
     Tout = T;
     Tout(:,3) = Translation_parms(:,1);

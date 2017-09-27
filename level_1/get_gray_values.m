@@ -51,10 +51,10 @@ im1 = medfilt2(im1, [d d]);
 im2 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(pix,2))), range);
 im2 = medfilt2(im2, [d d]);
 
-figure;imshow(mat2gray(im1));hold on;plot(Lo.pm.M{pix,1}(:,2),...
-    Lo.pm.M{pix,1}(:,1), 'y*');
-figure;imshow(mat2gray(im2));hold on;plot(Lo.pm.M{pix,2}(:,2),...
-    Lo.pm.M{pix,2}(:,1), 'y*');
+figure;imshow(mat2gray(im1));hold on;plot(Lo.pm.M{pix,1}(:,1),...
+    Lo.pm.M{pix,1}(:,2), 'y*');
+figure;imshow(mat2gray(im2));hold on;plot(Lo.pm.M{pix,2}(:,1),...
+    Lo.pm.M{pix,2}(:,2), 'y*');
 figure;showMatchedFeatures(im1, im2, x1, x2, 'montage');
 drawnow;
 %%

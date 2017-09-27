@@ -434,7 +434,7 @@ Error = err;
 Diagnostics.precision = precision;
 Diagnostics.err = err;
 Diagnostics.dim_A = size(A);
-Diagnostics.res =  A*x2;
+Diagnostics.res =  A*x2-b;
 [Diagnostics.tile_err, Diagnostics.rms] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res, ntiles);
 
 Tout = reshape(x2, tdim, ncoeff/tdim)';% remember, the transformations

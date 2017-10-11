@@ -361,7 +361,7 @@ parfor nix = 1:numel(chnks)
     fclose(fid);
     if isempty(grid_account)
         % upload TEM files in here
-        disableValidation = 0;
+        disableValidation = 1;
         resp_append = append_renderer_stack(rcout, rcsource, fn, 'v1', disableValidation, 0);
         %disp(resp_append)
         try

@@ -36,7 +36,7 @@ else
     if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
     if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
-    if ~isfield(opts, 'check_for_disconnected_tiles'), check_for_disconnected_tiles = 1; end
+    if ~isfield(opts, 'check_for_disconnected_tiles'), opts.check_for_disconnected_tiles = 1; end
     
     err = [];
     R = [];

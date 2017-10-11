@@ -1,4 +1,4 @@
-function [tile_err, rms] = system_solve_helper_tile_based_point_pair_errors(pm, res, ntiles, flag)
+function [tile_err, rms, delix] = system_solve_helper_tile_based_point_pair_errors(pm, res, ntiles, flag)
 % returns average point-pair error per tile.
 % Input:
 %    pm: point-match struct
@@ -47,7 +47,7 @@ tile_err = zeros(ntiles,2);
 rms = zeros(ntiles,1);
 parfor ix = 1:ntiles
     if isempty(tpr{ix})
-        tile_err(ix,:) = [-999 -999 -999];%full(sum(tpr{ix},1)/size(tpr{ix},1));
+        tile_err(ix,:) = [-999 -999];%full(sum(tpr{ix},1)/size(tpr{ix},1));
         rms(ix) = -999;
         delix(ix) = 1;
     else

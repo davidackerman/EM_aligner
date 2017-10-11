@@ -10,7 +10,7 @@ if isfield(url_options, 'fullScaleWidth'), cmd = [cmd ' --fullScaleWidth ' url_o
 if isfield(url_options, 'fullScaleHeight'), cmd = [cmd ' --fullScaleHeight ' url_options.fullScaleHeight]; end
 [~,tile_image_url] = system(cmd);
 tile_image_url = regexprep(tile_image_url,'\r\n|\n|\r',''); % remove carriage return
-if scale~=1, tile_image_url = [tile_image_url, '&scale=' num2str(scale)];
+if scale~=1, tile_image_url = [tile_image_url, '&scale=' num2str(scale)]; end
 % If want the actual jpg (eg. for imread from webpage):
 if get_jpg, tile_image_url = strrep(tile_image_url, 'render-parameters', 'jpeg-image'); end
 end

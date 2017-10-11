@@ -77,6 +77,11 @@ function point_match_optimization(rc, tile_1_id, tile_2_id, SIFT_options, SURF_o
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Make the output directory and run SIFT and SURF if applicable
+if figure_visibility
+    figure_visibility = 'on';
+else
+    figure_visibility = 'off';
+end
 sorted_tile_ids = sort({tile_1_id, tile_2_id});
 result_output_directory = [result_output_directory '/' rc.stack '/' sorted_tile_ids{1} '_and_' sorted_tile_ids{2}];
 system(['mkdir -p ' result_output_directory]);

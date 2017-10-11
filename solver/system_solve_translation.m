@@ -37,7 +37,6 @@ else
     if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
     if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
     
-    
     err = [];
     R = [];
     xout = [];
@@ -62,9 +61,8 @@ else
     %% Step 1: load transformations, tile ids
     % load all tiles in this range and pool into Msection object
     disp('Loading transformations and tile/canvas ids from Renderer database.....');
-        [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, zu, opts.dir_scratch);
-
-    %%%[T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
+    [T, map_id, tIds, z_val] = load_all_transformations(rc, zu, dir_scratch);
+    
     
     ntiles = size(T,1);
     disp(['..system has ' num2str(ntiles) ' tiles...']);

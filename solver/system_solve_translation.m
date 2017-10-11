@@ -90,6 +90,20 @@ else
     PM.W = W;
     PM.np = np;
 end
+
+%%% uncomment to test for number of connected components (should be one)
+%%% could take up a lot of time/memory to do for large PM structs
+indx = sub2ind([ntiles ntiles], PM.adj(:,1), PM.adj(:,2));
+indx = [indx; sub2ind([ntiles ntiles], PM.adj(:,2), PM.adj(:,1))];
+A = sparse(ntiles,ntiles);
+A(indx) = 1;
+G = graph(A);
+c = conncomp(G);
+nbins = max(c);
+disp(['Number of connected components: ' num2str(nbins)]);
+if nbins>1, error(' Number of connected components in point-match graph cannot exceed one');end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if opts.use_peg
     %% generate new point-match entries to connect all tiles -- may not work for massive data yet
     tvalid = unique(PM.adj(:));  % lists all tiles that have connections to other tiles through point-matches
@@ -380,7 +394,7 @@ Diagnostics.precision = precision;
 Diagnostics.err = err;
 Diagnostics.dim_A = size(A);
 % estimate error per tile before solution (i.e. use transformation parameters from rc --- the source collection)
-Diagnostics.res_o = [ 0;0;A*T(9:3:end)'-b];
+Diagnostics.res_o = [ 0;0;A*T(9:3:end)'-b]; % T is the source transformation parameters
 [Diagnostics.tile_err_o, Diagnostics.rms_o] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res_o, ntiles);
 
 % estimate error after solution (i.e. use x2)

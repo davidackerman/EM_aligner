@@ -1,4 +1,10 @@
-function [ output_args ] = remove_blank_tiles_from_collection(rc, zu, opts )
+function [ fft2_results ] = remove_blank_tiles_from_collection(rc, zu, opts )
+%% Removes blank tiles from rc over the range zu, or replaces blank tiles in the middle
+% opts has fields
+% cutoff_value (1E4):             The cutoff used to determine if the tile is blank
+% save_removed_tile_images (0):   To save the images of removed tiles, saved with the tile id prefixed with the blank tile metric
+% output_directory (pwd):         The directory where the images and files containing a list of the removed or replaced tiles will be placed
+% Returns fft2_results struct
 if nargin==1
     zu = get_section_ids(rc);
     opts = [];
@@ -18,7 +24,7 @@ if nargin==3
 end
 
 if ~isfield(opts, 'cutoff_value'), opts.cutoff_value = 1E4; end
-if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 1;  end
+if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 0;  end
 if ~isfield(opts, 'output_directory'), opts.output_directory = pwd;
 fft2_results  = find_blank_tiles( rc, zu, opts );
 all_tile_ids = [fft2_results(:).tile_ids];
@@ -31,7 +37,7 @@ tile_indices_to_replace = find(all_tile_is_in_middle & tile_indices_below_cutoff
 tile_indices_to_remove = find(~all_tile_is_in_middle & tile_indices_below_cutoff);
 fid_remove = fopen([opts.output_directory '/removed_tiles.txt'],'wt');
 for i=1:numel(tile_indices_to_remove)
-   fprintf(fid_remove, '%s \n', all_tile_ids{tile_indices_to_remove(i)});
+   fprintf(fid_remove, '%s\n', all_tile_ids{tile_indices_to_remove(i)});
 end
 fclose(fid_remove);
 % replace middle tiles with neighboring ones
@@ -60,14 +66,17 @@ for i=1:numel(tile_indices_to_replace)
     end
     path = L_bad.tiles(bad_tile_index).path;
     [pathstr, name, ext] = fileparts(path);
-    %system(['mkdir -p ' pathstr '/badImages/']);
-    %system(['mv ' pathstr '/' name ext ' ' pathstr '/badImages/ ']);
-    %system(['ln -s ' L_good.tiles(good_tile_index).path ' ' L_bad.tiles(bad_tile_index).path]);
-    fprintf(fid_replace, '%s %s \n', all_tile_ids{tile_indices_to_replace(i)}, L_good.tiles(good_tile_index).path);
+    if exist([pathstr '/badImages/' name ext])
+        error(sprintf('File %s has already been replaced', [pathstr '/badImages/' name ext]));
+    end
+    system(['mkdir -p ' pathstr '/badImages/']);
+    system(['mv ' pathstr '/' name ext ' ' pathstr '/badImages/ ']);
+    system(['ln -s ' L_good.tiles(good_tile_index).path ' ' L_bad.tiles(bad_tile_index).path]);
+    fprintf(fid_replace, '%s %s -> %s \n', all_tile_ids{tile_indices_to_replace(i)}, L_bad.tiles(bad_tile_index).path, L_good.tiles(good_tile_index).path);
 end
 fclose(fid_replace);
 % remove edge blank tiles
 tile_ids_to_remove = all_tile_ids(tile_indices_to_remove);
-delete_renderer_tile(tile_ids_to_remove);
+delete_renderer_tile(rc,tile_ids_to_remove);
 end
 

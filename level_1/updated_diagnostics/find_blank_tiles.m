@@ -1,4 +1,14 @@
 function fft2_results  = find_blank_tiles( rc, varargin )
+%% Determines if a tile is blank based on its radially averaged fft2 and a cutoff.
+% opts has fields
+% scale (0.25):                 scale of image used for fft2
+% angle_to_skip (15):           angle within x or y axis to skip during radial averaging
+% min_radius (100):             minimum radius for radial averaging
+% max_radius (200):             maximum radius for radial averaging
+% cutoff (1E4):                 cutoff for blank tile metric for the tile to be considered blank
+% save_removed_tile_images (0): whether to save images, though this doesn't work well in parfor
+% output_directory (pwd):       output directory for saving images
+% Returns fft2_results
 if nargin==1
     zu = get_section_ids(rc);
     opts = [];
@@ -21,7 +31,7 @@ if ~isfield(opts, 'angle_to_skip') opts.angle_to_skip = 15; end
 if ~isfield(opts, 'min_radius') opts.min_radius = 100; end
 if ~isfield(opts, 'max_radius') opts.max_radius = 200; end
 if ~isfield(opts, 'cutoff_value'), opts.cutoff_value = 1E4; end
-if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 1;  end
+if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 0;  end
 if ~isfield(opts, 'output_directory'), opts.output_directory = pwd; end
     
 fft2_results = calculate_all_fft2_and_profile(rc, zu, opts);%calculate_fft2_and_profile(rc, tile_ids, 0.25);
@@ -78,7 +88,7 @@ parfor i=1:numel(zs)
                     output_directory = [opts.output_directory '/edge/'];
                 end               
                 prefix = sprintf('%011.4f', round(fft2_results(i).blank_metric(tile_index)*10000)/10000);
-                imwrite(imresize(img,0.15), [output_directory prefix '_' fft2_results(i).tile_ids{tile_index} '.tif']);
+                my_parfor_imwrite(imresize(img,0.15), [output_directory prefix '_' fft2_results(i).tile_ids{tile_index} '.tif']);
             end
         end
         % Get average
@@ -118,5 +128,10 @@ end
 % Get average
 radial_profile = radial_profile ./ count;
 blank_metric = nanmean(radial_profile(10:30));
+end
+
+function my_parfor_imwrite(img, file_name)
+imwrite(img, file_name);
+
 end
 

@@ -58,9 +58,21 @@ function point_match_optimization(rc, tile_1_id, tile_2_id, SIFT_options, SURF_o
 %        images and point-match results from SIFT.
 %        NO DEFAULT VALUE
 %
-% SIFT_options struct fields and their defaults:
+% SURF_options struct fields and their defaults:
 %     renderScale
 %        NO DEFAULT VALUE
+%     numPixels
+%        NO DEFAULT VALUE
+%     SURF_NumOctaves
+%        NO DEFAULT VALUE except for what it is in find_point_matches_with_matlab
+%     SURF_NumOctaves
+%        NO DEFAULT VALUE except for what it is in find_point_matches_with_matlab
+%     SURF_NumScaleLevels
+%        NO DEFAULT VALUE except for what it is in find_point_matches_with_matlab
+%     SURF_MetricThreshold
+%        NO DEFAULT VALUE except for what it is in find_point_matches_with_matlab
+%     MatchThreshold
+%        NO DEFAULT VALUE except for what it is in find_point_matches_with_matlab
 %
 % url_options struct and their defaults:
 %     normalizeForMatching
@@ -83,6 +95,8 @@ else
     figure_visibility = 'off';
 end
 sorted_tile_ids = sort({tile_1_id, tile_2_id});
+tile_1_id = sorted_tile_ids{1};
+tile_2_id = sorted_tile_ids{2};
 result_output_directory = [result_output_directory '/' rc.stack '/' sorted_tile_ids{1} '_and_' sorted_tile_ids{2}];
 system(['mkdir -p ' result_output_directory]);
 if ~isempty(SIFT_options)
@@ -98,60 +112,11 @@ function find_SIFT_point_matches(rc, tile_1_id, tile_2_id, SIFT_options, url_opt
 tile_1_url = get_tile_image_url(rc, tile_1_id, url_options, false);
 tile_2_url = get_tile_image_url(rc, tile_2_id, url_options, false);
 
-% To parallelize it, need to figure out how many total parameter sets need
-% to be tested since each field may have multiple values
-total_number_of_combinations = 1;
-user_set_fields = fieldnames(SIFT_options);
-num_fields = numel(user_set_fields);
-number_of_elements_in_fields = ones(numel(user_set_fields),1);
-for current_field_index = 1:num_fields
-    current_field = SIFT_options.(user_set_fields{current_field_index});
-    if ~(ischar(current_field) || isstring(current_field)) % if it is string or char then it is single element, otherwise it would be cell array
-        total_number_of_combinations = total_number_of_combinations*numel(current_field);
-        number_of_elements_in_fields(current_field_index) = numel(current_field);
-    end
-end
-all_combinations_array = zeros(total_number_of_combinations, num_fields);
-for i=1:total_number_of_combinations
-    for current_field_index = 1:num_fields
-        all_combinations_array(i,current_field_index) = mod(floor((i-1)/prod(number_of_elements_in_fields(current_field_index+1:end))),number_of_elements_in_fields(current_field_index))+1;
-    end
-end
-% Loop through all the parameter set combinations
-parfor i = 1:total_number_of_combinations
-    SIFT_options_current = SIFT_options;
-    % All of the SIFT output will be saved in a subdirectory with the name
-    % of the stack
-    SIFT_options_current.outputDirectory = [SIFT_options_current.outputDirectory '/' rc.stack '/' ];
-    % Set SIFT_options_current based on the current parameter set
-    % Also set a string of the parameter values to be used for directory
-    % and image names as well as the string to be used for the legend in
-    % the figure
-    parameter_string = [];
-    legend_string = [];
-    for current_field_index = 1:num_fields
-        current_field = user_set_fields{current_field_index};
-        if ~strcmp(current_field, 'outputDirectory')
-            parameter_string = [parameter_string (current_field) '_'];
-            if iscell(SIFT_options_current.(current_field))
-                SIFT_options_current.(current_field) = SIFT_options.(current_field){all_combinations_array(i,current_field_index)};
-                parameter_string = [parameter_string SIFT_options_current.(current_field) '_'];
-                legend_string = [legend_string, {[current_field ': ' SIFT_options_current.(current_field)]}];
-            elseif ischar(SIFT_options_current.(current_field)) || isstring(SIFT_options_current.(current_field))
-                SIFT_options_current.(current_field) = SIFT_options.(current_field);
-                parameter_string = [parameter_string SIFT_options_current.(current_field) '_'];
-                legend_string = [legend_string, {[current_field ': ' SIFT_options_current.(current_field)]}];
-            else
-                SIFT_options_current.(current_field) = SIFT_options.(current_field)(all_combinations_array(i,current_field_index));
-                parameter_string = [parameter_string num2str(SIFT_options_current.(current_field)) '_'];
-                legend_string = [legend_string, {[current_field ': ' num2str(SIFT_options_current.(current_field))]}];
-            end
-        end
-    end
-    
-    % Create appropriate output directory, perform SIFT and save image if
-    % point matches were found
-    parameter_string(end) = [];
+[all_options, all_parameter_strings, all_legend_strings] = get_parameter_sets_and_strings(SIFT_options, rc);
+parfor i = 1:size(all_combinations_array,1)
+    SIFT_options_current = all_options(i);
+    parameter_string = all_parameter_strings{i};
+    legend_string = all_legend_strings{i};
     SIFT_options_current.outputDirectory = [SIFT_options_current.outputDirectory parameter_string];
     system(['mkdir -p ' SIFT_options_current.outputDirectory]);
     system(['rm ' SIFT_options_current.outputDirectory '/matches.json']);
@@ -217,19 +182,91 @@ tile_1_url = get_tile_image_url(rc, tile_1_id, url_options, true);
 tile_2_url = get_tile_image_url(rc, tile_2_id, url_options, true);
 im1 = rgb2gray(imread(tile_1_url, 'jpg'));
 im2 = rgb2gray(imread(tile_2_url, 'jpg'));
-for i = 1:numel(SURF_options.renderScale)
-    current_im1 = imresize(im1, SURF_options.renderScale(i));
-    current_im2 = imresize(im2, SURF_options.renderScale(i));
+[all_options, all_parameter_strings, all_legend_strings] = get_parameter_sets_and_strings(SURF_options);
+parfor i = 1:numel(all_options)
+    SURF_options_current = all_options(i);
+    if ~isfield(SURF_options_current,'numPixels')
+        current_im1 = imresize(im1, SURF_options_current.renderScale);
+        current_im2 = imresize(im2, SURF_options_current.renderScale);
+    else
+        current_im1 = imresize(im1(:,end-SURF_options_current.numPixels:end), SURF_options_current.renderScale);
+        current_im2 = imresize(im2(:,1:SURF_options_current.numPixels), SURF_options_current.renderScale);
+    end
     suppress_error = true;
-    [m12_2, m12_1, fh]=find_point_matches_with_matlab(current_im1, current_im2, 'SURF', figure_visibility, suppress_error);
-    parameter_string = ['renderScale_' num2str(SURF_options.renderScale(i))];
-    title_string = [{['renderScale: ' num2str(SURF_options.renderScale(i))]}];
+    [m12_2, m12_1, fh]=find_point_matches_with_matlab(current_im1, current_im2, 'SURF', figure_visibility, suppress_error,SURF_options_current);
+    parameter_string = all_parameter_strings{i};
+    legend_string = all_legend_strings{i};
     parameter_string = strrep(parameter_string,'.','p');
     ax = fh.CurrentAxes;
     pos_fig = get(fh, 'position');
     ax.Title.String = strrep([{'SURF'}, {['Number of Point-Matches: ' num2str(size(m12_2, 1))]}], '_', '\_');
+    annotation('textbox', [0.25, 0, 1, 0.85], 'string', legend_string, 'fitboxtotext','on','backgroundcolor','white');
     set(fh, 'position',  pos_fig+ [0 0 0 50]);
-    annotation('textbox', [0.65, 0, 1, 0.85], 'string', title_string, 'fitboxtotext','on','backgroundcolor','white');
     saveas(fh, [ result_output_directory '//SURF_' parameter_string '.tif']);
+end
+end
+
+%% Get parameter sets and necessary strings
+function [all_options, all_parameter_strings, all_legend_strings]= get_parameter_sets_and_strings(varargin)
+options = varargin{1};
+if nargin==2
+    rc = varargin{2};
+else
+    rc = [];
+end
+total_number_of_combinations = 1;
+user_set_fields = fieldnames(options);
+num_fields = numel(user_set_fields);
+number_of_elements_in_fields = ones(numel(user_set_fields),1);
+for current_field_index = 1:num_fields
+    current_field = options.(user_set_fields{current_field_index});
+    if ~(ischar(current_field) || isstring(current_field)) % if it is string or char then it is single element, otherwise it would be cell array
+        total_number_of_combinations = total_number_of_combinations*numel(current_field);
+        number_of_elements_in_fields(current_field_index) = numel(current_field);
+    end
+end
+all_combinations_array = zeros(total_number_of_combinations, num_fields);
+for i=1:total_number_of_combinations
+    for current_field_index = 1:num_fields
+        all_combinations_array(i,current_field_index) = mod(floor((i-1)/prod(number_of_elements_in_fields(current_field_index+1:end))),number_of_elements_in_fields(current_field_index))+1;
+    end
+end
+% Loop through all the parameter set combinations
+all_parameter_strings = {};
+all_legend_strings = {};
+parfor i = 1:total_number_of_combinations
+    options_current = options;
+    % All of the output will be saved in a subdirectory with the name
+    % of the stack
+    if isfield(options_current, 'output_directory'), options_current.outputDirectory = [options_current.outputDirectory '/' rc.stack '/' ]; end
+    % Set options_current based on the current parameter set
+    % Also set a string of the parameter values to be used for directory
+    % and image names as well as the string to be used for the legend in
+    % the figure
+    parameter_string = [];
+    legend_string = [];
+    for current_field_index = 1:num_fields
+        current_field = user_set_fields{current_field_index};
+        if ~strcmp(current_field, 'outputDirectory')
+            parameter_string = [parameter_string (current_field) '_'];
+            if iscell(options_current.(current_field))
+                options_current.(current_field) = options.(current_field){all_combinations_array(i,current_field_index)};
+                parameter_string = [parameter_string options_current.(current_field) '_'];
+                legend_string = [legend_string, {[current_field ': ' options_current.(current_field)]}];
+            elseif ischar(options_current.(current_field)) || isstring(options_current.(current_field))
+                options_current.(current_field) = options.(current_field);
+                parameter_string = [parameter_string options_current.(current_field) '_'];
+                legend_string = [legend_string, {[current_field ': ' options_current.(current_field)]}];
+            else
+                options_current.(current_field) = options.(current_field)(all_combinations_array(i,current_field_index));
+                parameter_string = [parameter_string num2str(options_current.(current_field)) '_'];
+                legend_string = [legend_string, {strrep([current_field ': ' num2str(options_current.(current_field))],'_','\_')}];
+            end
+        end
+    end
+    parameter_string(end) = [];
+    all_options(i) = options_current;
+    all_parameter_strings{i} = parameter_string;
+    all_legend_strings{i} = legend_string;
 end
 end

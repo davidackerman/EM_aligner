@@ -185,7 +185,7 @@ im2 = rgb2gray(imread(tile_2_url, 'jpg'));
 [all_options, all_parameter_strings, all_legend_strings] = get_parameter_sets_and_strings(SURF_options);
 parfor i = 1:numel(all_options)
     SURF_options_current = all_options(i);
-    if ~isfield(SURF_options_current,'numPixles')
+    if ~isfield(SURF_options_current,'numPixels')
         current_im1 = imresize(im1, SURF_options_current.renderScale);
         current_im2 = imresize(im2, SURF_options_current.renderScale);
     else

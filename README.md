@@ -25,6 +25,10 @@ In production use at Janelia. This is a nascent set of tools that is undergoing 
 
 ## Main steps for stitching small-to-moderate size datasets (less than 1M tiles):
 
+Important:
+For montage or cross-layer affine registration use "system_solve_affine_with_constraint.m". Usage is documented in the file.
+This function requires a starting collection that will serve to constrain the affine solution (regularization). The typical way to obtain a good starting alignment is by solving your source collection using either system_solve_translation.m or system_solve_rigid_approximation.m. Neither of them requires (or makes use of) a starting guess, they only need the source tiles (Renderer collection) and of course a good point-match collection.
+
 ![Alt text](https://github.com/khaledkhairy/EM_aligner/blob/master/doc/stitching_strategy_small_volume.jpg "stitching_schematic (small datasets)")
 - 	[Install Renderer and point-match services](https://github.com/saalfeldlab/render) and dependencies as indicated above
 -	Ingest image metadata:

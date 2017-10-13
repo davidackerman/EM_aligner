@@ -2,13 +2,23 @@ function [m12_2, m12_1, fh] = find_point_matches_with_matlab(im1,im2, method, vi
 if nargin<4, visible = true; end
 if nargin<5, suppressError = false; end
 if nargin<6, opt = []; end
+if ~isfield(opt, 'verbose'), opt.verbose = 0; end
 B = [];
 T = [];
-%method = 'SURF';%'MSER_SURF';%'SURF';%'SURF'; %'BRISK' 'HARRIS' 'FAST''FAST_SURF';%
 if ~isfield(opt, 'SURF_NumOctaves'), opt.SURF_NumOctaves = 1; end
 if ~isfield(opt, 'SURF_NumScaleLevels'), opt.SURF_NumScaleLevels = 10; end
 if ~isfield(opt, 'SURF_MetricThreshold'), opt.SURF_MetricThreshold = 100; end
-if ~isfield(opt, 'MatchThreshold'), opt.MatchThreshold = 99; end
+
+if ~isfield(opt, 'MatchThreshold'), opt.MatchThreshold = 100; end
+if ~isfield(opt, 'Unique'), opt.Unique = true; end
+if ~isfield(opt, 'Method'), opt.Method = 'Exhaustive'; end
+if ~isfield(opt, 'MaxRatio'), opt.MaxRatio = 0.65; end
+if ~isfield(opt, 'Metric'), opt.Metric = 'SAD'; end
+
+if opt.verbose
+    disp('SURF and match parameters:');
+    disp(opt);
+end
 
 [f1, vp1] = im_get_features(im2,method, opt);
 [f2, vp2] = im_get_features(im1,method, opt);
@@ -34,9 +44,11 @@ function [m1, m2] = im_pair_match_features_local(f1, vp1, f2, vp2, suppressError
 
 index_pairs = matchFeatures(f1, f2,...
     'MatchThreshold', opt.MatchThreshold,...
-    'Unique', true, ...
-    'Method', 'Exhaustive', ...
-    'Metric', 'SAD');
+    'Unique', opt.Unique, ...
+    'Method', opt.Method, ...
+    'MaxRatio', opt.MaxRatio,...
+    'Metric', opt.Metric);
+
 if isempty(index_pairs)
     if suppressError
         warning on;

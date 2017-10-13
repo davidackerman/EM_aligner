@@ -83,7 +83,7 @@ function point_match_optimization(rc, tile_1_id, tile_2_id, SIFT_options, SURF_o
 %        Default: true
 %     fullScaleWidth
 %        Unused is default
-%     fullScaleHeight         : 
+%     fullScaleHeight         :
 %        Unused is default
 % Author: David Ackerman
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -112,13 +112,13 @@ function find_SIFT_point_matches(rc, tile_1_id, tile_2_id, SIFT_options, url_opt
 tile_1_url = get_tile_image_url(rc, tile_1_id, url_options, false);
 tile_2_url = get_tile_image_url(rc, tile_2_id, url_options, false);
 
-[all_options, all_parameter_strings, all_legend_strings] = get_parameter_sets_and_strings(SIFT_options, rc);
-parfor i = 1:size(all_combinations_array,1)
+[all_options, all_parameter_strings, all_legend_strings, all_combinations_array] = get_parameter_sets_and_strings(SIFT_options, rc);
+for i = 1:size(all_combinations_array,1)
     SIFT_options_current = all_options(i);
     parameter_string = all_parameter_strings{i};
     legend_string = all_legend_strings{i};
-    SIFT_options_current.outputDirectory = [SIFT_options_current.outputDirectory parameter_string];
-    system(['mkdir -p ' SIFT_options_current.outputDirectory]);
+    SIFT_options_current.outputDirectory = [SIFT_options_current.outputDirectory parameter_string(1:20)];
+    [a, resp_str] = system(['mkdir -p ' SIFT_options_current.outputDirectory]);
     system(['rm ' SIFT_options_current.outputDirectory '/matches.json']);
     debug_canvas_pair_matches(SIFT_options_current, tile_1_url, tile_2_url);
     fid = fopen([SIFT_options_current.outputDirectory '/matches.json']);
@@ -144,7 +144,7 @@ parfor i = 1:size(all_combinations_array,1)
     set(fh, 'position',  pos_fig+ [0 0 0 50]);
     annotation('textbox', [0.65, 0, 1, 0.85], 'string', legend_string, 'fitboxtotext','on','backgroundcolor','white');
     if ~isempty(result_output_directory)
-        saveas(fh, [ result_output_directory '//SIFT_' parameter_string '.tif']);
+        saveas(fh, [ result_output_directory '//SIFT_' parameter_string(1:40) '_' num2str(randi(1e6)) '.tif']);
     end
 end
 end
@@ -202,12 +202,12 @@ parfor i = 1:numel(all_options)
     ax.Title.String = strrep([{'SURF'}, {['Number of Point-Matches: ' num2str(size(m12_2, 1))]}], '_', '\_');
     annotation('textbox', [0.25, 0, 1, 0.85], 'string', legend_string, 'fitboxtotext','on','backgroundcolor','white');
     set(fh, 'position',  pos_fig+ [0 0 0 50]);
-    saveas(fh, [ result_output_directory '//SURF_' parameter_string '.tif']);
+    saveas(fh, [ result_output_directory '//SURF_' parameter_string(1:40) '_' num2str(randi(1e6)) '_' '.tif']); % cluge: we need a parameter summary for filenames
 end
 end
 
 %% Get parameter sets and necessary strings
-function [all_options, all_parameter_strings, all_legend_strings]= get_parameter_sets_and_strings(varargin)
+function [all_options, all_parameter_strings, all_legend_strings, all_combinations_array]= get_parameter_sets_and_strings(varargin)
 options = varargin{1};
 if nargin==2
     rc = varargin{2};

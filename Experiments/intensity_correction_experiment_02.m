@@ -51,7 +51,7 @@ IMo = mat2gray(IMo);
 % figure;showMatchedFeatures(IMo(:,:,1), IMo(:,:,2),Lo.pm.M{2,1}, Lo.pm.M{2,2}, 'montage');
 %% obtain gray values at generated point-match locations (after scaling-gray values)
 range = [mn mx];
-[Lo, GS] = get_gray_values(Lo, range);
+[Logs, GS] = get_gray_values(Lo, range);
 %% solve: generates solution vector xsol
 
 
@@ -60,14 +60,14 @@ experiment_intensity_correction_linear_system_gen;
 
 
 
-% % Render transformed Lo
+%% Render transformed Lo
 [Wbox, bbox, url] = get_section_bounds_renderer(rc, z);
 sb1 = Wbox(4)+1;
 sb2 = Wbox(3)+1;
 IM = {};
-for ix = 1:numel(Lo.tiles)
+for ix = 1:numel(Logs.tiles)
     I = zeros( sb1, sb2);
-    im = get_image(Lo.tiles(ix));
+    im = get_image(Logs.tiles(ix));
 %     indx_zeros = im<0.0001;
     im = imwarp(im, L.tiles(ix).tform);
     im = mat2gray(im, [mn mx]);
@@ -85,7 +85,8 @@ for ix = 1:numel(Lo.tiles)
     imb = vec(1) + vec(2).*imx + vec(3).*imy + ...
          vec(4) .* imx.*imx + vec(5).*imx.*imy + vec(6).*imy.*imy;
     end
-    im = imsubtract(im,imb);
+    
+    im = imb;%imsubtract(im,imb);
     %im(indx_zeros) = 0;
     %%%%
     
@@ -125,13 +126,13 @@ parfor ix = 1:numel(L.tiles)
     
 end
 
-I = zeros(sb1, sb2);
+Ir = zeros(sb1, sb2);
 for ix = 1:numel(IM)
     im = IM{ix}; 
     indx = im>0.0;
-   I(indx) = im(indx);
+   Ir(indx) = im(indx);
 end
-figure;imshow(I);
+figure(2);clf;imshow(Ir);
 
 % 
 % 

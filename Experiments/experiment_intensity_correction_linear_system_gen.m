@@ -1,7 +1,7 @@
 %% construct linear system for intensity correction and solve
 degree = 1;
-M = Lo.pm.M;
-adj = Lo.pm.adj;
+M = Logs.pm.M;
+adj = Logs.pm.adj;
 %% set up linear system
 Gs12_1  = GS{2,1};
 Gs12_2  = GS{2,2};
@@ -60,7 +60,6 @@ q34 = get_poly_basis_block(m34_2, degree);%[ones(size(m23_1, 1),1) m23_2(:,2) m2
 
 
 A = [];
-% A = [p13 -q13];
 % % pair 1,2
 A = [p12 -q12];
 % 
@@ -81,15 +80,15 @@ A(sa+1: sa+size(p34,1), v4) = -q34;
 
 b = zeros(size(A,1),1);
 
-% v12 = Gs12_1(:)-Gs12_2(:);
-% v13 = Gs13_1(:)-Gs13_2(:);
-% v24 = Gs24_1(:)-Gs24_2(:);
-% v34 = Gs34_1(:)-Gs34_2(:);
-
-v12 = Gs12_1(:)-Gs12_2(:);
-v13 = Gs13_1(:)-Gs13_2(:);
+v12 = Gs12_1(:)-Gs12_2(:) - Gs12_1;
+v13 = Gs13_1(:)-Gs13_2(:) - Gs13_1;
 v24 = Gs24_1(:)-Gs24_2(:);
 v34 = Gs34_1(:)-Gs34_2(:);
+
+% v12 = Gs12_1(:)-Gs12_2(:);
+% v13 = Gs13_1(:)-Gs13_2(:);
+%v24 = Gs24_1(:)-Gs24_2(:);
+%v34 = Gs34_1(:)-Gs34_2(:);
 
 b =   double([v12;v13;v24;v34]);
 % b =   double([-v12;-v13]);b(size(A,1)) = 0;
@@ -98,16 +97,54 @@ b =   double([v12;v13;v24;v34]);
 % b = double([v12]);
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % for the case with no prior, we fix tile 1
-% % A = A(:,tdim+1:end);
-% % xsol = A\b;
-% % xsol = [zeros(tdim, 1);xsol];xsol(12) = 0;
+A = A(:,tdim+1:end);
+xsol = A\b;
+xsol = [zeros(tdim, 1);xsol];%xsol(12) = 0;
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-d = zeros(size(A,2),1);
-lambda = 1;
-K  = A'*A + lambda;
-Lm  = A'*b + lambda*d;
-%     [x2, R] = solve_AxB(K,Lm, opts, d);
-xsol = K\Lm;xsol = [xsol];
+% d = zeros(size(A,2),1);
+% lambda = 1;
+% K  = A'*A + lambda;
+% Lm  = A'*b + lambda*d;
+% %     [x2, R] = solve_AxB(K,Lm, opts, d);
+% xsol = K\Lm;xsol = [xsol];
 
 clc;
 disp(xsol)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

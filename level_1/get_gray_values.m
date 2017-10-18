@@ -1,14 +1,15 @@
 function [Lo, GS] = get_gray_values(Lo, range)
-% given Msection object L with pm field as obtained from
-% get_section_point_matches, re-samples to produce anew M and
-% produces gray values corresponding
-% to those points in M
+% given Msection object Lo with pm field as obtained from
+% get_section_point_matches, re-samples to produce a new L.pm struct and
+% produces gray values corresponding to the new points in Lo.pm.M
+% GS is a cell array with rows corresponding to gray scale values of the corresponding
+% x y points in Lo.pm.M
 % Note: the convention is to use tiles from "acquire", i.e. post-lens and scale
-% Important is that point-matches correspond to the gray-scale image
+
 
 %% obtain rectangle to sample from
 im1 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(1,1))), range);
-npoints = 5;
+npoints = 50;
 for pix = 1:size(Lo.pm.M,1)
     % determine transformation
     tform = estimateGeometricTransform(Lo.pm.M{pix,1}, Lo.pm.M{pix,2}, 'affine');
@@ -38,48 +39,65 @@ for pix = 1:size(Lo.pm.M,1)
     %%%%%%%%%%%%%%%%%%%%%%%%%
 end
 %% % sosi
-    d = 10;
-    pix = 1;
-x1 = Lo.pm.M{pix,1};
-x2 = Lo.pm.M{pix,2};
-disp([min(x1) max(x1)]);
-disp([min(x2) max(x2)]);
-disp(size(im1));
-% %
-im1 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(pix,1))), range);
-im1 = medfilt2(im1, [d d]);
-im2 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(pix,2))), range);
-im2 = medfilt2(im2, [d d]);
-
-figure;imshow(mat2gray(im1));hold on;plot(Lo.pm.M{pix,1}(:,1),...
-    Lo.pm.M{pix,1}(:,2), 'y*');
-figure;imshow(mat2gray(im2));hold on;plot(Lo.pm.M{pix,2}(:,1),...
-    Lo.pm.M{pix,2}(:,2), 'y*');
-figure;showMatchedFeatures(im1, im2, x1, x2, 'montage');
-drawnow;
+%     d = 1;
+%     pix = 1;   % index of adjacency pair   1 = 1,3
+% x1 = Lo.pm.M{pix,1};
+% x2 = Lo.pm.M{pix,2};
+% disp([min(x1) max(x1)]);
+% disp([min(x2) max(x2)]);
+% disp(size(im1));
+% 
+% %%% get images and median filter
+% im1 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(pix,1))), range);
+% im1 = medfilt2(im1, [d d]);
+% indx1 = sub2ind(...
+%     size(im1), ...
+%     round(Lo.pm.M{pix,1}(:,2)),...
+%     round(Lo.pm.M{pix,1}(:,1)));
+% gs1 = im1(indx1);
+% 
+% im2 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(pix,2))), range);
+% im2 = medfilt2(im2, [d d]);
+% indx2 = sub2ind(size(im2), ...
+%     round(Lo.pm.M{pix,2}(:,2)),...
+%     round(Lo.pm.M{pix,2}(:,1)));
+% gs2 = im2(indx2);
+% 
+% %%%% show image 1 and points
+% figure(1);clf;imshow(mat2gray(im1));hold on;plot(Lo.pm.M{pix,1}(:,1),...
+%     Lo.pm.M{pix,1}(:,2), 'y*');
+% 
+% %%%% show image 2 and points
+% figure(2);clf;imshow(mat2gray(im2));hold on;plot(Lo.pm.M{pix,2}(:,1),...
+%     Lo.pm.M{pix,2}(:,2), 'y*');
+% 
+% figure(3);clf;showMatchedFeatures(im1, im2, x1, x2, 'montage');
+% drawnow;
 %%
 
 %% determine gray-scale values
 d = 10;
 GS  = {};
 for pix = 1:size(Lo.pm.M,1)
+    
+    %%% obtain image 1, median filter and record gray scale values at points
+    %%% corresponding to x y coordinates in Lo.pm.M
     im1 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(pix,1))), range);
     im1 = medfilt2(im1, [d d]);
-    
     indx1 = sub2ind(...
         size(im1), ...
-        round(Lo.pm.M{pix,1}(:,1)),...
-        round(Lo.pm.M{pix,1}(:,2)));
-    
+        round(Lo.pm.M{pix,1}(:,2)),...
+        round(Lo.pm.M{pix,1}(:,1)));
     gs1 = im1(indx1);
+    
+    %%% obtain image 1, median filter and record gray scale values at points
+    %%% corresponding to x y coordinates in Lo.pm.M
     
     im2 = mat2gray(get_image(Lo.tiles(Lo.pm.adj(pix,2))), range);
     im2 = medfilt2(im2, [d d]);
-    
     indx2 = sub2ind(size(im2), ...
-        round(Lo.pm.M{pix,2}(:,1)),...
-        round(Lo.pm.M{pix,2}(:,2)));
-    
+        round(Lo.pm.M{pix,2}(:,2)),...
+        round(Lo.pm.M{pix,2}(:,1)));
     gs2 = im2(indx2);
     
     % find and delete entries that point to zero gray scale
@@ -90,11 +108,11 @@ for pix = 1:size(Lo.pm.M,1)
     Lo.pm.M{pix,1}(ixdel,:) = [];
     Lo.pm.M{pix,2}(ixdel,:) = [];
     %
-    
+    %%%% store in GS cell array
     GS{pix,1} = gs1;
     GS{pix,2} = gs2;
     
-    
+
 end
 
 

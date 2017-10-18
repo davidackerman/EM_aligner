@@ -1,10 +1,31 @@
-function [ fft2_results ] =filter_empty_tiles_from_collection(rc, zu, opts )
+function [ fft2_results ] =filter_empty_tiles_from_collection(rcs, zu, opts )
 %% Removes blank tiles from rc over the range zu, or replaces blank tiles in the middle
+% If rcs is an array of rcs then the first one is copied to the name of the
+% second one, which is then used for filtering
+
 % opts has fields
 % cutoff_value (1E4):             The cutoff used to determine if the tile is blank
 % save_removed_tile_images (0):   To save the images of removed tiles, saved with the tile id prefixed with the blank tile metric
 % output_directory (pwd):         The directory where the images and files containing a list of the removed or replaced tiles will be placed
+% remove_copied_tiles (false):    Whether to also delete tiles that have been replaced by adjacent tiles
 % Returns fft2_results struct
+
+
+if numel(rcs)>1
+   rcin = rcs(1);
+   rc = rcs(2);
+   str = sprintf('/groups/flyTEM/flyTEM/render/bin/copy-stack.sh --sparkNodes 1 --sparkBillTo flyem --sparkRunInBackground n --sparkDir /groups/flyem/data/render/spark_output --baseDataUrl http://tem-services:8080/render-ws/v1 --owner %s --project %s --stack %s --targetStack %s',...
+       rcin.owner, rcin.project, rcin.stack, rc.stack);
+   if stack_exists(rc)
+       warning('Not creating output stack %s, it already exists', rc.stack);
+   else
+       fprintf('Making output stack:');
+       system(str);
+       set_renderer_stack_state_complete(rc);
+   end
+else
+    rc = rcs; 
+end
 if nargin==1
     zu = get_section_ids(rc);
     opts = [];
@@ -26,6 +47,7 @@ end
 if ~isfield(opts, 'cutoff_value'), opts.cutoff_value = 1E4; end
 if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 0;  end
 if ~isfield(opts, 'output_directory'), opts.output_directory = pwd;
+if ~isfield(opts, 'remove_copied_tiles'), opts.remove_copied_tiles = false; end
 fft2_results  = find_blank_tiles( rc, zu, opts );
 all_tile_ids = [fft2_results(:).tile_ids];
 all_tile_metrics = [fft2_results(:).blank_metric];
@@ -97,11 +119,17 @@ for i=1:numel(tile_file_string)
 end
 fclose(fid_replace);
 fclose(fid_remove);
+
 % fid_remove = fopen([opts.output_directory '/removed_tiles.txt'],'wt');
 % for i=1:numel(tile_ids_to_remove)
 %    fprintf(fid_remove, '%s %d\n', tile_ids_to_remove{i},tile_to_remove_is_in_middle(i));
 % end
 % remove edge blank tiles
-delete_renderer_tile(rc,tile_ids_to_remove);
+if opts.remove_copied_tiles == true
+    delete_renderer_tile(rc,tile_ids_to_replace_or_remove);
+else
+    delete_renderer_tile(rc,tile_ids_to_remove);
+end
+end
 end
 

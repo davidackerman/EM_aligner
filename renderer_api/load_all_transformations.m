@@ -1,4 +1,4 @@
-function [T, map_id, tIds, section_id, r, c] = load_all_transformations(rc, zu, dir_scratch)
+function [T, map_id, tIds, section_id, r, c, tile_image_path] = load_all_transformations(rc, zu, dir_scratch)
 % fastest way to load tile transformations from a renderer collection for 
 % z-values specified in vector zu.
 % Requires specification of a scratch directory.
@@ -30,7 +30,7 @@ str = ['head -3 ' fn_layout];[a, c] = system(str);if rc.verbose, disp(c); end
 str = ['tail -3 ' fn_layout];[a, c] = system(str);if rc.verbose, disp(c); end
 fid = fopen(fn_layout, 'r');
 % C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%n%s%n%n%n%s', 'delimiter', '\t');
-if nargout == 6
+if nargout >= 6
     C = textscan(fid,'%n%s%n%n%n%n%n%n%n%n%s%s%s%s%s%s', 'delimiter', '\t');
 else % read r and c in as strings
     C = textscan(fid,'%n%s%n%n%n%n%n%n%s%s%s%s%s%s%s%s', 'delimiter', '\t');
@@ -40,7 +40,7 @@ delete(fn_layout);
 section_id = C{1};
 tIds = C{2};
 T = [C{3}(:) C{4}(:) C{5}(:) C{6}(:) C{7}(:) C{8}(:)];
-if nargout == 6
+if nargout >= 6
     r = C{9}(:);
     c = C{10}(:);
 end
@@ -50,4 +50,4 @@ parfor ix = 1:numel(tIds)
     id_vec(ix) = tIds(ix);%tIds{ix};
 end
 map_id = containers.Map(id_vec, count_vec);
-
+tile_image_path = C{12};

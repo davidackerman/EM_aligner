@@ -71,7 +71,7 @@ parfor i=1:numel(zs)
     cols = [L.tiles.col];
     num_tiles = numel(L.tiles);
     if num_tiles ==1
-        fft2_results(i).is_in_middle = 1;
+        fft2_results(i).is_in_middle = true;
     else
         fft2_results(i).is_in_middle = (cols~= min(cols) & cols~=max(cols));
     end

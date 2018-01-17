@@ -5,6 +5,9 @@ function system_solve_helper_ingest_into_renderer_database(rc, rcout, ...
 if ~isfield(opts, 'translate_to_positive_space'),
     opts.translate_to_positive_space = 1;
 end
+if ~isfield(opts, 'shift_by_tile_dimension'), 
+    opts.shift_by_tile_dimension = 1;
+end
 if ~isempty(rcout)
     disp('--------------- Ingesting data .....');
     
@@ -15,11 +18,16 @@ if ~isempty(rcout)
         urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
             rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
         j = webread(urlChar, webopts);
-        jt1 = tile(j(1));
-        Width = jt1.W;
-        Height = jt1.H;
-        
-        delta = -(5000 + max([Width Height]));
+      %  jt1 = tile(j(1));
+        Width = j(1).width; %jt1.W;
+        Height = j(1).height; %jt1.H;
+        if opts.shift_by_tile_dimension
+            delta = -(5000 + max([Width Height]));
+            disp(' shifting by tile dimension ');
+        else
+            delta = 0; 
+            disp(' not shifting by tile dimension ');
+        end
         dx = min(Tout(:,3)) +  delta;
         dy = min(Tout(:,6)) +  delta;
         for ix = 1:size(Tout,1)

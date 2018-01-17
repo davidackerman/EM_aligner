@@ -107,7 +107,7 @@ function [err,R, Tout, Diagnostics] = system_solve_affine_with_constraint(nfirst
 %   Diagnostics.dim_A: dimensions of A (size(A)
 %   Diagnostics.nnz_A: number of non-zeros in original matrix A (that does not get solved)
 %   Diagnostics.nnz_K: number of non-zeros in sparse matrix K, which gets solved
-%   Diagnostics.precision: precision of matrix solution: norm(K*x-Lm)/norm(Lm)
+%   Diagnostics.precision: prtrautmane_test_montage_canvas_tier_0ecision of matrix solution: norm(K*x-Lm)/norm(Lm)
 %   Diagnostics.err: norm of residual of the orginal system A x b (not K x Lm), given by norm(A*x-b).
 %                    This is the actual magnitude of point-match residuals and an important measure of
 %                    how well point-matches actually match given the solution.

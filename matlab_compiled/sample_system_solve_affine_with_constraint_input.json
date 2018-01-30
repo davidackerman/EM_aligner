@@ -52,7 +52,7 @@
 		"stack": "0003x0003_000008_davidtest",
 		"service_host": "10.40.3.162:8080",
 		"baseURL": "http://10.40.3.162:8080/render-ws/v1",
-		"verbose": 0
+		"verbose": 1
 	},
 	"source_point_match_collection": {
 		"server": "http://10.40.3.162:8080/render-ws/v1",
@@ -61,5 +61,6 @@
 		"verbose": 0
 	},
 	"verbose": 1,
-    "diagnostics_level": 1
+    	"diagnostics_level": 1,
+    	"num_cores": 2
 }

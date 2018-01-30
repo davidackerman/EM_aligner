@@ -329,9 +329,9 @@ if ~isempty(rcout)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
     j = webread(urlChar, webopts);
-    jt1 = tile(j(1));
-    Width = jt1.W;
-    Height = jt1.H;
+    %jt1 = tile(j(1));
+    Width = j(1).width;
+    Height = j(1).height;
     
     delta = -(5000 + max([Width Height]));
     dx = min(Tout(:,3)) +  delta;

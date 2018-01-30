@@ -4,7 +4,7 @@ function [err, resp] = create_renderer_stack(rc)
 %
 % Author: Khaled Khairy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-verbose = 0;
+if ~isfield(rc, 'verbose'), rc.verbose = 0; end
 err = 0;
 check_input(rc);
 if ~isfield(rc, 'versionNotes'), rc.versionNotes = 'none';end
@@ -23,12 +23,12 @@ if ~isfield(rc, 'renderbinPath')
     rc.renderbinPath = '/groups/flyTEM/flyTEM/render/bin';
 end
 
-strcmd = sprintf('%s/manage-stack.sh --baseDataUrl %s --owner %s --project %s --action CREATE --stack %s --versionNotes "%s";',...
+strcmd = sprintf('%s/manage-stack.sh --baseDataUrl %s --owner %s --project %s --action CREATE --stack %s --versionNotes "%s"',...
     rc.renderbinPath, rc.baseURL, rc.owner, rc.project, rc.stack, rc.versionNotes);
+if isfield(rc, 'diagnostics'), strcmd = [strcmd sprintf(' --alignmentQuality %f', rc.diagnostics)]; end
+strcmd = [strcmd ';'];
 
-
-
-if verbose,
+if rc.verbose,
     disp('In create_renderer_stack: command issued');
     disp(strcmd);
 end
@@ -40,7 +40,7 @@ catch err_cmd_exec
     error(['Error executing: ' strcmd]);
 end
 
-if verbose,
+if rc.verbose,
     disp('system response:');
     disp(a);
     disp(resp);
@@ -52,11 +52,11 @@ if strfind(resp, 'caught exception'),
 end
 
 
-if verbose,
-    disp(strcmd);
-    disp(a);
-    disp(resp);
-end
+%if rc.verbose,
+%    disp(strcmd);
+%    disp(a);
+%    disp(resp);
+%end
 
 %%
 function check_input(rc)

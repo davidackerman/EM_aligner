@@ -18,5 +18,6 @@ if sl.verbose
     end
 end
 
+if isfield(sl, 'num_cores'), parpool(sl.num_cores); end
 %%% deprecated?
 [err,R, Tout, A, b, map_id, tIds, z_val] = system_solve_rigid_approximation(sl.first_section, sl.last_section, sl.source_collection, sl.source_point_match_collection, sl.solver_options, sl.target_collection);

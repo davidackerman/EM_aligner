@@ -75,9 +75,9 @@ classdef tile
                 if isfield(p.layout, 'rotation'),obj.rot = p.layout.rotation;end
                 if isfield(p.layout, 'temca'),obj.temca_conf = str2double(p.layout.temca);end
                 obj.sectionId = p.layout.sectionId;
-                
+                try
                 if strcmp(p.mipmapLevels.x0.imageUrl(1:4), 'file')
-                    if isfield(p.mipmapLevels.x0, 'imageUrl'),
+                    if isfield(p.mipmapLevels.x0, 'imageUrl')
                         obj.path = p.mipmapLevels.x0.imageUrl(6:end);
                     end
                 end
@@ -85,6 +85,9 @@ classdef tile
                     if isfield(p.mipmapLevels.x0, 'maskUrl'),
                         obj.mask = p.mipmapLevels.x0.maskUrl(6:end);
                     end
+                end
+                catch
+                   %disp('No mipmap information');
                 end
                 % check if we have a list of transformations, in which case
                 % we need

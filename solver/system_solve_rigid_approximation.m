@@ -246,10 +246,15 @@ if opts.use_peg  % delete fictitious tile
 end
 
 %% Step 5: ingest scaled similarity into Renderer database
+%%% temporary Renderer stack
+% rctemp = rcout;
+% rctemp.stack = [rctemp.stack '_temp_similarity'];
+% system_solve_helper_ingest_into_renderer_database(rc, rctemp, ...
+%     Tout, tIds, z_val, opts, zu);
 if ~isempty(rcout)
     %%% temporary Renderer stack
     rctemp = rcout;
-    rctemp.stack = [rctemp.stack '_temp_similarity'];
+    rctemp.stack = [rctemp.stack '_temp'];
     
     %%%%
     disp('** STEP 5:   Ingesting data .....');

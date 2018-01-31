@@ -100,8 +100,12 @@ classdef Msection
                     catch err_reading
                         kk_disp_err(err_reading);
                         disp('Trying again...');
+                        try
                         j = webread(urlChar, webopts);
                         disp('Success!');
+                        catch err_reading_02
+                            disp('Failed to read tile-specs');
+                        end
                     end
                     % generate the tiles
                     jt = tile;

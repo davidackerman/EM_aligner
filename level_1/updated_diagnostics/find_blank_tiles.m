@@ -43,6 +43,7 @@ is_in_middle = [fft2_results(:).is_in_middle];
 [sorted_metrics,sorted_indices] = sort(all_tile_metrics);
 sorted_ids = all_tile_ids(sorted_indices);
 sorted_is_in_middle = is_in_middle(sorted_indices);
+sorted_is_in_middle = logical(sorted_is_in_middle);
 figure(); hold on;
 plot(tile_indices(sorted_is_in_middle), sorted_metrics(sorted_is_in_middle),'ro')
 plot(tile_indices(~sorted_is_in_middle), sorted_metrics(~sorted_is_in_middle),'b.')

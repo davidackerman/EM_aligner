@@ -26,23 +26,23 @@ if numel(rcs)>1
 else
     rc = rcs; 
 end
-if nargin==1
-    zu = get_section_ids(rc);
-    opts = [];
-end
-if nargin==2
-    if isstruct(varargin{1})
-        opts = varargin{1};
-        zu = get_section_ids(rc);
-    else
-        opts = [];
-        zu = varargin{1};
-    end
-end
-if nargin==3
-    zu = varargin{1};
-    opts = varargin{2};
-end
+% if nargin==1
+%     zu = get_section_ids(rc);
+%     opts = [];
+% end
+% if nargin==2
+%     if isstruct(varargin{1})
+%         opts = varargin{1};
+%         zu = get_section_ids(rc);
+%     else
+%         opts = [];
+%         zu = varargin{1};
+%     end
+% end
+% if nargin==3
+%     zu = varargin{1};
+%     opts = varargin{2};
+% end
 
 if ~isfield(opts, 'cutoff_value'), opts.cutoff_value = 1E4; end
 if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 0;  end

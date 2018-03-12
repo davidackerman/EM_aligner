@@ -12,7 +12,9 @@ function [err,R, Tout, Diagnostics, PM] = system_solve_affine_with_constraint(nf
 %
 % opts: options struct, example values and comments below:
 % 
-%     opts.transfac = 1e-15;                  % translation constraint (regulrization). Small values leave translation free to be optimized for
+%     opts.transfac = 1e-15;                  % translation constraint (regularization). Small values leave translation free to be optimized for
+%     opts.transfacx = 1e-15;                 % translation constrint in x. When this is set, opts.transfac is disregarded for x
+%     opts.transfacy = 1e-5;                  % translation constrint in y. When this is set, opts.transfac is disregarded for y
 %     opts.lambda = 10^(1);                   % general regularization parameter
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     % IMPORTANT --- PLEASE READ THE ENTIRE CONSTRAINTS STRATEGY:

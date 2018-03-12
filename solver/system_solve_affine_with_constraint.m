@@ -358,8 +358,16 @@ d = reshape(T', ncoeff,1);
 % build constraints into system
 lambda = opts.lambda * ones(ncoeff,1);  % defines the general default constraint
 % modulate lambda accoding to opts.transfac
+if isfield(opts, 'transfac')
 if opts.transfac~=1
     lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
+end
+end
+if isfield(opts, 'transfacx')
+    lambda(3:6:end) = lambda(3:6:end) * opts.transfacx;
+end
+if isfield(opts, 'transfacy')
+    lambda(6:6:end) = lambda(6:6:end) * opts.transfacy;
 end
 
 

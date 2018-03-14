@@ -36,7 +36,7 @@
 		"debug": 0,
 		"constrain_by_z": 0,
 		"sandwich": 0,
-		"constraint_fac": 1e+15
+		"constraint_fac": 1e+15,
 	},
 	"source_collection": {
 		"owner": "flyTEM",
@@ -61,6 +61,5 @@
 		"verbose": 0
 	},
 	"verbose": 1,
-    	"diagnostics_level": 1,
     	"num_cores": 2
 }

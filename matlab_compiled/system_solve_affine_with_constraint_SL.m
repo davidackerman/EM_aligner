@@ -17,7 +17,13 @@ if sl.verbose
     end
 end
 
-if isfield(sl, 'num_cores'), parpool(sl.num_cores); end
+if isfield(sl, 'num_cores')
+    if sl.num_cores>1
+        parpool(sl.num_cores)
+    end
+else
+   parpool 
+end
 %%% deprecated?
 [err,R, Tout, Diagnostics] = system_solve_affine_with_constraint(sl.first_section, sl.last_section, sl.source_collection, sl.source_point_match_collection, sl.solver_options, sl.target_collection);
 if sl.solver_options.diagnostics_level>=0

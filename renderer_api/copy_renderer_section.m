@@ -7,14 +7,14 @@ check_input(rcto);
 check_input(rcfrom);
 if ~stack_exists(rcto)
     disp('Target collection not found, creating new collection in state: ''Loading''');
-    resp = create_renderer_stack(rc_target);
+    resp = create_renderer_stack(rcto);
 end
 
 % configure
 verbose = 0;
 translate_to_positive_space = 0;
 complete = 0;
-disableValidation = 0;
+disableValidation = 1;
 err = zeros(numel(z));
 parfor zix = 1:numel(z)
     if verbose, disp(['copying section ' num2str(z(zix)) ' from ' rcfrom.stack ' to ' rcto.stack]);end

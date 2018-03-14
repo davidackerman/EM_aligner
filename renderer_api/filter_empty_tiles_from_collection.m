@@ -27,9 +27,11 @@ if numel(rcs)>1
 else
     rc = rcs(1); 
 end
+
 if isempty(zu)
      zu = get_section_ids(rc);
 end
+
 if ~isfield(opts, 'cutoff_value'), opts.cutoff_value = 1E4; end
 if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 0;  end
 if ~isfield(opts, 'output_directory'), opts.output_directory = pwd; end

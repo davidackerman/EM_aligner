@@ -77,8 +77,10 @@ diary off;
 diary on;
 disp('loading point matches');
 timer_load_point_matches = tic;
-if isfield(opts, 'pm_data_file')
-    load(opts.pm_data_file);
+if isfield(opts, 'PM')
+    PM = opts.PM;
+elseif isfield(opts, 'pm_data_file')
+    load(opts.pm_data_file); % loads a saved PM struct
 else
     
     [M, adj, W, np, discard] = system_solve_helper_load_point_matches(...

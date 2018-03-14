@@ -9,6 +9,27 @@ function [I, Io] = get_xz_image_renderer(rc, x, y, width, dy, scale, zstart, zfi
 %* width = 1000;
 %* scale = 0.5;
 %* res = [4 4 50]; % voxel resolution in nm
+%%%%% Example usage:
+% % % % % [Wbox, bbox, url] = get_slab_bounds_renderer(rcfine);
+% % % % % scale = 0.1;
+% % % % % dx = 5/scale;
+% % % % % x = Wbox(1) + Wbox(3)/2;
+% % % % % y = Wbox(2);
+% % % % % height = Wbox(4);
+% % % % % disp([x y height dx]);
+% % % % % [Iyz, Io] = get_yz_image_renderer(rcfine, x, y, dx, height, scale,...
+% % % % %     nfirst, nlast, [2 2 1]);
+% % % % % % imtool(Iyz); %
+% % % % % % zrange = nfirst:nlast;
+% % % % % % I = imresize(Iyz,[height numel(zrange)*(zres/yres)]);
+% % % % % 
+% % % % % % %
+% % % % % h =  size(Iyz,1);%20000;
+% % % % % w =  size(Iyz,2);
+% % % % % im = Iyz(1:h,:);
+% % % % % I = imresize(im,[h/32 (w)]);
+% % % % % figure(2);imshow(I); title('Affine based on acquire');
+
 % Author: Khaled Khairy. Janelia Research Campus
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

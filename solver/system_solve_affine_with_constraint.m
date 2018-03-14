@@ -1,4 +1,4 @@
-function [err,R, Tout, Diagnostics] = system_solve_affine_with_constraint(nfirst, nlast, rc, pm, opts, rcout)
+function [err,R, Tout, Diagnostics, PM] = system_solve_affine_with_constraint(nfirst, nlast, rc, pm, opts, rcout)
 % Fast solve and ingest of section alignment when regularizer (starting collection)
 % rc and full set of point-matches pm is provided
 % After solving, ingests solved tiles into Renderer collection rcout if non empty
@@ -12,7 +12,9 @@ function [err,R, Tout, Diagnostics] = system_solve_affine_with_constraint(nfirst
 %
 % opts: options struct, example values and comments below:
 % 
-%     opts.transfac = 1e-15;                  % translation constraint (regulrization). Small values leave translation free to be optimized for
+%     opts.transfac = 1e-15;                  % translation constraint (regularization). Small values leave translation free to be optimized for
+%     opts.transfacx = 1e-15;                 % translation constrint in x. When this is set, opts.transfac is disregarded for x
+%     opts.transfacy = 1e-5;                  % translation constrint in y. When this is set, opts.transfac is disregarded for y
 %     opts.lambda = 10^(1);                   % general regularization parameter
 %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     % IMPORTANT --- PLEASE READ THE ENTIRE CONSTRAINTS STRATEGY:
@@ -358,8 +360,16 @@ d = reshape(T', ncoeff,1);
 % build constraints into system
 lambda = opts.lambda * ones(ncoeff,1);  % defines the general default constraint
 % modulate lambda accoding to opts.transfac
+if isfield(opts, 'transfac')
 if opts.transfac~=1
     lambda(3:3:end) = lambda(3:3:end) * opts.transfac;
+end
+end
+if isfield(opts, 'transfacx')
+    lambda(3:6:end) = lambda(3:6:end) * opts.transfacx;
+end
+if isfield(opts, 'transfacy')
+    lambda(6:6:end) = lambda(6:6:end) * opts.transfacy;
 end
 
 

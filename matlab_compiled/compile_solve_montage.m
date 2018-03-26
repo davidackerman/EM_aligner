@@ -2,8 +2,9 @@
 
 
 dir_curr = pwd;
-dir_EM_aligner = '/groups/flyTEM/home/khairyk/EM_aligner';   % your local EM_aligner directory
-cd /groups/flyTEM/home/khairyk/EM_aligner/matlab_compiled    % deploy to this directory
+dir_EM_aligner = '/groups/flyTEM/home/ackermand/EM_aligner';   % your local EM_aligner directory
+cd /groups/flyTEM/home/ackermand/EM_aligner/matlab_compiled
+    % deploy to this directory
 
 
 
@@ -31,5 +32,5 @@ astr = [astr sprintf(' -a %s/external/jsonlab/%s',dir_EM_aligner, fn_use(ix).nam
 end
 
 
-str = sprintf('mcc -m -R -nodesktop -v solve_montage_SL.m %s;', astr);
+str = sprintf('mcc -m -R -nodesktop -w off:vision:obsolete:obsoleteFunctionality -v solve_montage_SL.m %s;', astr);
 eval(str);

@@ -17,7 +17,8 @@
 		"translation_fac": 1,
         "use_peg": 1,
         "peg_weight": 0.0001,
-        "peg_npoints": 5
+        "peg_npoints": 5,
+	"nbrs": 0
 	},
 	"source_collection": {
 		"stack": "v12_acquire_merged",

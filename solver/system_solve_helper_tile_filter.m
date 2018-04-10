@@ -5,6 +5,9 @@ function  tIds_removed  = system_solve_helper_tile_filter( rcin, rcout, zs, opts
 %   disconnected tiles (unless they are part of sections containing 1 or 2 tiles.
 %   ingesting the filtered collection into rcout.
 
+if ~isfield(opts, 'nchunks_ingest'), opts.nchunks_ingest = 32;end
+if ~isfield(opts, 'disableValidation'), opts.disableValidation = 1;end
+
 % Get section information
 if isempty(zs)
     [zu, sID, sectionId, z, ns] = get_section_ids(rcin);

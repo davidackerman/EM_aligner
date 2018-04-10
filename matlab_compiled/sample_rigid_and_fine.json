@@ -1,0 +1,101 @@
+{
+	"first_section": 2200,
+	"last_section": 2699,
+	"rigid_solver_options": {
+		"degree": 0,
+		"solver": "backslash",
+		"transfac": 1,
+		"nbrs": 2,
+		"nbrs_step": 1,
+		"xs_weight": 1,
+		"min_points": 1,
+		"max_points": 150,
+		"outlier_lambda": 100,
+		"min_tiles": 2,
+		"matrix_only": 0,
+		"distribute_A": 16,
+		"dir_scratch": "/scratch/ackermand",
+		"distributed": 0,
+		"disableValidation": 1,
+		"use_peg": 0,
+		"filter_point_matches": 1,
+		"pmopts": {
+			"NumRandomSamplingsMethod": "Desired confidence",
+			"MaximumRandomSamples": 5000,
+			"DesiredConfidence": 99.9,
+			"PixelDistanceThreshold": 50
+		},
+		"verbose": 0,
+		"debug": 0
+	},
+	"fine_solver_options": {
+		"transfac": 1e-10,
+		"lambda": 1000000,
+		"constrain_by_z": 0,
+		"sandwich": 0,
+		"constraint_fac": 1e+15,
+		"filter_point_matches": 1,
+		"save_matrix": 0,
+		"degree": 1,
+		"solver": "backslash",
+		"nbrs": 2,
+		"nbrs_step": 1,
+		"xs_weight": 1,
+		"min_points": 1,
+		"max_points": "_Inf_",
+		"outlier_lambda": 100,
+		"min_tiles": 2,
+		"pastix": {
+			"ncpus": 8,
+			"parms_fn": "/nrs/flyTEM/khairy/FAFB00v13/matlab_production_scripts/params_file.txt",
+			"split": 1
+		},
+		"matrix_only": 0,
+		"distribute_A": 16,
+		"dir_scratch": "/scratch/ackermand",
+		"distributed": 0,
+		"disableValidation": 1,
+		"edge_lambda": 1000000,
+		"use_peg": 0,
+		"pmopts": {
+			"NumRandomSamplingsMethod": "Desired confidence",
+			"MaximumRandomSamples": 5000,
+			"DesiredConfidence": 99.9,
+			"PixelDistanceThreshold": 50
+		},
+		"verbose": 1,
+		"debug": 0
+	},
+	"source_collection": {
+		"stack": "0001x0001_000000",
+		"owner": "flyTEM",
+		"project": "trautmane_fafb_fold_montage_tiles_sample_tier_0",
+		"service_host": "10.40.3.162:8080",
+		"baseURL": "http://10.40.3.162:8080/render-ws/v1",
+		"verbose": 0
+	},
+	"rigid_collection": {
+		"stack": "davidrigid_2200_2699",
+		"owner": "flyTEM",
+		"project": "trautmane_fafb_fold_montage_tiles_sample_tier_0",
+		"service_host": "10.40.3.162:8080",
+		"baseURL": "http://10.40.3.162:8080/render-ws/v1",
+		"verbose": 0
+	},
+	"fine_collection": {
+		"stack": "davidTest_affine",
+		"owner": "flyTEM",
+		"project": "trautmane_fafb_fold_montage_tiles_sample_tier_0",
+		"service_host": "10.40.3.162:8080",
+		"baseURL": "http://10.40.3.162:8080/render-ws/v1",
+		"verbose": 0,
+		"versionNotes": "Fine alignment: regularized by rigid"
+	},
+	"source_point_match_collection": {
+		"server": "http://10.40.3.162:8080/render-ws/v1",
+		"owner": "flyTEM",
+		"match_collection": "trautmane_fafb_fold_montage_tiles_sample_tier_0_0001x0001_000000",
+		"verbose": 0
+	},
+	"verbose": 1
+}

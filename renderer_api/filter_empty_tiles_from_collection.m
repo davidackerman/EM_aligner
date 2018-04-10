@@ -1,7 +1,8 @@
 function [ fft2_results ] =filter_empty_tiles_from_collection(rcs, zu, opts )
 %% Removes blank tiles from rc over the range zu, or replaces blank tiles in the middle
 % If rcs is an array of rcs then the first one is copied to the name of the
-% second one, which is then used for filtering
+% second one, which is then used for filtering. Varargin is either opts, or
+% zu and opts
 
 % opts has fields
 % cutoff_value (1E4):             The cutoff used to determine if the tile is blank
@@ -19,41 +20,28 @@ if numel(rcs)>1
    if stack_exists(rc)
        warning('Not creating output stack %s, it already exists', rc.stack);
    else
-       fprintf('Making output stack:');
+       fprintf('Making output stack:\n');
        system(str);
        set_renderer_stack_state_complete(rc);
    end
 else
-    rc = rcs; 
+    rc = rcs(1); 
 end
-% if nargin==1
-%     zu = get_section_ids(rc);
-%     opts = [];
-% end
-% if nargin==2
-%     if isstruct(varargin{1})
-%         opts = varargin{1};
-%         zu = get_section_ids(rc);
-%     else
-%         opts = [];
-%         zu = varargin{1};
-%     end
-% end
-% if nargin==3
-%     zu = varargin{1};
-%     opts = varargin{2};
-% end
+
+if isempty(zu)
+     zu = get_section_ids(rc);
+end
 
 if ~isfield(opts, 'cutoff_value'), opts.cutoff_value = 1E4; end
 if ~isfield(opts, 'save_removed_tile_images'), opts.save_removed_tile_images = 0;  end
-if ~isfield(opts, 'output_directory'), opts.output_directory = pwd;
+if ~isfield(opts, 'output_directory'), opts.output_directory = pwd; end
 if ~isfield(opts, 'remove_copied_tiles'), opts.remove_copied_tiles = false; end
 fft2_results  = find_blank_tiles( rc, zu, opts );
 all_tile_ids = [fft2_results(:).tile_ids];
 all_tile_metrics = [fft2_results(:).blank_metric];
 all_tile_is_in_middle = [fft2_results(:).is_in_middle];
 all_tile_zs = [fft2_results(:).tile_zs];
-tile_indices_below_cutoff = find(all_tile_metrics<opts.cutoff_value);
+tile_indices_below_cutoff = find([fft2_results(:).blank_metric]<opts.cutoff_value);
 tile_ids_below_cutoff= all_tile_ids(tile_indices_below_cutoff);
 tile_will_be_replaced_or_removed = cell(size(tile_ids_below_cutoff)); % one replaced, two removed
 tile_ids_to_replace_or_remove = cell(size(tile_ids_below_cutoff));
@@ -102,7 +90,7 @@ parfor i=1:numel(tile_indices_below_cutoff)
     end
 end
 
-
+system(['mkdir -p ' opts.output_directory]);
 fid_replace = fopen([opts.output_directory '/replaced_tiles.txt'],'wt');
 fid_remove = fopen([opts.output_directory '/removed_tiles.txt'],'wt');
 tile_ids_to_remove={};
@@ -129,7 +117,6 @@ if opts.remove_copied_tiles == true
     delete_renderer_tile(rc,tile_ids_to_replace_or_remove);
 else
     delete_renderer_tile(rc,tile_ids_to_remove);
-end
 end
 end
 

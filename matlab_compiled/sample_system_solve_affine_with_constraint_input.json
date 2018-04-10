@@ -36,29 +36,30 @@
 		"debug": 0,
 		"constrain_by_z": 0,
 		"sandwich": 0,
-		"constraint_fac": 1e+15
+		"constraint_fac": 1e+15,
 	},
 	"source_collection": {
 		"owner": "flyTEM",
-		"project": "trautmane_test",
-		"stack": "montage_canvas_tier_0_rigid",
+		"project": "trautmane_test_rough_tiles_tier_1",
+		"stack": "0003x0003_000008",
 		"service_host": "10.40.3.162:8080",
 		"baseURL": "http://10.40.3.162:8080/render-ws/v1",
 		"verbose": 0
 	},
 	"target_collection": {
 		"owner": "flyTEM",
-		"project": "trautmane_test",
-		"stack": "montage_canvas_tier_0_fine",
+		"project": "trautmane_test_rough_tiles_tier_1",
+		"stack": "0003x0003_000008_davidtest",
 		"service_host": "10.40.3.162:8080",
 		"baseURL": "http://10.40.3.162:8080/render-ws/v1",
-		"verbose": 0
+		"verbose": 1
 	},
 	"source_point_match_collection": {
 		"server": "http://10.40.3.162:8080/render-ws/v1",
 		"owner": "flyTEM",
-		"match_collection": "trautmane_test_montage_canvas_tier_0",
+		"match_collection": "trautmane_test_rough_tiles_tier_1_0003x0003_000008",
 		"verbose": 0
 	},
-	"verbose": 1
+	"verbose": 1,
+    	"num_cores": 2
 }

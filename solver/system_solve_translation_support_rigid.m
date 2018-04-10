@@ -1,4 +1,4 @@
-function [err,R, Tout] = system_solve_translation_support_rigid(...
+function [err,R, Tout, Diagnostics] = system_solve_translation_support_rigid(...
     nfirst, nlast, rc, pm, opts, rcout, T,map_id, tIds, z_val, PM)
 % support function that performs translation only on a rigid rotation
 % It applies the rotation transformation to point matches prio to translation
@@ -289,6 +289,20 @@ disp(['Precision: ' num2str(precision)]);
 err = norm(A*x2-b);
 disp(['Error norm(Ax-b): ' num2str(err)]);
 Error = err;
+
+Diagnostics.nnz_A = nnz(A);
+Diagnostics.nnz_K = nnz(K);
+Diagnostics.precision = precision;
+Diagnostics.err = err;
+Diagnostics.dim_A = size(A);
+% estimate error per tile before solution (i.e. use transformation parameters from rc --- the source collection)
+Diagnostics.res_o = [ 0;0;A*T(9:3:end)'-b]; % T is the source transformation parameters
+[Diagnostics.tile_err_o, Diagnostics.rms_o] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res_o, ntiles);
+
+% estimate error after solution (i.e. use x2)
+Diagnostics.res =  [0 ; 0; A*x2-b];
+[Diagnostics.tile_err, Diagnostics.rms] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res, ntiles);
+
 %%% include the eliminated tile
 x2 = [T(1,[3]); T(1,[6]); x2];
 Translation_parms = reshape(x2, tdim, ncoeff/tdim)';% remember the transformations
@@ -321,6 +335,9 @@ disp('.... done!');
 
 %% Step 5: ingest into Renderer database
 if ~isempty(rcout)
+    if isfield(opts, 'diagnostics_level') && opts.diagnostics_level>=0
+        rcout.diagnostics = mean(Diagnostics.rms);
+    end
     disp('** STEP 5:   Ingesting data .....');
     disp(' ..... translate to +ve space');
     %             delta = 0;
@@ -329,9 +346,9 @@ if ~isempty(rcout)
     urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
         rc.baseURL, rc.owner, rc.project, rc.stack,zu(1));
     j = webread(urlChar, webopts);
-    jt1 = tile(j(1));
-    Width = jt1.W;
-    Height = jt1.H;
+    %jt1 = tile(j(1));
+    Width = j(1).width;
+    Height = j(1).height;
     
     delta = -(5000 + max([Width Height]));
     dx = min(Tout(:,3)) +  delta;

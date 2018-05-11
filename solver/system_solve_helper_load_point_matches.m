@@ -56,6 +56,9 @@ else
 end
 ismontage = [];
 count  = 1;
+if ~opts.outside_group
+    sID_all = cell(numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2,2);
+end
 for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
     %disp(['Setting up section: ' sID{ix}]);
     sID_all{count,1} = sID{ix};

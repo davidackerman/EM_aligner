@@ -102,8 +102,8 @@ for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
         end
     end
 end
-if ~opts.outside_group && count ~= numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2
-    sID_all = sID_all(1:count,2);
+if ~opts.outside_group && count ~= numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2 +1
+    sID_all = sID_all(1:count-1,2);
 end
 % clear sID
 % % perform pm requests

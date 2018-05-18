@@ -164,7 +164,7 @@ M   = {};
 adj = {};
 W   = {};
 np = {};  % store a vector with number of points in point-matches (so we don't need to loop again later)
-parfor ix = 1:size(sID_all,1)   % loop over sections
+parfor ix = 1:count-1   % loop over sections
     %disp([sID_all{ix,1}{1} ' ' sID_all{ix,2}{1} ' ' num2str(ismontage(ix))]);
     % when loading point matches, load all available point
     % then filter them, and after that select points randomly to limit the size of

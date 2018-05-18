@@ -63,7 +63,6 @@ else
 end
 ismontage = [];
 count  = 1;
-<<<<<<< HEAD
 
 if ~opts.primenbr
   if ~opts.outside_group
@@ -71,13 +70,11 @@ if ~opts.primenbr
   end
   for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
 			 %disp(['Setting up section: ' sID{ix}]);
-=======
 if ~opts.outside_group
     sID_all = cell(numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2,2);
 end
 for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
     %disp(['Setting up section: ' sID{ix}]);
->>>>>>> 2c271c9cfc9f887c68309efc639307bf9f6a1b13
     sID_all{count,1} = sID{ix};
     sID_all{count,2} = sID{ix};
     ismontage(count) = 1;
@@ -149,15 +146,12 @@ else
   end
   sID_all = sID_all(1:count-1,1:2);	
 end
-<<<<<<< HEAD
 
 
 
-=======
 if ~opts.outside_group && count ~= numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2 +1
     sID_all = sID_all(1:count-1,1:2);
 end
->>>>>>> 2c271c9cfc9f887c68309efc639307bf9f6a1b13
 % clear sID
 % % perform pm requests
 

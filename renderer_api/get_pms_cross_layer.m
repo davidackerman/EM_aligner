@@ -49,7 +49,9 @@ end
 % % %disp([sID{isix} ' ---- ' sID{jsix}]);
 % % %%jj = webread(urlChar, wopts);
 try
-  jj = [];
+  if outside_group
+    jj = [];
+  end
   
   for pix = numel(pm):-1:1
     if outside_group
@@ -62,7 +64,7 @@ try
       urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
 			pm(pix).server, pm(pix).owner, ...
 			pm(pix).match_collection, sID1, sID2);
-      jj(pix) = webread(urlChar,wopts)
+      jj(pix) = webread(urlChar,wopts);
     end
   end
 catch err_fetch_pm

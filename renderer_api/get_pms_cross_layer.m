@@ -16,9 +16,9 @@ end
    data_options_str(1) = '?';
    for ix = 2:numel(pm)
      if ix ==2
-       data_options_str(ix) = 'mergeCollection=' pm(ix).match_collection;
+       data_options_str(ix) = strcat('mergeCollection=',pm(ix).match_collection);
      else
-       data_options_str(ix) = '&mergeCollection=' pm(ix).match_collection;
+       data_options_str(ix) = strcat('&mergeCollection=',pm(ix).match_collection);
      end
    end
    

@@ -133,7 +133,7 @@ if ~isfield(opts, 'transfac'), opts.transfac = 1;end
 if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
 if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
 if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
-is ~isfield(opts, 'centre'), opts.centre = false;end
+if ~isfield(opts, 'centre'), opts.centre = false;end
 
 
 err = [];

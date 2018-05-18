@@ -49,17 +49,22 @@ end
 % % %disp([sID{isix} ' ---- ' sID{jsix}]);
 % % %%jj = webread(urlChar, wopts);
 try
-    jj = [];
-    for pix = 1:numel(pm)
-        if outside_group
-            urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup', ...
-                pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1);
-        else
-             urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
-                pm(pix).server, pm(pix).owner, pm(pix).match_collection, sID1, sID2);
-        end
-        jj =[jj; webread(urlChar, wopts)];
+  jj = [];
+  
+  for pix = numel(pm):-1:1
+    if outside_group
+      urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup', ...
+			pm(pix).server, pm(pix).owner,
+			pm(pix).match_collection, sID1);
+      jj =[jj; webread(urlChar, wopts)];
+
+    else
+      urlChar = sprintf('%s/owner/%s/matchCollection/%s/group/%s/matchesWith/%s', ...
+			pm(pix).server, pm(pix).owner,
+			pm(pix).match_collection, sID1, sID2);
+      jj(pix) = webread(urlChar,wopts)
     end
+  end
 catch err_fetch_pm
     kk_disp_err(err_fetch_pm)
     pause(1);

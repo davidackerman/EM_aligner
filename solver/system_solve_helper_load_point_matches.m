@@ -31,12 +31,19 @@ if ~isfield(opts, 'Width')  % if not set, then assume FAFB
     opts.Width = 2160;
     opts.Height = 2560;
 end
+if ~isfield(opts, 'offset_x')
+  opts.offset_x = 0;
+  opts.offset_y = 0;
+end
+if ~isfield(opts, 'centre'), opts.centre = false; end
 if ~isfield(opts, 'inverse_dz')
     opts.inverse_dz = 1;
 end
 spmd
     warning('off', 'vision:obsolete:obsoleteFunctionality');
 end
+
+if ~isfield(opts, 'primenbr'), opts.primenbr = false; end
 
 if ~isfield(pm,'verbose')
     for i = 1:numel(pm)
@@ -56,58 +63,105 @@ else
 end
 ismontage = [];
 count  = 1;
+<<<<<<< HEAD
+
+if ~opts.primenbr
+  if ~opts.outside_group
+    sID_all = cell(numel(zu)*(opts.nbrs+1)-opts.nbrs*(opts.nbrs+1)/2,2);
+  end
+  for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
+			 %disp(['Setting up section: ' sID{ix}]);
+=======
 if ~opts.outside_group
     sID_all = cell(numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2,2);
 end
 for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
     %disp(['Setting up section: ' sID{ix}]);
+>>>>>>> 2c271c9cfc9f887c68309efc639307bf9f6a1b13
     sID_all{count,1} = sID{ix};
     sID_all{count,2} = sID{ix};
     ismontage(count) = 1;
     if opts.outside_group 
-        fac{count} = 1;
+      fac{count} = 1;
     else
-        fac(count) = 1;
+      fac(count) = 1;
     end
     count = count + 1;
     if opts.outside_group
-        %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-        second_index = min(ix+opts.nbrs, numel(zu));
-        sID1 = sID{ix};
-        if ix~=second_index
-            sID_all{count,1} = sID1;
-            sID_all{count,2} = sID{second_index}; %what to do about reacquires
-            ismontage(count) = 0;
-            z_range = ix+1:second_index;
-            current_sID_range = cellfun(@(sIDs)(sIDs{:}), sID(z_range),'uniformOutput', false);
-            current_keys = strcat([sID1{1} '_'], current_sID_range);
-            current_values = opts.xs_weight./(z_range -ix + 1);
-            fac{count} = containers.Map(current_keys,current_values);
-            count = count + 1;
-        end
+%disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+      second_index = min(ix+opts.nbrs, numel(zu));
+      sID1 = sID{ix};
+      if ix~=second_index
+        sID_all{count,1} = sID1;
+        sID_all{count,2} = sID{second_index}; %what to do about reacquires
+        ismontage(count) = 0;
+        z_range = ix+1:second_index;
+        current_sID_range = cellfun(@(sIDs)(sIDs{:}), sID(z_range),'uniformOutput', false);
+        current_keys = strcat([sID1{1} '_'], current_sID_range);
+        current_values = opts.xs_weight./(z_range -ix + 1);
+        fac{count} = containers.Map(current_keys,current_values);
+        count = count + 1;
+      end
     else
-        for nix = 1:opts.nbrs
-            if (ix+nix)<=numel(zu)
-                %disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
-                sID_all{count,1} = sID{ix};
-                sID_all{count,2} = sID{ix+nix};
-                ismontage(count) = 0;
-                if opts.inverse_dz
-                    fac(count) = opts.xs_weight/(nix+1);
-                else
-                    fac(count) = opts.xs_weight;
-                end
-                count = count + 1;
-            end
+      for nix = 1:opts.nbrs
+        if (ix+nix)<=numel(zu)
+%disp(['cross-layer: ' num2str(ix) ' ' sID{ix} ' -- ' num2str(nix) ' ' sID{ix+nix}]);
+          sID_all{count,1} = sID{ix};
+          sID_all{count,2} = sID{ix+nix};
+          ismontage(count) = 0;
+          if opts.inverse_dz
+            fac(count) = opts.xs_weight/(nix+1);
+          else
+            fac(count) = opts.xs_weight;
+          end
+          count = count + 1;
         end
+      end
     end
+  end
+  if ~opts.outside_group && count ~= numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2 + 1
+    sID_all = sID_all(1:count-1,1:2);
+  end
+else
+  if opts.outside_group
+    error('opts.primenbr can not be used with opts.outside_group')
+  end
+						 %Preallocate sID
+  sID_all = cell((numel(zu)-1) * opts.primenbr, 2); %will need to be
+						 %reduced
+  primes_plus_one = [1,primes(opts.nbrs)];
+  for ix = 1:numel(zu)
+    ismontage(count)=1;
+    for nix = primes_plus_one(1:opts.primenbr)
+      if (ix + nix) <= numel(zu)
+	sID_all{count,1} = sID{ix};
+	sID_all{count,2} = sID{ix+nix};
+	ismontage(count) = 0;
+	if opts.inverse_dz
+	  fac(count) = opts.xs_weight/(nix+1);
+	else
+	  fac(count) = opts.xs_weight;
+	end
+	count = count+1;
+      end
+    end
+    
+  end
+  sID_all = sID_all(1:count-1,1:2);	
 end
+<<<<<<< HEAD
+
+
+
+=======
 if ~opts.outside_group && count ~= numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2 +1
     sID_all = sID_all(1:count-1,1:2);
 end
+>>>>>>> 2c271c9cfc9f887c68309efc639307bf9f6a1b13
 % clear sID
 % % perform pm requests
 
+    disp('Loading point-matches from point-match database ....');
 if pm(end).verbose
     disp('Loading point-matches from point-match database ....');
 end
@@ -169,6 +223,18 @@ parfor ix = 1:size(sID_all,1)   % loop over sections
             pmm2 = pmm{2};
             pmm1 = pmm1(indx,:);
             pmm2 = pmm2(indx,:);
+	    pmm1(:,1) = pmm1(:,1) - opts.offset_x;
+	    pmm2(:,1) = pmm2(:,1) - opts.offset_x;
+	    pmm1(:,2) = pmm1(:,2) - opts.offset_y;
+	    pmm2(:,2) = pmm2(:,2) - opts.offset_y;
+	    
+	    if opts.centre
+	      pmm1(:,1) = pmm1(:,1) - (opts.Width)/2;
+	      pmm2(:,1) = pmm2(:,1) - (opts.Width)/2;
+	      pmm1(:,2) = pmm1(:,2) - (opts.Height)/2;
+	      pmm2(:,2) = pmm2(:,2) - (opts.Height)/2;
+	      
+	    end
             m(pmix,:) = {pmm1,pmm2};
             pmw = w{pmix};
             w{pmix} = pmw(indx);
@@ -185,7 +251,7 @@ parfor ix = 1:size(sID_all,1)   % loop over sections
         n(delix) = [];
         a(delix,:) = [];
     end
-    
+
     M(ix) = {m};
     adj(ix) = {a};
     W(ix) = {w};
@@ -265,6 +331,7 @@ parfor pmix = 1:size(M, 1)
             end
             del_ix(pmix) = pmix;
         end
+	
         W{pmix} = w(inlierIdx);
         np(pmix) = length(W{pmix});
     end
@@ -305,7 +372,6 @@ for pix = 1:size(M,1)
         end
 %         disp(['Section: ' num2str(L.z) ' -- Removing ' num2str(numel(delix)) ' point-match sets outside bounds']);
     end
-    
 end
 delix = [delix; find(res(:,2)>thresh)];
 delix = [delix; find(res(:,1)>thresh)];

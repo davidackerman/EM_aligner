@@ -63,7 +63,6 @@ else
 end
 ismontage = [];
 count  = 1;
-<<<<<<< HEAD
 
 if ~opts.primenbr
   if ~opts.outside_group

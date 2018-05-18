@@ -12,15 +12,17 @@ end
  U = matlab.net.URI(urlChar);
 
  if numel(pm)>1
-     data_options_str = '?';
-     for ix = 2:numel(pm)
-         if ix ==2
-             data_options_str = [data_options_str 'mergeCollection=' pm(ix).match_collection];
-         else
-             data_options_str = [data_options_str '&mergeCollection=' pm(ix).match_collection];
-         end
+   data_options_str(numel(pm)) = '';
+   data_options_str(1) = '?';
+   for ix = 2:numel(pm)
+     if ix ==2
+       data_options_str(ix) = 'mergeCollection=' pm(ix).match_collection;
+     else
+       data_options_str(ix) = '&mergeCollection=' pm(ix).match_collection;
      end
-     QPs = matlab.net.QueryParameter(data_options_str);
+   end
+   
+     QPs = matlab.net.QueryParameter(strjoin(data_options_str,''));
      U.Query = QPs;
  end
 

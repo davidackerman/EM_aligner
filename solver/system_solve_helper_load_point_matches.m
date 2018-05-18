@@ -70,9 +70,7 @@ if ~opts.primenbr
   end
   for ix = 1:numel(zu)   % loop over sections  -- can this be made parfor?
 			 %disp(['Setting up section: ' sID{ix}]);
-    if ~opts.outside_group
-      sID_all = cell(numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2,2);
-    end
+
 
     sID_all{count,1} = sID{ix};
     sID_all{count,2} = sID{ix};
@@ -115,7 +113,7 @@ if ~opts.primenbr
       end
     end
   end
-  if ~opts.outside_group && count ~= numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs)+1/2 + 1
+  if ~opts.outside_group && count ~= numel(zu)*(opts.nbrs+1) - opts.nbrs * (opts.nbrs+1)/2 + 1
     sID_all = sID_all(1:count-1,1:2);
   end
 else

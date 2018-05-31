@@ -17,7 +17,7 @@ The set of tools described here were used for alignment of the female adult fly 
 
 Specifically:
 -	Image Rendering, image transformation and meta-data management were performed using the Renderer (available freely and documented here: https://github.com/saalfeldlab/render). 
--	Point-matches were produced via cross-correlation, based on the code from Bill Karsh, and also by using SIFT features with subsequent RANSAC filtering based on the work of Saalfeld et al. 2012.
+-	Point-matches were produced via cross-correlation, based on the code from [Bill Karsh](https://github.com/billkarsh/Alignment_Projects), and augmented with point-matches determined using SIFT features with subsequent RANSAC filtering based on the work of [Saalfeld et al. 2012] (https://www.nature.com/articles/nmeth.2072).
 -	Alignment of large slabs (up to 2.7 million tiles at a time) was performed using the solver techniques implemented in this repository. The implementation is based on the article Khairy et al. 2018.
 
 

@@ -12,6 +12,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # EM_aligner
 A set of Matlab tools for aligning EM images into a coherent image volume in two and three dimensions. This library works in conjunction with the "Renderer" ecosystem of tools. 
 
+# Application to the Female Adult Fly Brain
+The set of tools described here were used for alignment of the female adult fly brain (FAFB) ssTEM dataset. 
+
+Specifically:
+-	Image Rendering, image transformation and meta-data management were performed using the Renderer (available freely and documented here: https://github.com/saalfeldlab/render). 
+-	Point-matches were produced via cross-correlation, based on the code from Bill Karsh, and also by using SIFT features with subsequent RANSAC filtering based on the work of Saalfeld et al. 2012.
+-	Alignment of large slabs (up to 2.7 million tiles at a time) was performed using the solver techniques implemented in this repository. The implementation is based on the article Khairy et al. 2018.
+
+
 ## Status: 
 In production use at Janelia. This is a nascent set of tools that is undergoing large changes and code cleanup. We consider the library suitable for use by our collaborators as well as other research groups. Due to limited staffing, we do not guarantee support for outside groups.
 

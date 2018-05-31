@@ -13,7 +13,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 A set of Matlab tools for aligning EM images into a coherent image volume in two and three dimensions. This library works in conjunction with the "Renderer" ecosystem of tools. 
 
 # Application to ssTEM data of a female adult fly brain
-The set of tools described here was used for alignment of the female adult fly brain (FAFB) ssTEM dataset, described in the BioRxiv article [A Complete Electron Microscopy Volume Of The Brain Of Adult Drosophila melanogaster](https://www.biorxiv.org/content/early/2017/06/13/140905). 
+The set of tools provided here was used for alignment of the female adult fly brain (FAFB) ssTEM dataset, described in the BioRxiv article [A Complete Electron Microscopy Volume Of The Brain Of Adult Drosophila melanogaster](https://www.biorxiv.org/content/early/2017/06/13/140905). 
 
 Specifically:
 -	Image Rendering, image transformation and meta-data management were performed using the Renderer (available freely and documented here: https://github.com/saalfeldlab/render). 

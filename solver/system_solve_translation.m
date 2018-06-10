@@ -417,6 +417,9 @@ Diagnostics.res =  [0 ; 0; A*x2-b];
     clear K Lm d tb A b Wmx tB
     disp('.... done!');
     %% ingest into Renderer
+    if isfield(opts, 'diagnostics_level') && opts.diagnostics_level>=0
+        rcout.diagnostics = mean(Diagnostics.rms);
+    end
 system_solve_helper_ingest_into_renderer_database(rc, rcout, ...
     Tout, tIds, z_val, opts, zu);
     

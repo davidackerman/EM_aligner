@@ -8,7 +8,7 @@ end
 
 [T, map_id, tIds, ~] = load_all_transformations(rc, zu, options.dir_scratch);
 
-if ~isfield('point_matches', 'adj')
+if ~isfield(point_matches, 'adj')
     [PM.M, PM.adj, ~, PM.np] = system_solve_helper_load_point_matches(zu, options,point_matches, map_id, sID, size(T,1));
 else
     PM = point_matches;

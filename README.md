@@ -1,5 +1,25 @@
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL HHMI-JANELIA RESEARCH CAMPUS BE LIABLE 
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 # EM_aligner
 A set of Matlab tools for aligning EM images into a coherent image volume in two and three dimensions. This library works in conjunction with the "Renderer" ecosystem of tools. 
+
+# Application to ssTEM data of a female adult fly brain
+The set of tools provided here was used for alignment of the female adult fly brain (FAFB) ssTEM dataset, described in the BioRxiv article [A Complete Electron Microscopy Volume Of The Brain Of Adult Drosophila melanogaster](https://www.biorxiv.org/content/early/2017/06/13/140905). 
+
+Specifically:
+-	Image Rendering, image transformation and meta-data management were performed using the Renderer (available freely and documented here: https://github.com/saalfeldlab/render). 
+-	Point-matches were produced via cross-correlation, based on the ptest procedure provided in the [Alignment repository created by Bill Karsh](https://github.com/billkarsh/Alignment_Projects), and augmented with point-matches determined using SIFT features with subsequent RANSAC filtering based on the method of [Saalfeld et al. 2012](https://www.nature.com/articles/nmeth.2072).
+-	Alignment of large slabs (up to 2.7 million tiles at a time) was performed using the solver techniques implemented in this repository. The implementation is based on the article [Khairy et al. 2018](https://arxiv.org/abs/1804.10019).
+
 
 ## Status: 
 In production use at Janelia. This is a nascent set of tools that is undergoing large changes and code cleanup. We consider the library suitable for use by our collaborators as well as other research groups. Due to limited staffing, we do not guarantee support for outside groups.

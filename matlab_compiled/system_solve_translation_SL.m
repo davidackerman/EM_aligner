@@ -1,10 +1,9 @@
 function system_solve_translation_SL(fn)
 % Intended for deployment: solve matrix system using translation based on json input provided by fn
 
-
 % read json input
 sl = loadjson(fileread(fn));
-
+if ~isfield(sl.solver_options, 'diagnostics_level'), sl.solver_options.diagnostics_level = 0; end
 if sl.verbose
     kk_clock();
     disp(['Using input file: ' fn]);
@@ -18,6 +17,21 @@ if sl.verbose
     end
 end
 
+if isfield(sl, 'num_cores')
+    if sl.num_cores>1
+        parpool(sl.num_cores)
+    end
+else
+   parpool 
+end
 
 %%% deprecated?
 [err,R, Tout, PM, Diagnostics] = system_solve_translation(sl.first_section, sl.last_section, sl.source_collection, sl.source_point_match_collection, sl.solver_options, sl.target_collection);
+if sl.solver_options.diagnostics_level>=0
+    fprintf('root_mean_square_residual_value_mean: %f\n',mean(Diagnostics.rms));
+    if sl.solver_options.diagnostics_level == 1
+        fprintf('root_mean_square_residual_values: ');
+        fprintf('%f ',Diagnostics.rms);
+        fprintf('\n');
+    end
+end

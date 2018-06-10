@@ -133,6 +133,7 @@ if ~isfield(opts, 'transfac'), opts.transfac = 1;end
 if ~isfield(opts, 'filter_point_matches'), opts.filter_point_matches = 1;end
 if ~isfield(opts, 'use_peg'), opts.use_peg = 0;end
 if ~isfield(opts, 'nbrs_step'), opts.nbrs_step = 1;end
+if ~isfield(opts, 'centre'), opts.centre = false;end
 
 
 err = [];
@@ -207,7 +208,11 @@ else
             H = j.height;
             for ix = 1:numel(tvalid)  % loop over tiles that are registered as having point-matches to other tiles
                 tix = tvalid(ix);
-                bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
+                if opts.centre
+                    bb = [-W/2 -H/2 1; W/2 -H/2 1; -W/2 H/2 1; W/2 H/2 1];
+                else
+                    bb = [0 0 1;W 0 1;0 H 1;W H 1];  % base is 4 corner points
+                end
                 aa = [rand(opts.peg_npoints-4,1)*W rand(opts.peg_npoints-4,1)...
                     *H ones(opts.peg_npoints-4,1)]; % add additional point to top up to n
                 bo = [aa;bb];
@@ -460,6 +465,9 @@ clear x2;
 clear K Lm d tb A b Wmx tB
 disp('.... done!');
 %% ingest into Renderer
+if isfield(opts, 'diagnostics_level') && opts.diagnostics_level>=0
+    rcout.diagnostics = mean(Diagnostics.rms);
+end
 system_solve_helper_ingest_into_renderer_database(rc, rcout, ...
     Tout, tIds, z_val, opts, zu);
 

@@ -56,5 +56,6 @@
 		"match_collection": "trautmane_test_montage_canvas_tier_0",
 		"verbose": 0
 	},
-	"verbose": 1
+	"verbose": 1,
+	"num_cores": 2
 }

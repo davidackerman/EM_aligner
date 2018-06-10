@@ -1,4 +1,4 @@
-function [err,R, Tout] = system_solve_translation_support_rigid(...
+function [err,R, Tout, Diagnostics] = system_solve_translation_support_rigid(...
     nfirst, nlast, rc, pm, opts, rcout, T,map_id, tIds, z_val, PM)
 % support function that performs translation only on a rigid rotation
 % It applies the rotation transformation to point matches prior to translation
@@ -310,6 +310,20 @@ disp(['Precision: ' num2str(precision)]);
 err = norm(A*x2-b);
 disp(['Error norm(Ax-b): ' num2str(err)]);
 Error = err;
+
+Diagnostics.nnz_A = nnz(A);
+Diagnostics.nnz_K = nnz(K);
+Diagnostics.precision = precision;
+Diagnostics.err = err;
+Diagnostics.dim_A = size(A);
+% estimate error per tile before solution (i.e. use transformation parameters from rc --- the source collection)
+Diagnostics.res_o = [ 0;0;A*T(9:3:end)'-b]; % T is the source transformation parameters
+[Diagnostics.tile_err_o, Diagnostics.rms_o] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res_o, ntiles);
+
+% estimate error after solution (i.e. use x2)
+Diagnostics.res =  [0 ; 0; A*x2-b];
+[Diagnostics.tile_err, Diagnostics.rms] = system_solve_helper_tile_based_point_pair_errors(PM, Diagnostics.res, ntiles);
+
 %%% include the eliminated tile
 %x2 = [T(1,[3]); T(1,[6]); x2];
 x2 = [0;0;x2];
@@ -344,6 +358,9 @@ disp('.... done!');
 
 %% Step 5: ingest into Renderer database
 if ~isempty(rcout)
+    if isfield(opts, 'diagnostics_level') && opts.diagnostics_level>=0
+        rcout.diagnostics = mean(Diagnostics.rms);
+    end
     disp('** STEP 5:   Ingesting data .....');
     %disp(' ..... translate to +ve space');
     %             delta = 0;
@@ -362,6 +379,7 @@ if ~isempty(rcout)
 %     for ix = 1:size(Tout,1)
 %         Tout(ix,[3 6]) = Tout(ix, [3 6]) - [dx dy];
 %     end
+
     
     disp('... export to MET (in preparation to be ingested into the Renderer database)...');
     

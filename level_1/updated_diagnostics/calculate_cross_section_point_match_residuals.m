@@ -113,12 +113,13 @@ if options.verbose
     fprintf('Cross Section Residuals Progress:');
     fprintf(['\n' repmat('.',1,unique_merged_z_number_of_elements) '\n\n']);
 end
-parfor z_index=1:unique_merged_z_number_of_elements
+for z_index=1:unique_merged_z_number_of_elements
     % Load in transformations and map ids necessary to calculate
     % residuals for current section
     cross_section_z_max = unique_merged_z(z_index)+options.number_of_cross_sections;
     
-     [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, unique_z(floor_unique_z>= unique_merged_z(z_index) & floor_unique_z<=cross_section_z_max), dir_scratch);
+    [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, unique_z(floor_unique_z>= unique_merged_z(z_index) & floor_unique_z<=cross_section_z_max), dir_scratch);
+    
     % new_residuals_values will store the residuals as:
     % [ Sn -> Sn+1 ,  Sn -> Sn+2  ,  Sn+1 -> Sn  ,  Sn+2 -> Sn ]
     % Necessary to have this variable because of parfor

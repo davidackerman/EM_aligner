@@ -60,6 +60,8 @@ elseif length(varargin)==3
     end
 end
 
+webopts = weboptions('Timeout', 60);
+
 floor_unique_z = floor(unique_z);
 unique_merged_z = unique(floor_unique_z);
 
@@ -98,6 +100,7 @@ all_pm_max = zeros(num_el,1);
 all_tile_ids_pm_max = cell(num_el,1);
 all_residuals_variance = zeros(num_el,1);
 all_tile_ids = cell(num_el,1);
+all_mapping_from_section_map_indices_to_current_indicies=cell(num_el,1);
 all_residuals_outlier_count = zeros(num_el,1);
 all_residuals_outlier_percent = zeros(num_el,1);
 all_residuals_outlier_tile_indices = cell(num_el,1);
@@ -128,8 +131,8 @@ parfor z_index = 1:numel(unique_merged_z)
 %         options.min_points, 0,inf);
          [T, map_id, tIds, z_val, r, c] = load_all_transformations(rc, valid_zs, options.dir_scratch);
          [M, adj, W, np] = system_solve_helper_load_point_matches(valid_zs, options, point_matches, map_id, sID(matching_indices), size(T,1), r, c);
-
-%     if options.filter_point_matches
+    
+         %     if options.filter_point_matches
 %         if isfield(options, 'pmopts')
 %             L.pm = filter_pm(L.pm, options.pmopts);
 %         else
@@ -164,6 +167,23 @@ parfor z_index = 1:numel(unique_merged_z)
             all_tile_ids_pm_max{z_index} = {tIds(adjacent_tile_1), tIds(adjacent_tile_2)};
         end
     end
+    
+    %Necessary so mapping order is the same between area/perimeter calculations
+    %and residuals
+    split_zs = unique_z(floor_unique_z == unique_merged_z(z_index));
+    rc_data_for_mapping = [];
+    for split_z_index = 1:numel(split_zs)
+        urlChar = sprintf('%s/owner/%s/project/%s/stack/%s/z/%.1f/tile-specs', ...
+            rc.baseURL, rc.owner, rc.project, rc.stack,split_zs(split_z_index) );
+        rc_data_for_mapping = [rc_data_for_mapping; webread(urlChar, webopts)];
+    end
+    [~, mapping_from_section_map_indices_to_current_indicies] = ismember({rc_data_for_mapping(:).tileId}, tIds);
+    if numel({rc_data_for_mapping(:).tileId})==numel(tIds) && sum(mapping_from_section_map_indices_to_current_indicies==0)==0 %Then all ids are covered
+        all_mapping_from_section_map_indices_to_current_indicies{z_index} = mapping_from_section_map_indices_to_current_indicies;
+    else
+        error('Different tile ids');
+    end
+    
     all_residuals_pair_max(z_index) = current_section_pair_max;
     all_pm_max(z_index) = current_section_pm_max;
     %% Determine residual outliers
@@ -182,8 +202,13 @@ parfor z_index = 1:numel(unique_merged_z)
     if options.output_data_per_tile, all_residuals_vector{z_index} = tile_residuals; end  % Store tile residuals for this section
     % Calculate median of mean tile residuals, and outliers
     only_greater_than = true;
+    
+    max_residuals = cellfun(@max,tile_residuals,'UniformOutput',false);  % all tile residuals for section zu1(z_index)
+    empties = cellfun('isempty',max_residuals);
+    max_residuals(empties) = {NaN};
+    max_residuals = cell2mat(max_residuals);
     [all_residuals_median(z_index), all_residuals_mean(z_index), all_residuals_max(z_index), all_residuals_variance(z_index), all_residuals_outlier_count(z_index), all_residuals_outlier_percent(z_index), all_residuals_outlier_tile_indices{z_index}, all_residuals_outlier_tile_ids{z_index}] = ...
-        calculate_statistics_and_outliers(cellfun(@mean,tile_residuals), options.outlier_deviation_for_residuals, tIds, 'fixed_cutoff', only_greater_than);
+        calculate_statistics_and_outliers(max_residuals, options.outlier_deviation_for_residuals, tIds, 'fixed_cutoff', only_greater_than);
     if options.verbose, fprintf('\b|\n'); end
 end
 % Create output struct
@@ -198,6 +223,7 @@ if options.output_data_per_tile
     output_struct.max_of_pm = all_pm_max;
     output_struct.tile_ids_of_pm = all_tile_ids_pm_max;
     output_struct.all_tile_ids = all_tile_ids;
+    output_struct.all_mapping_from_section_map_indices_to_current_indicies=all_mapping_from_section_map_indices_to_current_indicies;
     output_struct.outlier_count = all_residuals_outlier_count;
     output_struct.outlier_percent = all_residuals_outlier_percent;
     output_struct.outlier_tile_indices =all_residuals_outlier_tile_indices;

@@ -61,8 +61,12 @@ for z_index=1:numel(section_zs)
             plot_count = plot_count+num_to_compare;
         end
         subplot(number_of_rows,num_to_compare,plot_count);
-        residuals = cellfun(@mean,output_struct.MontageResiduals.values{z_index});  % all tile residuals for section zu1(z_index)
-        residuals_bounds = [min(residuals), options.outlier_deviation_for_residuals];
+        max_residuals = cellfun(@max,output_struct.MontageResiduals.values{z_index},'UniformOutput',false);  % all tile residuals for section zu1(z_index)
+        empties = cellfun('isempty',max_residuals);
+        max_residuals(empties) = {NaN};
+        max_residuals = cell2mat(max_residuals);
+        residuals=max_residuals(output_struct.MontageResiduals.all_mapping_from_section_map_indices_to_current_indicies{z_index});
+        residuals_bounds = [0, options.outlier_deviation_for_residuals];%[min(residuals), options.outlier_deviation_for_residuals];
         outlier_count_large = sum(residuals>=residuals_bounds(2));
         map_options.only_greater_than = true;
         map_options.label_str{1} = [{['Residuals for: ' num2str(current_z)]}...

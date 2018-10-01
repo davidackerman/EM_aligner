@@ -27,8 +27,8 @@ for tix = 1:numel(boxes)
     P = boxes{tix}{1};
     mean_x = mean(P(:,1));
     mean_y = mean(P(:,2));
-    url = sprintf('http://renderer-catmaid:8000/?pid=%s\\&zp=%d\\&yp=%d\\&xp=%d\\&tool=navigator\\&sid0=%s\\&s0=2',rc.project, 35*z,round(4*mean_y), round(4*mean_x), rc.stack);
-    set(p,'ButtonDownFcn',{@open_tile_in_catmaid,url});
+    url = sprintf('http://renderer-catmaid:8000/?pid=flyTEM__%s\\&zp=%d\\&yp=%d\\&xp=%d\\&tool=navigator\\&sid0=%s\\&s0=2',rc.project, 35*z,round(4*mean_y), round(4*mean_x), rc.stack);
+    set(p,'ButtonDownFcn',{@open_tile_in_catmaid,url,tix});
 end
 title(options.label_str{1});
 daspect([1 1 1]);axis ij; h = colorbar; set(h, 'ylim', [0,1],'ytick',(0:.25:1),'yticklabel',round(100*(data_bounds(1):(data_bounds(2)-data_bounds(1))/4: data_bounds(2)))/100); caxis([0 1]);

@@ -82,6 +82,7 @@ if ~isfield(options, 'pmopts')
     options.pmopts.DesiredConfidence = 99.5;
     options.pmopts.PixelDistanceThreshold = 1;
 end
+if ~isfield(options, 'store_residual_outlier_pair_information'), options.store_residual_outlier_pair_information = false; end
 
 dir_current = pwd;
 dir_scratch = [options.dir_scratch '/temp_' num2str(randi(3000000))];
@@ -108,7 +109,9 @@ all_residuals_outlier_tile_ids = cell(num_el,1);
 all_unconnected_count = zeros(num_el,1);
 all_unconnected_tile_indices = cell(num_el,1);
 all_unconnected_tile_ids = cell(num_el,1);
-
+if options.store_residual_outlier_pair_information
+    outlier_pm_max_pair_data = cell(num_el,1);
+end
 % Loop over all unique z and print out progress
 if options.verbose
     fprintf('Montage Residuals Progress:');
@@ -155,9 +158,20 @@ parfor z_index = 1:numel(unique_merged_z)
         point_matches_tile_2 = [point_matches_tile_2 ones(size(point_matches_tile_2,1),1)]*[reshape(T(adjacent_tile_2,:),3,2), [0;0;1]];  % Apply transformation
         all_residuals = sqrt((point_matches_tile_1(:,1)-point_matches_tile_2(:,1)).*(point_matches_tile_1(:,1)-point_matches_tile_2(:,1))  + (point_matches_tile_1(:,2)-point_matches_tile_2(:,2)).* (point_matches_tile_1(:,2)-point_matches_tile_2(:,2)));       
         residual = mean(all_residuals); 
-        current_pm_max = max(all_residuals);
+        [current_pm_max, current_pm_max_i] = max(all_residuals);
         tile_residuals{adjacent_tile_1} = [tile_residuals{adjacent_tile_1} residual];  % Aggregate residuals for adjacent tile 1
         tile_residuals{adjacent_tile_2} = [tile_residuals{adjacent_tile_2} residual];  % Aggregate residuals for adjacent tile 2
+        if options.store_residual_outlier_pair_information % Store information about high residuals
+           if current_pm_max >= options.outlier_deviation_for_residuals
+               [sorted_tIds, sorted_order] = sort({tIds{adjacent_tile_1}, tIds{adjacent_tile_2}});
+               if sorted_order(1)==1
+                  pm_max_xyz = [point_matches_tile_1(current_pm_max_i,1), point_matches_tile_1(current_pm_max_i,2), unique_merged_z(z_index)]; 
+               else
+                  pm_max_xyz = [point_matches_tile_2(current_pm_max_i,1), point_matches_tile_2(current_pm_max_i,2), unique_merged_z(z_index)];
+               end
+               outlier_pm_max_pair_data{z_index}{end+1,1} = sprintf('%0.1f %f %s %s %f %f', pm_max_xyz(3), current_pm_max, sorted_tIds{1}, sorted_tIds{2}, pm_max_xyz(1), pm_max_xyz(2));
+           end
+        end
         if residual>current_section_pair_max
             current_section_pair_max=residual;
             all_tile_ids_residuals_pair_max{z_index} = {tIds(adjacent_tile_1), tIds(adjacent_tile_2)};
@@ -167,7 +181,6 @@ parfor z_index = 1:numel(unique_merged_z)
             all_tile_ids_pm_max{z_index} = {tIds(adjacent_tile_1), tIds(adjacent_tile_2)};
         end
     end
-    
     %Necessary so mapping order is the same between area/perimeter calculations
     %and residuals
     split_zs = unique_z(floor_unique_z == unique_merged_z(z_index));
@@ -245,6 +258,9 @@ else
     output_struct.outlier_tile_ids = all_residuals_outlier_tile_ids;
     output_struct.unconnected_count = all_unconnected_count;
     output_struct.unconnected_tile_ids = all_unconnected_tile_ids;
+end
+if options.store_residual_outlier_pair_information % Store information about high residuals
+    output_struct.outlier_pm_max_pair_data = outlier_pm_max_pair_data;
 end
 cd(dir_current);
 if new_dir_scratch

@@ -30,12 +30,13 @@ in the MathWorks Documentation Center.
 
 Files to package for Standalone 
 ================================
--solve_montage_SL 
--run_solve_montage_SL.sh (shell script for temporarily setting environment variables and 
-                          executing the application)
+-diagnostics_maps_and_residuals_function 
+-run_diagnostics_maps_and_residuals_function.sh (shell script for temporarily setting 
+                                                 environment variables and executing the 
+                                                 application)
    -to run the shell script, type
    
-       ./run_solve_montage_SL.sh <mcr_directory> <argument_list>
+       ./run_diagnostics_maps_and_residuals_function.sh <mcr_directory> <argument_list>
        
     at Linux or Mac command prompt. <mcr_directory> is the directory 
     where version 9.2 of the MATLAB Runtime is installed or the directory where 
@@ -45,12 +46,12 @@ Files to package for Standalone
     If you have version 9.2 of the MATLAB Runtime installed in 
     /mathworks/home/application/v92, run the shell script as:
     
-       ./run_solve_montage_SL.sh /mathworks/home/application/v92
+       ./run_diagnostics_maps_and_residuals_function.sh /mathworks/home/application/v92
        
     If you have MATLAB installed in /mathworks/devel/application/matlab, 
     run the shell script as:
     
-       ./run_solve_montage_SL.sh /mathworks/devel/application/matlab
+       ./run_diagnostics_maps_and_residuals_function.sh /mathworks/devel/application/matlab
 -MCRInstaller.zip
    -if end users are unable to download the MATLAB Runtime using the above  
     link, include it when building your component by clicking 
@@ -104,7 +105,7 @@ In the following directions, replace MCR_ROOT by the directory where the MATLAB 
         NOTE: The environment variable syntax utilizes forward 
               slashes (/), delimited by colons (:).  
         NOTE: When deploying standalone applications, it is possible 
-              to run the shell script file run_solve_montage_SL.sh 
+              to run the shell script file run_diagnostics_maps_and_residuals_function.sh 
               instead of setting environment variables. See 
               section 2 "Files to Deploy and Package".    
 

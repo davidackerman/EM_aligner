@@ -1,0 +1,58 @@
+{
+	"source_collection": {
+		"baseURL": "http://10.37.5.60:8080/render-ws/v1",
+		"owner": "flyTEM",
+		"project": "FAFB00",
+		"stack": "v12_acquire_merged"
+	},
+	"options": {
+		"dir_scratch": "/scratch/ackermand",
+		"xs_weight": 0.5,
+		"min_points": 8,
+		"max_points": "_Inf_",
+		"number_of_cross_sections": 0,
+		"show_residuals": 0,
+		"show_deformations": 0,
+		"show_table": 0,
+		"output_data_per_tile": 1,
+		"outlier_deviation_for_residuals": 10,
+		"outlier_deviation_for_ratios": 0.1,
+		"visible": 0,
+		"save_comparison_figure": 1,
+		"save_comparison_figure_directory": "/groups/flyTEM/home/ackermand/beautification/temp_david2/images/",
+		"save_comparison_text_directory": "/groups/flyTEM/home/ackermand/beautification/temp_david2/text/",
+		"verbose": 0,
+		"zstart": 100,
+		"zend": 105
+	},
+	"renderer_collections": [
+		{
+			"owner": "flyTEM",
+			"project": "FAFB00",
+			"stack": "v12_acquire_merged",
+			"baseURL": "http://10.37.5.60:8080/render-ws/v1",
+			"verbose": 0
+		},
+		{
+			"owner": "flyTEM",
+			"project": "FAFBv14_kk",
+			"stack": "kk_13_pm7",
+			"baseURL": "http://10.37.5.60:8080/render-ws/v1",
+			"verbose": 0
+		},
+		{
+			"owner": "flyTEM",
+			"project": "FAFBv14_kk",
+			"stack": "kk14_montage",
+			"baseURL": "http://10.37.5.60:8080/render-ws/v1",
+			"verbose": 0
+		}
+	],
+	"point_match_collection": {
+		"server": "http://10.40.3.162:8080/render-ws/v1",
+		"owner": "flyTEM",
+		"match_collection": "v12_dmesh",
+		"verbose": 0
+	},
+	"verbose": 1
+}

@@ -112,6 +112,7 @@ if options.save_comparison_figure
         for index_to_compare = 1:numel(rc_in)
             rc = rc_in(index_to_compare);
             outlier_pm_max_pair_data = output_struct_in(index_to_compare).MontageResiduals.outlier_pm_max_pair_data;
+            
             for z_index=1:numel(outlier_pm_max_pair_data)
                 if ~isempty(outlier_pm_max_pair_data{z_index})
                     fileid = fopen([options.save_comparison_text_directory '/' rc.stack '_outlier_pm_pair_data_section_' num2str(section_zs(z_index)) '.txt'],'w');

@@ -169,7 +169,7 @@ parfor z_index = 1:numel(unique_merged_z)
                else
                   pm_max_xyz = [point_matches_tile_2(current_pm_max_i,1), point_matches_tile_2(current_pm_max_i,2), unique_merged_z(z_index)];
                end
-               outlier_pm_max_pair_data{z_index}{end+1,1} = sprintf('%0.1f %f %s %s %f %f', pm_max_xyz(3), current_pm_max, sorted_tIds{1}, sorted_tIds{2}, pm_max_xyz(1), pm_max_xyz(2));
+               outlier_pm_max_pair_data{z_index}{end+1,1} = sprintf('%0.1f %f %s %s %f %f %d', pm_max_xyz(3), current_pm_max, sorted_tIds{1}, sorted_tIds{2}, pm_max_xyz(1), pm_max_xyz(2), residual >= options.outlier_deviation_for_residuals);
            end
         end
         if residual>current_section_pair_max

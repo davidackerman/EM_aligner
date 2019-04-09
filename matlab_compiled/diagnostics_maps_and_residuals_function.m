@@ -111,14 +111,14 @@ if options.store_residual_outlier_pair_information
         summary_file_name = [options.save_comparison_text_directory '/' rcs(rc_index).stack '_outlier_pm_pair_data.csv'];
         delete(summary_file_name);
         summary_fid = fopen(summary_file_name,'w');
-        fprintf(summary_fid,'%s\n',cell2mat({'Z,', 'Max PM Residual,', 'Tile 1,', 'Tile 2,', 'PM X,', 'PM Y,', 'Mean Tile Residual Is Outlier'}));
+        fprintf(summary_fid,'%s\n',cell2mat({'Z,', 'Max PM Residual,', 'Tile 1,', 'Tile 2,', 'PM X,', 'PM Y,', 'Mean Tile Pair Residual Is Outlier'}));
         fclose(summary_fid);
         fid = fopen(summary_file_name,'a');
         for z = zu
             file_name = [options.save_comparison_text_directory '/' rcs(rc_index).stack '_outlier_pm_pair_data_section_' num2str(z) '.txt'];
             if exist(file_name, 'file') == 2 %otherwise there were no outliers for that section
-                [string_z, string_residual, string_tile_1, string_tile_2, string_pm_x, string_pm_y, string_mean_tile_residual_is_outlier] = textread(file_name, '%s %s %s %s %s %s %s');
-                output_data = [string_z, string_residual, string_tile_1, string_tile_2, string_pm_x, string_pm_y, string_mean_tile_residual_is_outlier];
+                [string_z, string_residual, string_tile_1, string_tile_2, string_pm_x, string_pm_y, string_mean_tile_pair_residual_is_outlier] = textread(file_name, '%s %s %s %s %s %s %s');
+                output_data = [string_z, string_residual, string_tile_1, string_tile_2, string_pm_x, string_pm_y, string_mean_tile_pair_residual_is_outlier];
                 [nrows, ~]=size(output_data);
                 for row=1:nrows
                     fprintf(fid, '%s,%s,%s,%s,%s,%s,%s\n', output_data{row,:});
